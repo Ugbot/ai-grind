@@ -1,0 +1,38 @@
+[project]
+name = "valgrind-mcp"
+version = "0.1.0"
+description = "MCP server and CLI wrapping the Valgrind tool suite with Polars-based analysis"
+readme = "README.md"
+authors = [
+    { name = "bengambleVV", email = "ben.gamble@ververica.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.3.1",
+    "lxml>=6.0.2",
+    "mcp>=1.26.0",
+    "polars>=1.39.0",
+    "pydantic>=2.12.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.19,<0.9.0"]
+build-backend = "uv_build"
+
+[project.scripts]
+valgrind-mcp = "valgrind_mcp.server:main"
+valgrind-analyze = "valgrind_mcp.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.15.6",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
