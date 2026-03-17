@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import polars as pl
-import pytest
 
 from valgrind_mcp import analysis
 from valgrind_mcp.models import ValgrindRun
 from valgrind_mcp.parsers import (
-    parse_callgrind,
     parse_cachegrind,
+    parse_callgrind,
     parse_massif,
     parse_memcheck_xml,
     parse_threadcheck_xml,
@@ -26,7 +25,7 @@ def _run_base(tool: str) -> ValgrindRun:
         binary="./test_binary",
         args=[],
         valgrind_args=[],
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         exit_code=0,
         duration_seconds=1.0,
     )

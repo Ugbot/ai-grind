@@ -7,7 +7,6 @@ for per-line data.
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from valgrind_mcp.models import (
@@ -92,20 +91,22 @@ def parse_cachegrind(file_path: str, run_base: ValgrindRun) -> CachegrindResult:
                 if idx < len(events):
                     event_costs[events[idx]] = val
 
-            data_lines.append(CachegrindLine(
-                file=current_file,
-                function=current_fn,
-                line=line_num,
-                ir=event_costs.get("Ir", 0),
-                i1mr=event_costs.get("I1mr", 0),
-                ilmr=event_costs.get("ILmr", 0),
-                dr=event_costs.get("Dr", 0),
-                d1mr=event_costs.get("D1mr", 0),
-                dlmr=event_costs.get("DLmr", 0),
-                dw=event_costs.get("Dw", 0),
-                d1mw=event_costs.get("D1mw", 0),
-                dlmw=event_costs.get("DLmw", 0),
-            ))
+            data_lines.append(
+                CachegrindLine(
+                    file=current_file,
+                    function=current_fn,
+                    line=line_num,
+                    ir=event_costs.get("Ir", 0),
+                    i1mr=event_costs.get("I1mr", 0),
+                    ilmr=event_costs.get("ILmr", 0),
+                    dr=event_costs.get("Dr", 0),
+                    d1mr=event_costs.get("D1mr", 0),
+                    dlmr=event_costs.get("DLmr", 0),
+                    dw=event_costs.get("Dw", 0),
+                    d1mw=event_costs.get("D1mw", 0),
+                    dlmw=event_costs.get("DLmw", 0),
+                )
+            )
 
     return CachegrindResult(
         **run_base.model_dump(),

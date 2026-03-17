@@ -9,7 +9,6 @@ import time
 
 from valgrind_mcp.models import RunResult
 
-
 # Tools that support XML output
 XML_TOOLS = {"memcheck", "helgrind", "drd"}
 
@@ -88,10 +87,8 @@ async def run_valgrind(
         )
 
         try:
-            stdout_bytes, stderr_bytes = await asyncio.wait_for(
-                proc.communicate(), timeout=timeout
-            )
-        except asyncio.TimeoutError:
+            stdout_bytes, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        except TimeoutError:
             proc.kill()
             await proc.wait()
             duration = time.monotonic() - start
@@ -141,7 +138,8 @@ async def check_valgrind(valgrind_path: str = "valgrind") -> dict[str, str]:
     """Check if valgrind is installed and return version info."""
     try:
         proc = await asyncio.create_subprocess_exec(
-            valgrind_path, "--version",
+            valgrind_path,
+            "--version",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -149,8 +147,11 @@ async def check_valgrind(valgrind_path: str = "valgrind") -> dict[str, str]:
         version = stdout.decode("utf-8", errors="replace").strip()
         return {"installed": "true", "version": version, "path": valgrind_path}
     except FileNotFoundError:
-        return {"installed": "false", "version": "", "path": valgrind_path,
-                "error": f"valgrind not found at '{valgrind_path}'"}
+        return {
+            "installed": "false",
+            "version": "",
+            "path": valgrind_path,
+            "error": f"valgrind not found at '{valgrind_path}'",
+        }
     except Exception as e:
-        return {"installed": "false", "version": "", "path": valgrind_path,
-                "error": str(e)}
+        return {"installed": "false", "version": "", "path": valgrind_path, "error": str(e)}

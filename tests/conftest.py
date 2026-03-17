@@ -35,7 +35,7 @@ def memcheck_xml_file() -> str:
     all_kinds = leak_kinds + error_kinds
 
     errors_xml = []
-    for i in range(num_errors):
+    for _i in range(num_errors):
         kind = random.choice(all_kinds)
         fn = _random_fn()
         src_file = _random_file()
@@ -46,7 +46,7 @@ def memcheck_xml_file() -> str:
             leaked_bytes = random.randint(16, 65536)
             leaked_blocks = random.randint(1, 100)
             what_xml = f"""<xwhat>
-        <text>{leaked_bytes} bytes in {leaked_blocks} blocks are {kind.replace('Leak_', '').lower()}</text>
+        <text>{leaked_bytes} bytes in {leaked_blocks} blocks are {kind.replace("Leak_", "").lower()}</text>
         <leakedbytes>{leaked_bytes}</leakedbytes>
         <leakedblocks>{leaked_blocks}</leakedblocks>
       </xwhat>"""
@@ -111,7 +111,7 @@ def helgrind_xml_file() -> str:
     kinds = ["Race", "LockOrder", "UnlockUnlocked", "UnlockForeign"]
 
     errors_xml = []
-    for i in range(num_errors):
+    for _i in range(num_errors):
         kind = random.choice(kinds)
         fn = _random_fn()
         tid = random.randint(1, 8)
@@ -121,7 +121,7 @@ def helgrind_xml_file() -> str:
     <unique>{unique_id}</unique>
     <tid>{tid}</tid>
     <kind>{kind}</kind>
-    <what>Possible data race during {random.choice(['read', 'write'])} of size {random.choice([1,4,8])}</what>
+    <what>Possible data race during {random.choice(["read", "write"])} of size {random.choice([1, 4, 8])}</what>
     <stack>
       <frame>
         <ip>{_random_hex()}</ip>
@@ -159,7 +159,7 @@ def callgrind_file() -> str:
     lines_out = [
         "# callgrind format",
         "version: 1",
-        f"creator: test-generator",
+        "creator: test-generator",
         f"pid: {random.randint(1000, 99999)}",
         "cmd: ./test_binary",
         "",
@@ -236,17 +236,19 @@ def cachegrind_file() -> str:
         for _ in range(num_lines):
             line_num = random.randint(1, 500)
             ir = random.randint(1000, 500000)
-            # Cache misses should be much smaller than refs
+            dr = random.randint(100, ir // 2)
+            dw = random.randint(50, ir // 4)
+            # Cache misses derived from their respective ref counts
             costs = [
                 ir,
-                random.randint(0, ir // 100),    # I1mr
-                random.randint(0, ir // 1000),   # ILmr
-                random.randint(100, ir // 2),    # Dr
-                random.randint(0, ir // 200),    # D1mr
-                random.randint(0, ir // 2000),   # DLmr
-                random.randint(50, ir // 4),     # Dw
-                random.randint(0, ir // 300),    # D1mw
-                random.randint(0, ir // 3000),   # DLmw
+                random.randint(0, max(ir // 100, 1)),  # I1mr
+                random.randint(0, max(ir // 1000, 1)),  # ILmr
+                dr,
+                random.randint(0, max(dr // 10, 1)),  # D1mr <= Dr
+                random.randint(0, max(dr // 100, 1)),  # DLmr <= Dr
+                dw,
+                random.randint(0, max(dw // 10, 1)),  # D1mw <= Dw
+                random.randint(0, max(dw // 100, 1)),  # DLmw <= Dw
             ]
             for idx, c in enumerate(costs):
                 total_costs[events[idx]] += c
@@ -287,7 +289,7 @@ def massif_file() -> str:
         stacks = random.randint(100, 5000)
         time_val = idx * random.randint(100000, 500000)
 
-        is_peak = (idx == peak_idx)
+        is_peak = idx == peak_idx
         is_detailed = is_peak or (idx % 10 == 0)
 
         lines_out.append("#-----------")
@@ -306,13 +308,13 @@ def massif_file() -> str:
             alloc1 = random.randint(heap_size // 4, heap_size // 2)
             alloc2 = heap_size - alloc1
             lines_out.append(f"n2: {heap_size} (heap allocation functions) malloc/new/new[], --alloc-fns, etc.")
-            lines_out.append(f" n0: {alloc1} {_random_hex()}: {fn1} ({_random_file()}:{random.randint(10,200)})")
-            lines_out.append(f" n0: {alloc2} {_random_hex()}: {fn2} ({_random_file()}:{random.randint(10,200)})")
+            lines_out.append(f" n0: {alloc1} {_random_hex()}: {fn1} ({_random_file()}:{random.randint(10, 200)})")
+            lines_out.append(f" n0: {alloc2} {_random_hex()}: {fn2} ({_random_file()}:{random.randint(10, 200)})")
         elif is_detailed:
             lines_out.append("heap_tree=detailed")
             fn1 = _random_fn()
             lines_out.append(f"n1: {heap_size} (heap allocation functions) malloc/new/new[], --alloc-fns, etc.")
-            lines_out.append(f" n0: {heap_size} {_random_hex()}: {fn1} ({_random_file()}:{random.randint(10,200)})")
+            lines_out.append(f" n0: {heap_size} {_random_hex()}: {fn1} ({_random_file()}:{random.randint(10, 200)})")
         else:
             lines_out.append("heap_tree=empty")
 

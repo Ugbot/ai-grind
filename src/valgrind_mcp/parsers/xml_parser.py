@@ -63,7 +63,7 @@ def parse_memcheck_xml(xml_path: str, run_base: ValgrindRun) -> MemcheckResult:
 
     try:
         context = etree.iterparse(xml_path, events=("end",), tag=("error", "errorcounts", "suppcounts"))
-    except (etree.XMLSyntaxError, OSError) as e:
+    except (etree.XMLSyntaxError, OSError):
         # Return empty result if XML is malformed or missing
         return MemcheckResult(
             **run_base.model_dump(),
@@ -72,7 +72,7 @@ def parse_memcheck_xml(xml_path: str, run_base: ValgrindRun) -> MemcheckResult:
             error_summary={},
         )
 
-    for event, elem in context:
+    for _event, elem in context:
         if elem.tag == "error":
             kind = _text(elem, "kind")
 
@@ -153,14 +153,14 @@ def parse_threadcheck_xml(xml_path: str, run_base: ValgrindRun, tool: str = "hel
 
     try:
         context = etree.iterparse(xml_path, events=("end",), tag=("error", "errorcounts"))
-    except (etree.XMLSyntaxError, OSError) as e:
+    except (etree.XMLSyntaxError, OSError):
         return ThreadCheckResult(
             **run_base.model_dump(),
             errors=[],
             error_summary={},
         )
 
-    for event, elem in context:
+    for _event, elem in context:
         if elem.tag == "error":
             kind = _text(elem, "kind")
 

@@ -13,7 +13,6 @@ produced by the analysis module. Supports:
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 
 import polars as pl
@@ -29,15 +28,15 @@ class FilterSpec:
 
     # --- Pattern inclusion (regex, case-insensitive) ---
     # Each maps a column name to a regex pattern. Rows matching ANY pattern are kept.
-    file_pattern: str | None = None          # regex on "file" or "top_file" column
-    function_pattern: str | None = None      # regex on "function" or "top_function" column
-    kind_pattern: str | None = None          # regex on "kind" column
-    what_pattern: str | None = None          # regex on "what" column
+    file_pattern: str | None = None  # regex on "file" or "top_file" column
+    function_pattern: str | None = None  # regex on "function" or "top_function" column
+    kind_pattern: str | None = None  # regex on "kind" column
+    what_pattern: str | None = None  # regex on "what" column
 
     # --- Pattern exclusion (regex, case-insensitive) ---
     # Rows matching ANY exclusion pattern are removed.
-    exclude_files: str | None = None         # regex: exclude files matching (e.g. "/usr/lib|/lib64")
-    exclude_functions: str | None = None     # regex: exclude functions matching (e.g. "^_|^std::")
+    exclude_files: str | None = None  # regex: exclude files matching (e.g. "/usr/lib|/lib64")
+    exclude_functions: str | None = None  # regex: exclude functions matching (e.g. "^_|^std::")
 
     # --- Numeric thresholds ---
     # Dict mapping column name to (min, max). Either bound can be None.
@@ -45,34 +44,34 @@ class FilterSpec:
     thresholds: dict[str, tuple[float | None, float | None]] = field(default_factory=dict)
 
     # --- Sorting ---
-    sort_by: str | None = None               # column to sort by (overrides default)
-    sort_descending: bool = True             # sort direction
+    sort_by: str | None = None  # column to sort by (overrides default)
+    sort_descending: bool = True  # sort direction
 
     # --- Pagination ---
-    offset: int = 0                          # skip first N rows after filtering
-    limit: int | None = None                 # max rows to return (None = all)
+    offset: int = 0  # skip first N rows after filtering
+    limit: int | None = None  # max rows to return (None = all)
 
     # --- Sampling ---
-    sample_n: int | None = None              # random sample of N rows
-    sample_fraction: float | None = None     # random fraction (0.0-1.0)
-    sample_every: int | None = None          # take every Nth row (systematic sampling)
-    sample_seed: int | None = None           # seed for reproducible random sampling
-    stratify_by: str | None = None           # stratified sampling: sample_n per group in this column
+    sample_n: int | None = None  # random sample of N rows
+    sample_fraction: float | None = None  # random fraction (0.0-1.0)
+    sample_every: int | None = None  # take every Nth row (systematic sampling)
+    sample_seed: int | None = None  # seed for reproducible random sampling
+    stratify_by: str | None = None  # stratified sampling: sample_n per group in this column
 
     # --- Time range (massif) ---
-    time_min: int | None = None              # minimum time value
-    time_max: int | None = None              # maximum time value
+    time_min: int | None = None  # minimum time value
+    time_max: int | None = None  # maximum time value
 
     # --- Memory range (massif) ---
-    min_bytes: int | None = None             # minimum total_bytes / heap_bytes
-    max_bytes: int | None = None             # maximum total_bytes / heap_bytes
+    min_bytes: int | None = None  # minimum total_bytes / heap_bytes
+    max_bytes: int | None = None  # maximum total_bytes / heap_bytes
 
     # --- Stack depth filter (error tools) ---
     min_stack_depth: int | None = None
     max_stack_depth: int | None = None
 
     # --- Thread filter (helgrind/drd) ---
-    thread_ids: list[int] | None = None      # only errors from these threads
+    thread_ids: list[int] | None = None  # only errors from these threads
 
 
 def apply_filters(df: pl.DataFrame, spec: FilterSpec) -> pl.DataFrame:
@@ -237,7 +236,7 @@ def describe_active_filters(spec: FilterSpec) -> str:
     if spec.sample_n is not None:
         parts.append(f"sample {spec.sample_n} rows")
     if spec.sample_fraction is not None:
-        parts.append(f"sample {spec.sample_fraction*100:.0f}%")
+        parts.append(f"sample {spec.sample_fraction * 100:.0f}%")
     if spec.sample_every is not None:
         parts.append(f"every {spec.sample_every}th row")
     if spec.stratify_by:
@@ -270,9 +269,7 @@ def _apply_pattern(df: pl.DataFrame, pattern: str | None, columns: list[str]) ->
     if col is None:
         return df
     try:
-        return df.filter(
-            pl.col(col).cast(pl.Utf8).str.contains(f"(?i){pattern}")
-        )
+        return df.filter(pl.col(col).cast(pl.Utf8).str.contains(f"(?i){pattern}"))
     except Exception:
         return df
 
@@ -285,9 +282,7 @@ def _apply_exclude(df: pl.DataFrame, pattern: str | None, columns: list[str]) ->
     if col is None:
         return df
     try:
-        return df.filter(
-            ~pl.col(col).cast(pl.Utf8).str.contains(f"(?i){pattern}")
-        )
+        return df.filter(~pl.col(col).cast(pl.Utf8).str.contains(f"(?i){pattern}"))
     except Exception:
         return df
 

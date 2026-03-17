@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 import polars as pl
 
-from valgrind_mcp.models import ValgrindResult, ValgrindRun
+from valgrind_mcp.models import ValgrindResult
 
 
 @dataclass

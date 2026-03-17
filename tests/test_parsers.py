@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-
-import pytest
+from datetime import UTC, datetime
 
 from valgrind_mcp.models import ValgrindRun
 from valgrind_mcp.parsers import (
-    parse_callgrind,
     parse_cachegrind,
+    parse_callgrind,
     parse_massif,
     parse_memcheck_xml,
     parse_threadcheck_xml,
@@ -24,7 +22,7 @@ def _run_base(tool: str) -> ValgrindRun:
         binary="./test_binary",
         args=[],
         valgrind_args=[],
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         exit_code=0,
         duration_seconds=1.0,
     )
@@ -45,8 +43,13 @@ class TestMemcheckParser:
     def test_error_has_kind(self, memcheck_xml_file: str):
         result = parse_memcheck_xml(memcheck_xml_file, _run_base("memcheck"))
         valid_kinds = {
-            "InvalidRead", "InvalidWrite", "UninitValue", "UninitCondition",
-            "Leak_DefinitelyLost", "Leak_PossiblyLost", "Leak_IndirectlyLost",
+            "InvalidRead",
+            "InvalidWrite",
+            "UninitValue",
+            "UninitCondition",
+            "Leak_DefinitelyLost",
+            "Leak_PossiblyLost",
+            "Leak_IndirectlyLost",
             "Leak_StillReachable",
         }
         for error in result.errors:
@@ -64,7 +67,7 @@ class TestMemcheckParser:
     def test_error_summary_populated(self, memcheck_xml_file: str):
         result = parse_memcheck_xml(memcheck_xml_file, _run_base("memcheck"))
         assert len(result.error_summary) > 0
-        for kind, count in result.error_summary.items():
+        for _kind, count in result.error_summary.items():
             assert count > 0
 
     def test_handles_missing_file(self):

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
+import uuid
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +18,7 @@ class StackFrame(BaseModel):
 
     @property
     def location(self) -> str:
-        parts = []
+        parts: list[str] = []
         if self.fn:
             parts.append(self.fn)
         if self.file and self.line is not None:
@@ -177,3 +177,24 @@ class RunResult(BaseModel):
 
 # Union type for any parsed result
 ValgrindResult = MemcheckResult | ThreadCheckResult | CallgrindResult | CachegrindResult | MassifResult
+
+
+def create_run_base(
+    tool: str,
+    binary: str,
+    args: list[str] | None = None,
+    valgrind_args: list[str] | None = None,
+    duration_seconds: float = 0.0,
+    exit_code: int = 0,
+) -> ValgrindRun:
+    """Factory for creating a ValgrindRun base used by parsers."""
+    return ValgrindRun(
+        run_id=str(uuid.uuid4()),
+        tool=tool,
+        binary=binary,
+        args=args or [],
+        valgrind_args=valgrind_args or [],
+        timestamp=datetime.now(UTC),
+        exit_code=exit_code,
+        duration_seconds=duration_seconds,
+    )

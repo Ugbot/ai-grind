@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import polars as pl
 import pytest
@@ -13,11 +13,10 @@ from valgrind_mcp import analysis
 from valgrind_mcp.filters import FilterSpec, apply_filters, build_filter_spec, describe_active_filters
 from valgrind_mcp.models import ValgrindRun
 from valgrind_mcp.parsers import (
-    parse_callgrind,
     parse_cachegrind,
+    parse_callgrind,
     parse_massif,
     parse_memcheck_xml,
-    parse_threadcheck_xml,
 )
 
 
@@ -28,7 +27,7 @@ def _run_base(tool: str) -> ValgrindRun:
         binary="./test_binary",
         args=[],
         valgrind_args=[],
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         exit_code=0,
         duration_seconds=1.0,
     )
@@ -99,10 +98,12 @@ class TestThresholdFilters:
             assert val >= 100
 
     def test_threshold_on_arbitrary_column(self):
-        df = pl.DataFrame({
-            "function": [f"fn_{i}" for i in range(20)],
-            "ir": [random.randint(100, 100000) for _ in range(20)],
-        })
+        df = pl.DataFrame(
+            {
+                "function": [f"fn_{i}" for i in range(20)],
+                "ir": [random.randint(100, 100000) for _ in range(20)],
+            }
+        )
         spec = build_filter_spec(thresholds={"ir": (5000, 50000)})
         filtered = apply_filters(df, spec)
         for val in filtered["ir"].to_list():
@@ -123,10 +124,12 @@ class TestThresholdFilters:
 
 class TestSampling:
     def test_sample_n(self):
-        df = pl.DataFrame({
-            "x": list(range(100)),
-            "y": [random.random() for _ in range(100)],
-        })
+        df = pl.DataFrame(
+            {
+                "x": list(range(100)),
+                "y": [random.random() for _ in range(100)],
+            }
+        )
         spec = build_filter_spec(sample_n=10, sample_seed=42)
         filtered = apply_filters(df, spec)
         assert len(filtered) == 10
@@ -146,10 +149,12 @@ class TestSampling:
         assert 50 <= len(filtered) <= 150
 
     def test_stratified_sampling(self):
-        df = pl.DataFrame({
-            "kind": ["A"] * 50 + ["B"] * 30 + ["C"] * 20,
-            "value": [random.randint(1, 100) for _ in range(100)],
-        })
+        df = pl.DataFrame(
+            {
+                "kind": ["A"] * 50 + ["B"] * 30 + ["C"] * 20,
+                "value": [random.randint(1, 100) for _ in range(100)],
+            }
+        )
         spec = build_filter_spec(sample_n=5, stratify_by="kind", sample_seed=42)
         filtered = apply_filters(df, spec)
         # Should have 5 from each group = 15 total
@@ -210,11 +215,13 @@ class TestCombinedFilters:
             assert "Leak" in kind
 
     def test_filter_sort_paginate(self):
-        df = pl.DataFrame({
-            "function": [f"fn_{i}" for i in range(50)],
-            "file": ["a.c"] * 25 + ["b.c"] * 25,
-            "ir": [random.randint(100, 100000) for _ in range(50)],
-        })
+        df = pl.DataFrame(
+            {
+                "function": [f"fn_{i}" for i in range(50)],
+                "file": ["a.c"] * 25 + ["b.c"] * 25,
+                "ir": [random.randint(100, 100000) for _ in range(50)],
+            }
+        )
         spec = build_filter_spec(
             file_pattern="a\\.c",
             sort_by="ir",
