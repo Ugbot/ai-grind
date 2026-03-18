@@ -1,7 +1,7 @@
 [project]
-name = "valgrind-mcp"
-version = "0.1.0"
-description = "MCP server and CLI wrapping the Valgrind tool suite with Polars-based analysis"
+name = "devtools-mcp"
+version = "0.2.0"
+description = "Unified performance engineering MCP server — Valgrind, LLDB, DTrace, perf"
 readme = "README.md"
 authors = [
     { name = "bengambleVV", email = "ben.gamble@ververica.com" }
@@ -20,8 +20,7 @@ requires = ["uv_build>=0.8.19,<0.9.0"]
 build-backend = "uv_build"
 
 [project.scripts]
-valgrind-mcp = "valgrind_mcp.server:main"
-valgrind-analyze = "valgrind_mcp.cli:main"
+devtools-mcp = "devtools_mcp.server:main"
 
 [dependency-groups]
 dev = [
@@ -41,4 +40,4 @@ line-length = 120
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["valgrind_mcp"]
+known-first-party = ["devtools_mcp"]

@@ -238,17 +238,16 @@ def cachegrind_file() -> str:
             ir = random.randint(1000, 500000)
             dr = random.randint(100, ir // 2)
             dw = random.randint(50, ir // 4)
-            # Cache misses derived from their respective ref counts
             costs = [
                 ir,
-                random.randint(0, max(ir // 100, 1)),  # I1mr
-                random.randint(0, max(ir // 1000, 1)),  # ILmr
+                random.randint(0, max(ir // 100, 1)),
+                random.randint(0, max(ir // 1000, 1)),
                 dr,
-                random.randint(0, max(dr // 10, 1)),  # D1mr <= Dr
-                random.randint(0, max(dr // 100, 1)),  # DLmr <= Dr
+                random.randint(0, max(dr // 10, 1)),
+                random.randint(0, max(dr // 100, 1)),
                 dw,
-                random.randint(0, max(dw // 10, 1)),  # D1mw <= Dw
-                random.randint(0, max(dw // 100, 1)),  # DLmw <= Dw
+                random.randint(0, max(dw // 10, 1)),
+                random.randint(0, max(dw // 100, 1)),
             ]
             for idx, c in enumerate(costs):
                 total_costs[events[idx]] += c
@@ -279,7 +278,6 @@ def massif_file() -> str:
 
     heap_size = 0
     for idx in range(num_snapshots):
-        # Simulate growing then shrinking heap
         if idx <= peak_idx:
             heap_size += random.randint(1000, 50000)
         else:
@@ -302,7 +300,6 @@ def massif_file() -> str:
 
         if is_peak:
             lines_out.append("heap_tree=peak")
-            # Generate a simple allocation tree
             fn1 = _random_fn()
             fn2 = _random_fn()
             alloc1 = random.randint(heap_size // 4, heap_size // 2)

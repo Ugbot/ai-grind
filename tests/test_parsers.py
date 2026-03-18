@@ -5,8 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from valgrind_mcp.models import ValgrindRun
-from valgrind_mcp.parsers import (
+from devtools_mcp.models import RunBase
+from devtools_mcp.valgrind.parsers import (
     parse_cachegrind,
     parse_callgrind,
     parse_massif,
@@ -15,9 +15,10 @@ from valgrind_mcp.parsers import (
 )
 
 
-def _run_base(tool: str) -> ValgrindRun:
-    return ValgrindRun(
+def _run_base(tool: str) -> RunBase:
+    return RunBase(
         run_id=str(uuid.uuid4()),
+        suite="valgrind",
         tool=tool,
         binary="./test_binary",
         args=[],

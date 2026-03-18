@@ -9,10 +9,10 @@ from datetime import UTC, datetime
 import polars as pl
 import pytest
 
-from valgrind_mcp import analysis
-from valgrind_mcp.filters import FilterSpec, apply_filters, build_filter_spec, describe_active_filters
-from valgrind_mcp.models import ValgrindRun
-from valgrind_mcp.parsers import (
+from devtools_mcp.filters import FilterSpec, apply_filters, build_filter_spec, describe_active_filters
+from devtools_mcp.models import RunBase
+from devtools_mcp.valgrind import analysis
+from devtools_mcp.valgrind.parsers import (
     parse_cachegrind,
     parse_callgrind,
     parse_massif,
@@ -20,9 +20,10 @@ from valgrind_mcp.parsers import (
 )
 
 
-def _run_base(tool: str) -> ValgrindRun:
-    return ValgrindRun(
+def _run_base(tool: str) -> RunBase:
+    return RunBase(
         run_id=str(uuid.uuid4()),
+        suite="valgrind",
         tool=tool,
         binary="./test_binary",
         args=[],
