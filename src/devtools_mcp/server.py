@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from mcp.server.fastmcp import Context, FastMCP
 
 # Import backends to trigger auto-registration
+import devtools_mcp.lldb.backend  # noqa: F401
 import devtools_mcp.valgrind.backend  # noqa: F401
 from devtools_mcp.models import RunBase
 from devtools_mcp.registry import ToolRegistry
