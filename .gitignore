@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Compiled test fixtures (rebuild from source)
+tests/fixtures/target
+tests/fixtures/target.dSYM/
