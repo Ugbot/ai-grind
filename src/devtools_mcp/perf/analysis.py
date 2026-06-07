@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import polars as pl
 
+from devtools_mcp.models import StackSample
 from devtools_mcp.perf.models import PerfAnnotationResult, PerfRecordResult, PerfStatResult
+
+
+def perf_stack_samples(result: PerfRecordResult) -> list[StackSample]:
+    """Folded stacks from `perf script` (present when call graphs were recorded)."""
+    return list(result.stack_samples)
 
 
 def perf_counters_df(result: PerfStatResult) -> pl.DataFrame:

@@ -5,7 +5,12 @@ from __future__ import annotations
 from typing import Any
 
 from devtools_mcp.models import RunBase
-from devtools_mcp.perf.analysis import perf_annotation_df, perf_counters_df, perf_hotspots_df
+from devtools_mcp.perf.analysis import (
+    perf_annotation_df,
+    perf_counters_df,
+    perf_hotspots_df,
+    perf_stack_samples,
+)
 from devtools_mcp.perf.formatters import format_perf_summary
 from devtools_mcp.perf.models import PerfAnnotationResult, PerfRecordResult, PerfStatResult
 from devtools_mcp.perf.runner import check_perf, run_perf
@@ -72,6 +77,7 @@ def _register() -> None:
             run=run,
             df_builders=_DF_BUILDERS,
             format_summary=format_summary,
+            stacks=perf_stack_samples,
         )
     )
 

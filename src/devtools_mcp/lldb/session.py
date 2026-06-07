@@ -9,10 +9,19 @@ Ported from /Users/bengamble/lldb-mcp/lldb_mcp.py with enhancements:
 from __future__ import annotations
 
 import asyncio
-import fcntl
 import os
-import pty
-import termios
+
+# PTY support is Unix-only. Import lazily so this module (and the backend that
+# imports it) loads on Windows, where LLDB sessions are simply unavailable.
+try:
+    import fcntl
+    import pty
+    import termios
+
+    _HAS_PTY = True
+except ImportError:  # pragma: no cover - Windows
+    fcntl = pty = termios = None  # type: ignore[assignment]
+    _HAS_PTY = False
 
 
 class LldbSession:
@@ -37,6 +46,12 @@ class LldbSession:
 
     async def start(self) -> str:
         """Start the LLDB process with a PTY. Returns initial output."""
+        if not _HAS_PTY:
+            msg = (
+                "LLDB sessions require a Unix PTY; not supported on Windows. "
+                "Use the cdb backend for Windows debugging."
+            )
+            raise RuntimeError(msg)
         self.master_fd, self.slave_fd = pty.openpty()
 
         # Disable echo on the terminal

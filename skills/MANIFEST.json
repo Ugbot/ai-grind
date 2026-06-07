@@ -1,0 +1,418 @@
+{
+  "counts": {
+    "skill": 24,
+    "command": 23,
+    "agent": 3,
+    "archive": 1
+  },
+  "items": [
+    {
+      "name": "debug-windows-msvc",
+      "type": "skill",
+      "category": "debug",
+      "origin": "C:\\Users\\Capta\\.claude\\skills\\debug-windows-msvc",
+      "dest": "catalog\\skills\\debug\\debug-windows-msvc\\SKILL.md",
+      "sha256": "69fae496d7b30b8c7fb4eadd665d7363b48dd8dec1502e340f28f5e726c0b65e"
+    },
+    {
+      "name": "debug-linux-lldb",
+      "type": "skill",
+      "category": "debug",
+      "origin": "C:\\Users\\Capta\\.claude\\skills\\debug-linux-lldb",
+      "dest": "catalog\\skills\\debug\\debug-linux-lldb\\SKILL.md",
+      "sha256": "777ef75ce27e68919e329997aca01e401651fd6e193c8be1aac05c0176b43cb0"
+    },
+    {
+      "name": "llm-station-debug",
+      "type": "skill",
+      "category": "debug",
+      "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-debug",
+      "dest": "catalog\\skills\\debug\\llm-station-debug\\SKILL.md",
+      "sha256": "f8dd8a3dc26ce57e74db8ed62b61f43e9c2cc21dd385417c77ea6ca0b2699f58"
+    },
+    {
+      "name": "bench-rdtsc-profile",
+      "type": "skill",
+      "category": "profiling",
+      "origin": "C:\\code\\marbledb\\.claude\\skills\\bench-rdtsc-profile.md",
+      "dest": "catalog\\skills\\profiling\\bench-rdtsc-profile\\SKILL.md",
+      "sha256": "4e754a149e622702415352fcd119cefdafeb614fb69f1492c712b1f558a5227b"
+    },
+    {
+      "name": "perfview-etw-trace",
+      "type": "skill",
+      "category": "profiling",
+      "origin": "C:\\code\\marbledb\\.claude\\skills\\perfview-etw-trace.md",
+      "dest": "catalog\\skills\\profiling\\perfview-etw-trace\\SKILL.md",
+      "sha256": "cf23777458a2fee8c4e5cdfa6bc50eee97090737d0eeb18d0d6521d671d9677f"
+    },
+    {
+      "name": "llm-station-analyze",
+      "type": "skill",
+      "category": "code-intel",
+      "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-analyze",
+      "dest": "catalog\\skills\\code-intel\\llm-station-analyze\\SKILL.md",
+      "sha256": "e31ed7d49176ab57bb122746eb46b505726812b130a0a2cc8fa891f8cdc56996"
+    },
+    {
+      "name": "llm-station-search",
+      "type": "skill",
+      "category": "code-intel",
+      "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-search",
+      "dest": "catalog\\skills\\code-intel\\llm-station-search\\SKILL.md",
+      "sha256": "de0d8291fb26fea573c63b504738cef70b4884a890fd91a79210141177222703"
+    },
+    {
+      "name": "llm-station-patterns",
+      "type": "skill",
+      "category": "code-intel",
+      "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-patterns",
+      "dest": "catalog\\skills\\code-intel\\llm-station-patterns\\SKILL.md",
+      "sha256": "2d4495ad8f061cf291a92b8579b547f1394f8a536afd11b7e3c8533b0e130dab"
+    },
+    {
+      "name": "chukonu-dev",
+      "type": "skill",
+      "category": "project-drivers",
+      "origin": "C:\\code\\chukonu\\.claude\\skills\\chukonu-dev",
+      "dest": "catalog\\skills\\project-drivers\\chukonu-dev\\SKILL.md",
+      "sha256": "059c4de9e9ebca5433f2d6f676b371cc846c281046bf9f5978093c935a4f99c4"
+    },
+    {
+      "name": "se-analyse-story",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-analyse-story.md",
+      "dest": "catalog\\skills\\narrative\\se-analyse-story\\SKILL.md",
+      "sha256": "8aaec33ccb28ad52e546b40533b4b1023dc087e96ac73ce8beab8ed4401e6453"
+    },
+    {
+      "name": "se-character-trace",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-character-trace.md",
+      "dest": "catalog\\skills\\narrative\\se-character-trace\\SKILL.md",
+      "sha256": "e237eabae48fac50bc38e81bf95ecc09bd07ca8bea732b746baf8daf34a7a8df"
+    },
+    {
+      "name": "se-check-plot",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-check-plot.md",
+      "dest": "catalog\\skills\\narrative\\se-check-plot\\SKILL.md",
+      "sha256": "255e003eb99b69aee3f4186ba51139b1a4faadd72f98dd7738dd0d5c6aa7b270"
+    },
+    {
+      "name": "se-cli-reference",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-cli-reference.md",
+      "dest": "catalog\\skills\\narrative\\se-cli-reference\\SKILL.md",
+      "sha256": "b2bea147e8ab2bb359cba8ff436dff7045c7b982182a153e2ca8080c4aebe85b"
+    },
+    {
+      "name": "se-edit-scene",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-edit-scene.md",
+      "dest": "catalog\\skills\\narrative\\se-edit-scene\\SKILL.md",
+      "sha256": "ba4497004b24ba07bb715e112d06f9e06e5a591a41529dff55c4d2fbcd5ae865"
+    },
+    {
+      "name": "se-enhance-prose",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-enhance-prose.md",
+      "dest": "catalog\\skills\\narrative\\se-enhance-prose\\SKILL.md",
+      "sha256": "177c9807f5664948f91bc63a0474778e56433eae5f284166d00a9c7f847590da"
+    },
+    {
+      "name": "se-explore-story",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-explore-story.md",
+      "dest": "catalog\\skills\\narrative\\se-explore-story\\SKILL.md",
+      "sha256": "5e8ee9ee190b874aff7df1af35126c02167ea7cfcd3796818a1552ebfb478526"
+    },
+    {
+      "name": "se-list-stories",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-list-stories.md",
+      "dest": "catalog\\skills\\narrative\\se-list-stories\\SKILL.md",
+      "sha256": "472e2607cfa9152032cc3b28a48a180afe3b188188ed7ce15109913dff924b0b"
+    },
+    {
+      "name": "se-play-story",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-play-story.md",
+      "dest": "catalog\\skills\\narrative\\se-play-story\\SKILL.md",
+      "sha256": "7b9d370b8d9dc372a2558342d0a2b79442c6769ff39df65e21f6882a8ff723e9"
+    },
+    {
+      "name": "se-progress-report",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-progress-report.md",
+      "dest": "catalog\\skills\\narrative\\se-progress-report\\SKILL.md",
+      "sha256": "2efb9375670ed4ed10da49531af3f3377561832a0abd6d8b5ab9fc0161f938d2"
+    },
+    {
+      "name": "se-query-timeline",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-query-timeline.md",
+      "dest": "catalog\\skills\\narrative\\se-query-timeline\\SKILL.md",
+      "sha256": "0125e8d88953dae7cd61674dbabd2b73ed05e3bcd4f4ea2db6943c8cba007c2a"
+    },
+    {
+      "name": "se-scene-context",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-scene-context.md",
+      "dest": "catalog\\skills\\narrative\\se-scene-context\\SKILL.md",
+      "sha256": "c8622a8938c6ca07ccf2f4990a43f56e576148f576fe5fb683362dd9fd97030a"
+    },
+    {
+      "name": "se-search",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-search.md",
+      "dest": "catalog\\skills\\narrative\\se-search\\SKILL.md",
+      "sha256": "b6c46dae13baa54ff7adc37fa6298707018009852f4ad282f2a81e2fd7cf3575"
+    },
+    {
+      "name": "se-write-story",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-write-story.md",
+      "dest": "catalog\\skills\\narrative\\se-write-story\\SKILL.md",
+      "sha256": "6bbe783af4defe21c54b957c3992032d48d837ec21bf4563cd57c8fb0f34d96a"
+    },
+    {
+      "name": "start-engine",
+      "type": "skill",
+      "category": "narrative",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\start-engine.md",
+      "dest": "catalog\\skills\\narrative\\start-engine\\SKILL.md",
+      "sha256": "a8d3979cce777ace415eea21b80e83d8f210735fab839c9184627a3e2da70b6f"
+    },
+    {
+      "name": "archive-mcp",
+      "type": "archive",
+      "category": "narrative/_archive",
+      "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\archive-mcp",
+      "dest": "catalog\\skills\\narrative\\_archive",
+      "sha256": ""
+    },
+    {
+      "name": "build-windows",
+      "type": "command",
+      "category": "build",
+      "origin": "C:\\code\\chukonu\\.claude\\commands\\build-windows.md",
+      "dest": "catalog\\commands\\build\\build-windows.md",
+      "sha256": "83c46ddcabe3f2393390f0bd624fa9bae8507ea0d3ac3a40987f9898058b0050"
+    },
+    {
+      "name": "build-macos",
+      "type": "command",
+      "category": "build",
+      "origin": "C:\\code\\chukonu\\.claude\\commands\\build-macos.md",
+      "dest": "catalog\\commands\\build\\build-macos.md",
+      "sha256": "91d7233e60dcae4eac0aca57267def13b4d8fa6170cd38677ab65839b47625fc"
+    },
+    {
+      "name": "build-linux",
+      "type": "command",
+      "category": "build",
+      "origin": "C:\\code\\chukonu\\.claude\\commands\\build-linux.md",
+      "dest": "catalog\\commands\\build\\build-linux.md",
+      "sha256": "ab3252424bed04630e5a2dbdfd7b0391e871ddb7eb0d4c4288821e7a5a85e933"
+    },
+    {
+      "name": "build",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\build.md",
+      "dest": "catalog\\commands\\llm-station\\build.md",
+      "sha256": "d207b46bdf71638c249f0a38970c651d765d9f7f7018fce10df7d2a448a27876"
+    },
+    {
+      "name": "callers",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\callers.md",
+      "dest": "catalog\\commands\\llm-station\\callers.md",
+      "sha256": "e8574e9ec36a5a3442ea0bb92d1d611eb1b9eb6bf7b90ee6fe874dfcb8fdc17c"
+    },
+    {
+      "name": "grep",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\grep.md",
+      "dest": "catalog\\commands\\llm-station\\grep.md",
+      "sha256": "b177230f50aa9f2330f52ff730770c669d0bf04f0dcaac4f56a28440eec910bd"
+    },
+    {
+      "name": "refs",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\refs.md",
+      "dest": "catalog\\commands\\llm-station\\refs.md",
+      "sha256": "b5731e085626b28aecc02b24a39ddefd1dd5125a276e443f249ab292e7f78f1a"
+    },
+    {
+      "name": "rename",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\rename.md",
+      "dest": "catalog\\commands\\llm-station\\rename.md",
+      "sha256": "1488f1900e764494a602e5fc95d1c2109521904c37c4579d60805c2853d15928"
+    },
+    {
+      "name": "search",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\search.md",
+      "dest": "catalog\\commands\\llm-station\\search.md",
+      "sha256": "67eb9a86c3793a09a7a418d8a1e262ea7d56659d37aad58a7c3d59602d01fb75"
+    },
+    {
+      "name": "start",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\start.md",
+      "dest": "catalog\\commands\\llm-station\\start.md",
+      "sha256": "f97713bf626ff6904ec06a6070d19d6061f10ee6a1e7aa0d0610e5cee66bcf92"
+    },
+    {
+      "name": "status",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\status.md",
+      "dest": "catalog\\commands\\llm-station\\status.md",
+      "sha256": "058398c4f58fef012190564b780e78ce16509c49680ef9fbd02d0c05b2b82834"
+    },
+    {
+      "name": "stop",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\stop.md",
+      "dest": "catalog\\commands\\llm-station\\stop.md",
+      "sha256": "8d6d8a0ac28532686e6c871bf589b5f621d0212779f0f542b01c17ce0dc04368"
+    },
+    {
+      "name": "task",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\task.md",
+      "dest": "catalog\\commands\\llm-station\\task.md",
+      "sha256": "99c729b1f6f5e520a76f5293ea8217d6bd649daef72729444a34707419bab694"
+    },
+    {
+      "name": "ned-build",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-build.md",
+      "dest": "catalog\\commands\\llm-station\\ned-build.md",
+      "sha256": "0c36117bfd059c47d3e807d630ff27afc7506bd2ec9fa1fefa5f03afdbccf409"
+    },
+    {
+      "name": "ned-callers",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-callers.md",
+      "dest": "catalog\\commands\\llm-station\\ned-callers.md",
+      "sha256": "e8574e9ec36a5a3442ea0bb92d1d611eb1b9eb6bf7b90ee6fe874dfcb8fdc17c"
+    },
+    {
+      "name": "ned-grep",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-grep.md",
+      "dest": "catalog\\commands\\llm-station\\ned-grep.md",
+      "sha256": "b177230f50aa9f2330f52ff730770c669d0bf04f0dcaac4f56a28440eec910bd"
+    },
+    {
+      "name": "ned-refs",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-refs.md",
+      "dest": "catalog\\commands\\llm-station\\ned-refs.md",
+      "sha256": "b5731e085626b28aecc02b24a39ddefd1dd5125a276e443f249ab292e7f78f1a"
+    },
+    {
+      "name": "ned-rename",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-rename.md",
+      "dest": "catalog\\commands\\llm-station\\ned-rename.md",
+      "sha256": "c400f3a2d69a04ccaf56d4568b685cbaf99412086fa91dba10bbe681babaf23d"
+    },
+    {
+      "name": "ned-search",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-search.md",
+      "dest": "catalog\\commands\\llm-station\\ned-search.md",
+      "sha256": "67eb9a86c3793a09a7a418d8a1e262ea7d56659d37aad58a7c3d59602d01fb75"
+    },
+    {
+      "name": "ned-start",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-start.md",
+      "dest": "catalog\\commands\\llm-station\\ned-start.md",
+      "sha256": "74ab6d5160907852582202ac8c6ac6dd6211f286c05fb3fbedf4f2ecd2086e4b"
+    },
+    {
+      "name": "ned-status",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-status.md",
+      "dest": "catalog\\commands\\llm-station\\ned-status.md",
+      "sha256": "431d8b56809e4d4db002f38d1b06c529e2f91ddbc16819c48c47e8a62874b466"
+    },
+    {
+      "name": "ned-stop",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-stop.md",
+      "dest": "catalog\\commands\\llm-station\\ned-stop.md",
+      "sha256": "2db88cc9b8ad6f6bacabfb1c6483430f53e430694bf486b1bd479d3416f6f78b"
+    },
+    {
+      "name": "ned-task",
+      "type": "command",
+      "category": "llm-station",
+      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-task.md",
+      "dest": "catalog\\commands\\llm-station\\ned-task.md",
+      "sha256": "a98dfd545bf4d5a9f05dd9811389d4bf4e6e063ceb83c6e2c5f88bae08f544f0"
+    },
+    {
+      "name": "living-docs-writer",
+      "type": "agent",
+      "category": "docs",
+      "origin": "C:\\code\\Gestalt\\.claude\\agents\\living-docs-writer.md",
+      "dest": "catalog\\agents\\docs\\living-docs-writer.md",
+      "sha256": "2f2bb88d731d9f3a2e72d0ece83d9a4f2a6c1c25183f53febd8208db8c82f1a6"
+    },
+    {
+      "name": "test-bench-runner",
+      "type": "agent",
+      "category": "testing",
+      "origin": "C:\\code\\Gestalt\\.claude\\agents\\test-bench-runner.md",
+      "dest": "catalog\\agents\\testing\\test-bench-runner.md",
+      "sha256": "d0f9a6778427621e0674cf4a89b8572d09739b7bc161cdc9addffccb1edea55b"
+    },
+    {
+      "name": "frontend-backend-connectivity-checker",
+      "type": "agent",
+      "category": "integration",
+      "origin": "C:\\code\\Enterprise-data-platform\\enterprise-data-platform-management\\.claude\\agents\\frontend-backend-connectivity-checker.md",
+      "dest": "catalog\\agents\\integration\\frontend-backend-connectivity-checker.md",
+      "sha256": "f7ee409a24ed87f8cd1abd3b5175ec24794eaedb48c546ff3d198712f7ce24c7"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ from typing import Any
 
 from devtools_mcp.dtrace.analysis import (
     dtrace_aggregation_df,
+    dtrace_stack_samples,
     dtrace_stacks_df,
 )
 from devtools_mcp.dtrace.formatters import format_dtrace_summary
@@ -76,6 +77,7 @@ def _register() -> None:
             run=run,
             df_builders=_DF_BUILDERS,
             format_summary=format_summary,
+            stacks=dtrace_stack_samples,
         )
     )
 

@@ -1,0 +1,291 @@
+# Harvest map for the unified skills/commands/agents library.
+#
+# One [[item]] row per asset. This is the single source of truth and the
+# bounded work-list for harvest.py -- there is NO recursive disk crawling.
+#
+# Fields:
+#   src      absolute path to the asset. A directory => folder-form skill
+#            (copied whole, bundled assets preserved). A *.md file => single
+#            file (skills are wrapped into <name>/SKILL.md by harvest.py).
+#   type     "skill" | "command" | "agent" | "archive"
+#   category sub-folder under catalog/<type>s/ (forward slashes allowed)
+#   note     optional human note
+#
+# Dedup decisions baked in here (canonical copy chosen, duplicates omitted):
+#   - llm-station-* skills: taken from the project (.claude), NOT the 3x copies
+#     under .agents / src/ralph / global ~/.claude.
+#   - build-* commands: taken from chukonu (identical to global copies).
+#   - debug-windows-msvc / debug-linux-lldb: only exist in global ~/.claude.
+
+# ---------------------------------------------------------------- skills ----
+
+[[item]]
+src = "C:/Users/Capta/.claude/skills/debug-windows-msvc"
+type = "skill"
+category = "debug"
+note = "MSVC step-through debugging of chukonu test exes (global-only)"
+
+[[item]]
+src = "C:/Users/Capta/.claude/skills/debug-linux-lldb"
+type = "skill"
+category = "debug"
+note = "LLDB + ASAN debugging in a Linux container (global-only)"
+
+[[item]]
+src = "C:/code/llm-station/.claude/skills/llm-station-debug"
+type = "skill"
+category = "debug"
+note = "Valgrind/perf via LLM Station devtools"
+
+[[item]]
+src = "C:/code/marbledb/.claude/skills/bench-rdtsc-profile.md"
+type = "skill"
+category = "profiling"
+note = "Inline-RDTSC micro-profiling of MarbleDB benchmarks"
+
+[[item]]
+src = "C:/code/marbledb/.claude/skills/perfview-etw-trace.md"
+type = "skill"
+category = "profiling"
+note = "PerfView ETW CPU/thread traces on Windows"
+
+[[item]]
+src = "C:/code/llm-station/.claude/skills/llm-station-analyze"
+type = "skill"
+category = "code-intel"
+note = "Call graph / predicate search / task decomposition"
+
+[[item]]
+src = "C:/code/llm-station/.claude/skills/llm-station-search"
+type = "skill"
+category = "code-intel"
+note = "Indexed codebase search via the daemon"
+
+[[item]]
+src = "C:/code/llm-station/.claude/skills/llm-station-patterns"
+type = "skill"
+category = "code-intel"
+note = "GoF + crystallized action templates"
+
+[[item]]
+src = "C:/code/chukonu/.claude/skills/chukonu-dev"
+type = "skill"
+category = "project-drivers"
+note = "Build/test/fuzz chukonu via tools/ckdev.py"
+
+# narrative -- Story Engine 3 (single-file skills)
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-analyse-story.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-character-trace.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-check-plot.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-cli-reference.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-edit-scene.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-enhance-prose.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-explore-story.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-list-stories.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-play-story.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-progress-report.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-query-timeline.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-scene-context.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-search.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/se-write-story.md"
+type = "skill"
+category = "narrative"
+
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/start-engine.md"
+type = "skill"
+category = "narrative"
+
+# narrative archive -- copied verbatim, excluded from sync (already archived)
+[[item]]
+src = "C:/code/Story-engine-3/.claude/skills/archive-mcp"
+type = "archive"
+category = "narrative/_archive"
+note = "Old MCP-era story skills; kept for reference, never synced"
+
+# -------------------------------------------------------------- commands ----
+
+[[item]]
+src = "C:/code/chukonu/.claude/commands/build-windows.md"
+type = "command"
+category = "build"
+
+[[item]]
+src = "C:/code/chukonu/.claude/commands/build-macos.md"
+type = "command"
+category = "build"
+
+[[item]]
+src = "C:/code/chukonu/.claude/commands/build-linux.md"
+type = "command"
+category = "build"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/build.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/callers.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/grep.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/refs.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/rename.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/search.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/start.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/status.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/stop.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/task.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-build.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-callers.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-grep.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-refs.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-rename.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-search.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-start.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-status.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-stop.md"
+type = "command"
+category = "llm-station"
+
+[[item]]
+src = "C:/code/llm-station/.claude/commands/ned-task.md"
+type = "command"
+category = "llm-station"
+
+# ---------------------------------------------------------------- agents ----
+
+[[item]]
+src = "C:/code/Gestalt/.claude/agents/living-docs-writer.md"
+type = "agent"
+category = "docs"
+
+[[item]]
+src = "C:/code/Gestalt/.claude/agents/test-bench-runner.md"
+type = "agent"
+category = "testing"
+
+[[item]]
+src = "C:/code/Enterprise-data-platform/enterprise-data-platform-management/.claude/agents/frontend-backend-connectivity-checker.md"
+type = "agent"
+category = "integration"

@@ -41,6 +41,19 @@ def create_run_base(
     )
 
 
+class StackSample(BaseModel):
+    """One aggregated call stack with a weight (sample count, bytes, etc.).
+
+    The universal flame-graph input: any sampling backend (perf, dtrace profile,
+    ETW, JFR, async-profiler, CDB thread stacks) maps its stacks onto this. Frames
+    are ordered root-first (outermost caller at index 0, leaf last) — the same
+    order Brendan-Gregg folded stacks use.
+    """
+
+    frames: list[str] = Field(default_factory=list)
+    weight: int = 1
+
+
 # ToolResult is the union of all concrete result types.
 # Each backend defines its own result types inheriting from RunBase.
 # This gets populated by the registry after all backends are imported.

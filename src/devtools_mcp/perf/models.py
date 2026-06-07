@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from devtools_mcp.models import RunBase
+from devtools_mcp.models import RunBase, StackSample
 
 
 class PerfCounter(BaseModel):
@@ -44,6 +44,7 @@ class PerfRecordResult(RunBase):
     suite: str = "perf"
     tool: str = "record"
     samples: list[PerfSample] = Field(default_factory=list)
+    stack_samples: list[StackSample] = Field(default_factory=list)
     total_samples: int = 0
     perf_data_path: str = ""
     raw_output: str = ""

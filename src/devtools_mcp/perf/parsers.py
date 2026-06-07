@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from devtools_mcp.models import RunBase
+from devtools_mcp.models import RunBase, StackSample
 from devtools_mcp.perf.models import (
     PerfAnnotationLine,
     PerfAnnotationResult,
@@ -13,6 +13,44 @@ from devtools_mcp.perf.models import (
     PerfSample,
     PerfStatResult,
 )
+
+_SCRIPT_FRAME = re.compile(r"^\s+\S+\s+(?P<sym>.+?)(?:\+0x[0-9a-fA-F]+)?\s+\((?P<dso>.*)\)\s*$")
+MAX_SCRIPT_LINES = 5_000_000  # bound
+
+
+def parse_perf_script(text: str) -> list[StackSample]:
+    """Collapse `perf script` output into folded StackSamples (root-first).
+
+    perf script prints, per sample: a header line (comm/pid/time/event) then
+    indented frames leaf-first, blank-line separated. We reverse each stack to
+    root-first and aggregate identical stacks.
+    """
+    assert isinstance(text, str), "perf script text must be str"
+    lines = text.splitlines()
+    assert len(lines) <= MAX_SCRIPT_LINES, f"perf script too large: {len(lines)} lines"
+    agg: dict[tuple[str, ...], int] = {}
+    frames: list[str] = []
+
+    def flush() -> None:
+        if frames:
+            key = tuple(reversed(frames))  # leaf-first -> root-first
+            agg[key] = agg.get(key, 0) + 1
+
+    for line in lines:
+        if not line.strip():
+            flush()
+            frames = []
+            continue
+        m = _SCRIPT_FRAME.match(line)
+        if m:
+            sym = m.group("sym").strip()
+            if sym and sym != "[unknown]":
+                frames.append(sym)
+        elif not line[0].isspace():
+            flush()  # a new sample's header line
+            frames = []
+    flush()
+    return [StackSample(frames=list(k), weight=w) for k, w in agg.items()]
 
 
 def parse_perf_stat(text: str, run_base: RunBase) -> PerfStatResult:

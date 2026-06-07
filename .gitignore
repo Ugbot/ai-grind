@@ -12,3 +12,12 @@ wheels/
 # Compiled test fixtures (rebuild from source)
 tests/fixtures/target
 tests/fixtures/target.dSYM/
+
+# Generated loadable skill mirror (rebuild with: python skills/sync.py)
+skills/loadable/
+
+# Project-synced skill mirror + local settings (generated; source is skills/authored + skills/catalog)
+.claude/skills/
+.claude/commands/
+.claude/agents/
+.claude/settings.local.json

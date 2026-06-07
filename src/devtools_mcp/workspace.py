@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 import shutil
 import tempfile
@@ -47,6 +48,22 @@ class Workspace:
             raise KeyError(f"Raw file for run '{run_id}' not found")
         return self.raw_files[run_id]
 
+    def store_artifact(self, run_id: str, name: str, data: str | bytes) -> str:
+        """Write a derived artifact (e.g. a flamegraph SVG) into the workspace.
+
+        Returns the absolute path. Large artifacts live on disk so they are never
+        inlined into an LLM response — only the path is handed back.
+        """
+        assert run_id, "run_id required for artifact"
+        assert name and "/" not in name and "\\" not in name, f"bad artifact name: {name!r}"
+        os.makedirs(self.base_dir, exist_ok=True)
+        path = os.path.join(self.base_dir, f"{run_id}-{name}")
+        mode = "wb" if isinstance(data, bytes) else "w"
+        with open(path, mode, encoding=None if isinstance(data, bytes) else "utf-8") as f:
+            f.write(data)
+        assert os.path.exists(path), f"artifact not written: {path}"
+        return path
+
     def get_dataframe(self, run_id: str) -> pl.DataFrame | None:
         """Get cached DataFrame for a run."""
         return self._dataframes.get(run_id)
@@ -86,6 +103,7 @@ class AppContext:
     lldb_sessions: dict[str, object] = field(default_factory=dict)  # LldbSession (Phase 2)
     registry: object = field(default=None)  # ToolRegistry, set during lifespan
     default_workspace_id: str = ""
+    viz_server: object = field(default=None)  # VizServer, started on demand
 
     def get_workspace(self, workspace_id: str | None = None) -> Workspace:
         """Get workspace by ID, or default."""
@@ -103,6 +121,9 @@ class AppContext:
         return ws
 
     def cleanup_all(self) -> None:
-        """Clean up all workspaces and sessions."""
+        """Clean up all workspaces, sessions, and the viz server."""
+        if self.viz_server is not None:
+            with contextlib.suppress(Exception):
+                self.viz_server.stop()
         for ws in self.workspaces.values():
             ws.cleanup()

@@ -283,7 +283,7 @@ def massif_file() -> str:
         else:
             heap_size = max(0, heap_size - random.randint(500, 30000))
 
-        heap_extra = random.randint(100, heap_size // 4 + 1)
+        heap_extra = random.randint(100, max(101, heap_size // 4 + 1))
         stacks = random.randint(100, 5000)
         time_val = idx * random.randint(100000, 500000)
 

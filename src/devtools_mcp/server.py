@@ -12,10 +12,21 @@ from contextlib import asynccontextmanager
 from mcp.server.fastmcp import Context, FastMCP
 
 # Import backends to trigger auto-registration
+import devtools_mcp.cargo.backend  # noqa: F401
+import devtools_mcp.cdb.backend  # noqa: F401
 import devtools_mcp.dtrace.backend  # noqa: F401
+import devtools_mcp.etw.backend  # noqa: F401
+import devtools_mcp.gradle.backend  # noqa: F401
+import devtools_mcp.jvm.backend  # noqa: F401
 import devtools_mcp.lldb.backend  # noqa: F401
+import devtools_mcp.maven.backend  # noqa: F401
+import devtools_mcp.node.backend  # noqa: F401
+import devtools_mcp.npm.backend  # noqa: F401
 import devtools_mcp.perf.backend  # noqa: F401
+import devtools_mcp.pnpm.backend  # noqa: F401
+import devtools_mcp.py.backend  # noqa: F401
 import devtools_mcp.valgrind.backend  # noqa: F401
+import devtools_mcp.yarn.backend  # noqa: F401
 from devtools_mcp.models import RunBase
 from devtools_mcp.registry import ToolRegistry
 from devtools_mcp.workspace import AppContext, Workspace
@@ -42,12 +53,16 @@ mcp = FastMCP(
     "devtools-mcp",
     lifespan=app_lifespan,
     instructions=(
-        "Unified performance engineering toolkit. Supports Valgrind (memcheck, helgrind, "
-        "drd, callgrind, cachegrind, massif), LLDB debugging, DTrace tracing, and perf profiling. "
-        "Use devtools_check() to see installed tools. Use devtools_run() to execute any tool. "
-        "Use devtools_search() to find patterns across all results. Use devtools_analyze() to "
-        "drill into specific runs. All analysis supports rich filtering: regex patterns, "
-        "thresholds, pagination, and sampling."
+        "Unified performance engineering toolkit across native, JVM, Python, and JavaScript. "
+        "Backends: valgrind, lldb, dtrace, perf, etw (Windows/PerfView), jvm "
+        "(jfr/threads/heap/asprof), cdb (Windows debugger), py (pyspy/dump/cprofile), node "
+        "(cpu/heap). Core rule: NEVER flood the model with raw output — every run is stored as a "
+        "queryable Polars DataFrame and tools return only bounded summaries + a run_id. "
+        "Workflow: devtools_check() to see installed tools; devtools_run(suite, tool, binary) to "
+        "run one; devtools_analyze()/devtools_query() to drill into the frame; "
+        "devtools_search()/devtools_correlate() across runs; devtools_flamegraph(run_id) for an "
+        "SVG + text flame graph from any sampling run; devtools_dashboard() to open a browser "
+        "visualization terminal. LLDB debug_* tools provide interactive sessions."
     ),
 )
 
@@ -76,8 +91,39 @@ import devtools_mcp.tools  # noqa: E402, F401
 
 
 def main() -> None:
-    """Run the MCP server via stdio transport."""
-    mcp.run()
+    """Run the MCP server over stdio (pipes), SSE, or streamable HTTP.
+
+    Transport resolves from (highest first): CLI flags, env vars, then stdio.
+      stdio (default)         : MCP over stdin/stdout — for editor/CLI clients.
+      sse / http              : network transports bound to --host/--port.
+
+    Env: DEVTOOLS_MCP_TRANSPORT, DEVTOOLS_MCP_HOST, DEVTOOLS_MCP_PORT.
+    """
+    import argparse
+    import os
+    import sys
+
+    ap = argparse.ArgumentParser(prog="devtools-mcp", description="devtools-mcp server")
+    ap.add_argument(
+        "--transport",
+        choices=("stdio", "sse", "http", "streamable-http"),
+        default=os.environ.get("DEVTOOLS_MCP_TRANSPORT", "stdio"),
+        help="Transport: stdio (pipes, default), sse, or http (streamable-http).",
+    )
+    ap.add_argument("--host", default=os.environ.get("DEVTOOLS_MCP_HOST", "127.0.0.1"))
+    ap.add_argument("--port", type=int, default=int(os.environ.get("DEVTOOLS_MCP_PORT", "8000")))
+    args = ap.parse_args()
+
+    transport = "streamable-http" if args.transport in ("http", "streamable-http") else args.transport
+    if transport != "stdio":
+        # Never write to stdout in stdio mode (it is the transport); for network
+        # transports, announce on stderr so it doesn't corrupt anything.
+        mcp.settings.host = args.host
+        mcp.settings.port = args.port
+        path = mcp.settings.sse_path if transport == "sse" else mcp.settings.streamable_http_path
+        print(f"devtools-mcp: {transport} on http://{args.host}:{args.port}{path}", file=sys.stderr)
+
+    mcp.run(transport=transport)
 
 
 if __name__ == "__main__":

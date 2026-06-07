@@ -5,6 +5,18 @@ from __future__ import annotations
 import polars as pl
 
 from devtools_mcp.dtrace.models import DTraceResult
+from devtools_mcp.models import StackSample
+
+
+def dtrace_stack_samples(result: DTraceResult) -> list[StackSample]:
+    """Map DTrace stacks to flame-graph StackSamples (leaf-last → root-first)."""
+    samples: list[StackSample] = []
+    for stack in result.stacks:
+        if not stack.frames:
+            continue
+        # DTrace prints stacks leaf-first; flame graphs want root-first.
+        samples.append(StackSample(frames=list(reversed(stack.frames)), weight=stack.count))
+    return samples
 
 
 def dtrace_aggregation_df(result: DTraceResult) -> pl.DataFrame:

@@ -2,7 +2,7 @@
   "mcpServers": {
     "devtools-mcp": {
       "command": "uv",
-      "args": ["run", "--directory", "/Users/bengamble/ai-grind", "devtools-mcp"]
+      "args": ["run", "--directory", "C:\\Users\\Capta\\ai-grind", "devtools-mcp"]
     }
   }
 }

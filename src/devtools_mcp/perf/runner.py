@@ -9,7 +9,12 @@ import time
 
 from devtools_mcp.models import create_run_base
 from devtools_mcp.perf.models import PerfAnnotationResult, PerfRecordResult, PerfStatResult
-from devtools_mcp.perf.parsers import parse_perf_annotate, parse_perf_report, parse_perf_stat
+from devtools_mcp.perf.parsers import (
+    parse_perf_annotate,
+    parse_perf_report,
+    parse_perf_script,
+    parse_perf_stat,
+)
 
 
 async def run_perf(
@@ -157,6 +162,18 @@ async def _run_perf_record(
         )
         result = parse_perf_report(report_text, run_base)
         result.perf_data_path = perf_data
+
+        # Also collapse full call stacks (for flame graphs) via `perf script`.
+        try:
+            script_proc = await asyncio.create_subprocess_exec(
+                "perf", "script", "-i", perf_data,
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+            script_out, _ = await asyncio.wait_for(script_proc.communicate(), timeout=60)
+            result.stack_samples = parse_perf_script(script_out.decode("utf-8", "replace"))
+        except (TimeoutError, FileNotFoundError, OSError):
+            pass  # flame graph optional; hotspots already captured
+
         return None, result, raw_path
 
     except FileNotFoundError:

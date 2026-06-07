@@ -36,6 +36,9 @@ class BackendSpec:
     df_builders: dict[str, Callable]  # tool -> fn(result) -> DataFrame
     format_summary: Callable[..., str]  # fn(result) -> str summary
     format_details: Callable[..., str] | None = None
+    # Optional: fn(result) -> list[StackSample] for sampling backends (perf,
+    # dtrace profile, ETW, JFR, async-profiler, CDB stacks). Enables flame graphs.
+    stacks: Callable[..., Any] | None = None
 
 
 _BACKENDS: dict[str, BackendSpec] = {}
