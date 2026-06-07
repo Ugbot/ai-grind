@@ -12,11 +12,11 @@ _TOP = 15
 
 
 def format_py_summary(result: PyResult) -> str:
-    if result.tool in ("pyspy", "memray"):
+    if result.tool in ("cpu", "pyspy", "memray"):
         return _format_sampling(result)
     if result.tool == "cprofile":
         return _format_cprofile(result)
-    if result.tool == "dump":
+    if result.tool in ("threads", "dump"):
         return _format_dump(result)
     return f"Unknown py tool: {result.tool}"
 

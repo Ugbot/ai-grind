@@ -20,7 +20,7 @@ from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
 async def detect() -> list[InstalledTool]:
     """Detect perf installation."""
     info = await check_perf()
-    tools = ["stat", "record", "annotate"]
+    tools = ["cpu", "stat", "annotate"]
     if info.get("installed") == "true":
         return [
             InstalledTool(
@@ -62,7 +62,7 @@ def format_summary(result: RunBase) -> str:
 
 _DF_BUILDERS = {
     "stat": perf_counters_df,
-    "record": perf_hotspots_df,
+    "cpu": perf_hotspots_df,
     "annotate": perf_annotation_df,
     "_default": perf_counters_df,
 }
@@ -72,7 +72,7 @@ def _register() -> None:
     register_backend(
         BackendSpec(
             suite="perf",
-            tools=["stat", "record", "annotate"],
+            tools=["cpu", "stat", "annotate"],
             detect=detect,
             run=run,
             df_builders=_DF_BUILDERS,

@@ -18,7 +18,7 @@ async def detect() -> list[InstalledTool]:
     avail = info.get("installed") == "true"
     return [
         InstalledTool(suite="node", name=t, path=info["path"], version="node", available=avail)
-        for t in ("cpu", "heap")
+        for t in ("cpu", "alloc")
     ]
 
 
@@ -40,14 +40,14 @@ def format_summary(result: RunBase) -> str:
     return f"Unknown node result: {type(result)}"
 
 
-_DF_BUILDERS = {"cpu": node_hotspots_df, "heap": node_hotspots_df, "_default": node_hotspots_df}
+_DF_BUILDERS = {"cpu": node_hotspots_df, "alloc": node_hotspots_df, "_default": node_hotspots_df}
 
 
 def _register() -> None:
     register_backend(
         BackendSpec(
             suite="node",
-            tools=["cpu", "heap"],
+            tools=["cpu", "alloc"],
             detect=detect,
             run=run,
             df_builders=_DF_BUILDERS,

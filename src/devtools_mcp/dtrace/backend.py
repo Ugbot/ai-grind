@@ -19,7 +19,7 @@ from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
 async def detect() -> list[InstalledTool]:
     """Detect DTrace installation."""
     info = await check_dtrace()
-    tools = ["trace", "syscall", "profile"]
+    tools = ["trace", "syscall", "cpu"]
     if info.get("installed") == "true":
         return [
             InstalledTool(
@@ -63,7 +63,7 @@ def format_summary(result: RunBase) -> str:
 _DF_BUILDERS = {
     "trace": dtrace_aggregation_df,
     "syscall": dtrace_aggregation_df,
-    "profile": dtrace_stacks_df,
+    "cpu": dtrace_stacks_df,
     "_default": dtrace_aggregation_df,
 }
 
@@ -72,7 +72,7 @@ def _register() -> None:
     register_backend(
         BackendSpec(
             suite="dtrace",
-            tools=["trace", "syscall", "profile"],
+            tools=["trace", "syscall", "cpu"],
             detect=detect,
             run=run,
             df_builders=_DF_BUILDERS,

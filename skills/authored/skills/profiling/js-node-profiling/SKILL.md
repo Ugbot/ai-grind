@@ -16,7 +16,7 @@ into the same flame-graph + Polars-table pipeline as every other backend.
 | tool | what | output unit |
 |---|---|---|
 | `cpu` | `node --cpu-prof` — sampled CPU profile (`.cpuprofile`) | samples |
-| `heap` | `node --heap-prof` — sampled allocation profile (`.heapprofile`) | bytes |
+| `alloc` | `node --heap-prof` — sampled allocation profile (`.heapprofile`) | bytes |
 
 ## CPU profile → flame graph
 
@@ -33,7 +33,7 @@ startup/internal frames appear too — filter to your code with
 ## Heap (allocation) profile → where bytes come from
 
 ```
-devtools_run(suite="node", tool="heap", binary="C:/path/app.js")
+devtools_run(suite="node", tool="alloc", binary="C:/path/app.js")
 devtools_flamegraph(run_id="...")                 # flame graph weighted by BYTES
 devtools_analyze(run_id="...", sort_by="exclusive")  # top allocation sites
 ```

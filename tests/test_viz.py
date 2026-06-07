@@ -42,7 +42,7 @@ def served():
     ws = app.create_workspace("default")
     app.default_workspace_id = ws.workspace_id
     ws.store_run(DTraceResult(
-        run_id="abc12345", suite="dtrace", tool="profile", binary="./app",
+        run_id="abc12345", suite="dtrace", tool="cpu", binary="./app",
         stacks=[
             DTraceStackTrace(frames=["libc`read", "app`process", "app`main"], count=120),
             DTraceStackTrace(frames=["app`hash", "app`process", "app`main"], count=40),
@@ -62,7 +62,7 @@ class TestServer:
     def test_dashboard_route(self, served):
         body = _get(served + "/")
         assert "abc12345" in body
-        assert "dtrace:profile" in body
+        assert "dtrace:cpu" in body
 
     def test_run_route_has_table(self, served):
         body = _get(served + "/run/abc12345")

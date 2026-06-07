@@ -76,7 +76,7 @@ async def _run(cmd: list[str], timeout: int) -> tuple[int, str, str]:
 
 
 async def run_jvm(
-    tool: str = "jfr",
+    tool: str = "cpu",
     binary: str = "",
     args: list[str] | None = None,
     extra_args: list[str] | None = None,
@@ -87,13 +87,13 @@ async def run_jvm(
     pid = _pid(binary, extra_args)
     if not pid:
         return "No JVM pid. Pass the PID as `binary` or `--pid N` in extra_args.", None, ""
-    if tool == "jfr":
+    if tool in ("cpu", "jfr"):
         return await _run_jfr(pid, extra_args, timeout)
     if tool == "threads":
         return await _run_threads(pid, timeout)
     if tool == "heap":
         return await _run_heap(pid, timeout)
-    if tool == "asprof":
+    if tool in ("alloc", "asprof"):
         return await _run_asprof(pid, extra_args, timeout)
     return f"Unknown jvm tool: {tool}", None, ""
 
@@ -120,7 +120,7 @@ async def _run_jfr(pid: str, extra_args: list[str] | None, timeout: int) -> tupl
     if rc != 0:
         return f"jfr print failed: {err.strip()}", None, path
     samples, counts = parse_jfr_json(text)
-    result = _result("jfr", pid, start, stack_samples=samples,
+    result = _result("cpu", pid, start, stack_samples=samples,
                      total_samples=sum(s.weight for s in samples), event_counts=counts, jfr_path=path)
     return None, result, path
 
@@ -161,12 +161,15 @@ async def _run_asprof(pid: str, extra_args: list[str] | None, timeout: int) -> t
         return ("async-profiler not found. Download from github.com/async-profiler/async-profiler "
                 "and set $DEVTOOLS_ASPROF or put `asprof` on PATH."), None, ""
     dur = _duration(extra_args)
+    # canonical `alloc` verb -> async-profiler allocation event (override with -e in extra_args)
+    event = "cpu" if (extra_args and "-e" in extra_args) else "alloc"
     fd, path = tempfile.mkstemp(prefix="devtools-asprof-", suffix=".folded")
     os.close(fd)
     start = time.monotonic()
-    rc, _o, err = await _run([asprof, "-d", str(dur), "-o", "collapsed", "-f", path, pid], timeout)
+    rc, _o, err = await _run(
+        [asprof, "-d", str(dur), "-e", event, "-o", "collapsed", "-f", path, pid], timeout)
     if rc != 0:
         return f"asprof failed: {err.strip()}", None, path
     samples = parse_folded(pathlib.Path(path).read_text(encoding="utf-8", errors="replace"))
-    return None, _result("asprof", pid, start, stack_samples=samples,
+    return None, _result("alloc", pid, start, stack_samples=samples,
                          total_samples=sum(s.weight for s in samples)), path

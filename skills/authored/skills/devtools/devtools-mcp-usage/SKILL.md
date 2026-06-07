@@ -34,11 +34,11 @@ precisely.
 | Goal | suite:tool |
 |---|---|
 | Native CPU profile on **Windows** | `etw:cpu` (PerfView) |
-| Native CPU/syscall profile on macOS | `dtrace:profile` / `dtrace:syscall` |
-| Native CPU profile on Linux | `perf:record` / `perf:stat` |
+| Native CPU/syscall profile on macOS | `dtrace:cpu` / `dtrace:syscall` |
+| Native CPU profile on Linux | `perf:cpu` / `perf:stat` |
 | Memory errors / leaks (Linux) | `valgrind:memcheck` |
 | Cache/branch/callgraph (Linux) | `valgrind:cachegrind` / `callgrind` |
-| **JVM** CPU/alloc profile | `jvm:jfr` (or `jvm:asprof`) |
+| **JVM** CPU/alloc profile | `jvm:cpu` (JFR) / `jvm:alloc` (async-profiler) |
 | JVM thread dump / deadlocks | `jvm:threads` |
 | JVM heap histogram | `jvm:heap` |
 | **Windows** crash dump / live debug | `cdb:analyze` / `cdb:stacks` |

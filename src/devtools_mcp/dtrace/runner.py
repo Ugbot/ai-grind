@@ -28,6 +28,8 @@ async def run_dtrace(
 
     Returns (error_msg, parsed_result, raw_output_path).
     """
+    if tool == "profile":  # legacy alias for the canonical CPU-profiling verb
+        tool = "cpu"
     cmd: list[str] = []
 
     if sudo:
@@ -48,13 +50,13 @@ async def run_dtrace(
         # Convenience: trace syscalls
         probe = f"syscall:::entry /pid == {pid}/" if pid else "syscall:::entry"
         cmd.extend(["-n", f"{probe} {{ @[probefunc] = count(); }}"])
-    elif tool == "profile":
-        # Convenience: CPU profiling
+    elif tool == "cpu":
+        # Convenience: CPU profiling (sampled user stacks)
         hz = 97
         probe = f"profile-{hz} /pid == {pid}/" if pid else f"profile-{hz}"
         cmd.extend(["-n", f"{probe} {{ @[ustack()] = count(); }}"])
     else:
-        return "Provide script, one_liner, or use tool=syscall/profile", None, ""
+        return "Provide script, one_liner, or use tool=syscall/cpu", None, ""
 
     # Attach to process or command
     if pid and "-p" not in cmd:

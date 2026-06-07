@@ -59,8 +59,10 @@ async def run_node(
     node = find_node()
     if not node:
         return "node not found. Install Node.js (nodejs.org).", None, ""
-    if tool not in ("cpu", "heap"):
-        return f"Unknown node tool: {tool} (cpu|heap)", None, ""
+    if tool in ("alloc", "heap"):  # canonical alloc verb -> V8 sampling heap profile
+        tool = "alloc"
+    if tool not in ("cpu", "alloc"):
+        return f"Unknown node tool: {tool} (cpu|alloc)", None, ""
     if not binary or not os.path.exists(binary):
         return f"node {tool} needs a script path as `binary` (got {binary!r}).", None, ""
 

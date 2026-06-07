@@ -13,18 +13,18 @@ from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
 
 
 async def detect() -> list[InstalledTool]:
-    """cProfile is always available (stdlib); pyspy/dump need py-spy installed."""
+    """cProfile is always available (stdlib); cpu/threads need py-spy installed."""
     info = await check_py()
     pyspy = info.get("py-spy") or ""
     return [
         InstalledTool(suite="py", name="cprofile", path=info["python"], version="stdlib", available=True),
-        InstalledTool(suite="py", name="pyspy", path=pyspy or "py-spy", version="py-spy", available=bool(pyspy)),
-        InstalledTool(suite="py", name="dump", path=pyspy or "py-spy", version="py-spy", available=bool(pyspy)),
+        InstalledTool(suite="py", name="cpu", path=pyspy or "py-spy", version="py-spy", available=bool(pyspy)),
+        InstalledTool(suite="py", name="threads", path=pyspy or "py-spy", version="py-spy", available=bool(pyspy)),
     ]
 
 
 async def run(
-    tool: str = "pyspy",
+    tool: str = "cpu",
     binary: str = "",
     args: list[str] | None = None,
     extra_args: list[str] | None = None,
@@ -42,8 +42,8 @@ def format_summary(result: RunBase) -> str:
 
 
 _DF_BUILDERS = {
-    "pyspy": py_hotspots_df,
-    "dump": py_threads_df,
+    "cpu": py_hotspots_df,
+    "threads": py_threads_df,
     "cprofile": py_funcstats_df,
     "_default": py_funcstats_df,
 }
@@ -53,7 +53,7 @@ def _register() -> None:
     register_backend(
         BackendSpec(
             suite="py",
-            tools=["pyspy", "dump", "cprofile"],
+            tools=["cpu", "threads", "cprofile"],
             detect=detect,
             run=run,
             df_builders=_DF_BUILDERS,

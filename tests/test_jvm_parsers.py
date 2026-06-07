@@ -53,7 +53,7 @@ class TestJfr:
 
     def test_hotspots_df(self):
         samples, _ = parse_jfr_json(_jfr_json(20))
-        df = jvm_hotspots_df(JvmResult(run_id="r", tool="jfr", binary="1", stack_samples=samples))
+        df = jvm_hotspots_df(JvmResult(run_id="r", tool="cpu", binary="1", stack_samples=samples))
         assert "function" in df.columns and "value" in df.columns
         assert df.height > 0
 

@@ -68,7 +68,7 @@ def _result(tool: str, target: str, start: float, **fields: object) -> PyResult:
 
 
 async def run_py(
-    tool: str = "pyspy",
+    tool: str = "cpu",
     binary: str = "",
     args: list[str] | None = None,
     extra_args: list[str] | None = None,
@@ -78,11 +78,11 @@ async def run_py(
     """Dispatch to a Python tool."""
     if tool == "cprofile":
         return await _run_cprofile(binary, args or [], timeout)
-    if tool == "pyspy":
+    if tool in ("cpu", "pyspy"):
         return await _run_pyspy(binary, args or [], extra_args, timeout)
-    if tool == "dump":
+    if tool in ("threads", "dump"):
         return await _run_dump(binary, extra_args, timeout)
-    return f"Unknown py tool: {tool} (pyspy|dump|cprofile)", None, ""
+    return f"Unknown py tool: {tool} (cpu|threads|cprofile)", None, ""
 
 
 async def _run_cprofile(binary: str, args: list[str], timeout: int) -> tuple[str | None, PyResult | None, str]:
@@ -117,7 +117,7 @@ async def _run_pyspy(binary: str, args: list[str], extra_args: list[str] | None,
     if rc != 0 and not os.path.getsize(raw):
         return f"py-spy failed: {err.strip()}", None, raw
     samples = parse_folded(pathlib.Path(raw).read_text(encoding="utf-8", errors="replace"))
-    return None, _result("pyspy", pid or binary, start, pid=pid or "", stack_samples=samples,
+    return None, _result("cpu", pid or binary, start, pid=pid or "", stack_samples=samples,
                          total_samples=sum(s.weight for s in samples)), raw
 
 
@@ -132,4 +132,4 @@ async def _run_dump(binary: str, extra_args: list[str] | None, timeout: int) -> 
     rc, out, err = await _run([pyspy, "dump", "--pid", pid], timeout)
     if rc != 0:
         return f"py-spy dump failed: {err.strip()}", None, ""
-    return None, _result("dump", pid, start, pid=pid, threads=parse_pyspy_dump(out), raw_output=out), ""
+    return None, _result("threads", pid, start, pid=pid, threads=parse_pyspy_dump(out), raw_output=out), ""

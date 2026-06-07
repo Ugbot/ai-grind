@@ -42,7 +42,7 @@ class PerfRecordResult(RunBase):
     """Result from perf record + perf report."""
 
     suite: str = "perf"
-    tool: str = "record"
+    tool: str = "cpu"
     samples: list[PerfSample] = Field(default_factory=list)
     stack_samples: list[StackSample] = Field(default_factory=list)
     total_samples: int = 0

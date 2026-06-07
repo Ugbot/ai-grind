@@ -12,7 +12,7 @@ _TOP = 15
 
 
 def format_jvm_summary(result: JvmResult) -> str:
-    if result.tool in ("jfr", "asprof"):
+    if result.tool in ("cpu", "alloc"):
         return _format_profile(result)
     if result.tool == "threads":
         return _format_threads(result)

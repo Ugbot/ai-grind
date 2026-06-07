@@ -36,7 +36,7 @@ async def run_perf(
 
     if tool == "stat":
         return await _run_perf_stat(binary, binary_args, extra_args, events, repeat, timeout)
-    if tool == "record":
+    if tool in ("cpu", "record"):
         return await _run_perf_record(binary, binary_args, extra_args, events, frequency, call_graph, timeout)
     if tool == "annotate":
         return await _run_perf_annotate(perf_data or "perf.data", symbol, extra_args, timeout)
@@ -154,7 +154,7 @@ async def _run_perf_record(
 
         run_base = create_run_base(
             suite="perf",
-            tool="record",
+            tool="cpu",
             binary=binary,
             args=binary_args,
             duration_seconds=duration,

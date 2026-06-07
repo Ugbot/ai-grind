@@ -77,7 +77,7 @@ Thread 4243 (idle): "worker-1"
         assert threads[1].state == "idle"
 
     def test_threads_df(self):
-        df = py_threads_df(PyResult(run_id="r", tool="dump", binary="4242",
+        df = py_threads_df(PyResult(run_id="r", tool="threads", binary="4242",
                                     threads=parse_pyspy_dump(self.SAMPLE)))
         assert df.height == 2
         assert "state" in df.columns
@@ -90,7 +90,7 @@ class TestPyspyRecord:
     def test_folded_to_hotspots(self):
         folded = "app.py:<module>;app.py:main;app.py:work 80\napp.py:<module>;app.py:main;lib.py:io 20"
         samples = parse_folded(folded)
-        df = py_hotspots_df(PyResult(run_id="r", tool="pyspy", binary="1", stack_samples=samples))
+        df = py_hotspots_df(PyResult(run_id="r", tool="cpu", binary="1", stack_samples=samples))
         assert df.height > 0
         assert "function" in df.columns
         assert df["exclusive"].sum() == 100

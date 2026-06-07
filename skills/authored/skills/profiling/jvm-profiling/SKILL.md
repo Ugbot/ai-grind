@@ -9,7 +9,7 @@ description: >
   jvm-threads-heap.
 ---
 
-# JVM profiling (devtools-mcp `jvm:jfr` / `jvm:asprof`)
+# JVM profiling (devtools-mcp `jvm:cpu` / `jvm:alloc`)
 
 Profiles a **live JVM by PID**. JFR ships with every modern JDK and needs no
 extra install; async-profiler is a separate download with lower overhead and
@@ -24,7 +24,7 @@ jcmd -l            # or jps -l — lists running JVMs and their pids
 ## JFR (built-in, default choice)
 
 ```
-devtools_run(suite="jvm", tool="jfr", binary="<pid>", extra_args=["--duration","20"])
+devtools_run(suite="jvm", tool="cpu", binary="<pid>", extra_args=["--duration","20"])
 ```
 
 The backend runs `JFR.start settings=profile duration=Ns`, lets it complete, then
@@ -37,7 +37,7 @@ Install from github.com/async-profiler/async-profiler, then set `$DEVTOOLS_ASPRO
 (or put `asprof` on PATH):
 
 ```
-devtools_run(suite="jvm", tool="asprof", binary="<pid>", extra_args=["--duration","20"])
+devtools_run(suite="jvm", tool="alloc", binary="<pid>", extra_args=["--duration","20"])
 ```
 
 It captures collapsed (folded) stacks directly — ideal flame-graph input.

@@ -14,17 +14,17 @@ Three complementary tools, normalized into queryable frames + flame graphs.
 
 | tool | what | needs |
 |---|---|---|
-| `pyspy` | low-overhead **sampling** CPU profile → flame graph; attach to a live PID or launch a script | py-spy |
-| `dump` | one-shot **thread stacks** of a running process (the Python "jstack") | py-spy |
+| `cpu` | low-overhead **sampling** CPU profile (py-spy) → flame graph; attach to a live PID or launch a script | py-spy |
+| `threads` | one-shot **thread stacks** (py-spy dump) of a running process (the Python "jstack") | py-spy |
 | `cprofile` | **deterministic** per-function stats (ncalls/tottime/cumtime) | stdlib |
 
 ## Sampling profile (py-spy) — the flame graph
 
 ```
 # attach to a running process for 20s:
-devtools_run(suite="py", tool="pyspy", binary="<pid>", extra_args=["--duration","20"])
+devtools_run(suite="py", tool="cpu", binary="<pid>", extra_args=["--duration","20"])
 # or launch a script and profile it:
-devtools_run(suite="py", tool="pyspy", binary="C:/path/app.py", args=["--flag"])
+devtools_run(suite="py", tool="cpu", binary="C:/path/app.py", args=["--flag"])
 devtools_flamegraph(run_id="...")            # SVG + text flame-tree
 ```
 
@@ -35,7 +35,7 @@ Install once: `pip install py-spy`.
 ## Thread dump (py-spy dump) — hangs & deadlocks
 
 ```
-devtools_run(suite="py", tool="dump", binary="<pid>")
+devtools_run(suite="py", tool="threads", binary="<pid>")
 devtools_analyze(run_id="...", kind_pattern="active")   # which threads are running
 ```
 

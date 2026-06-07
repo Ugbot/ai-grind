@@ -23,13 +23,13 @@ Instead of dozens of individual tool wrappers, devtools-mcp provides **a few cat
 |-------|-------|----------|
 | **Valgrind** | memcheck, helgrind, drd, callgrind, cachegrind, massif | Linux |
 | **LLDB** | Interactive debugging with backtrace, variables, breakpoints, registers, memory, disassembly | macOS, Linux |
-| **DTrace** | trace, syscall, profile | macOS, Solaris |
-| **perf** | stat, record, annotate | Linux |
+| **DTrace** | cpu, syscall, trace | macOS, Solaris |
+| **perf** | cpu, stat, annotate | Linux |
 | **ETW** (PerfView) | cpu (CPU hotspots Exc%/Inc% + flame graph) | Windows |
-| **JVM** | jfr, threads (jstack), heap (jmap/jcmd), asprof (async-profiler) | any (JDK) |
+| **JVM** | cpu (JFR), alloc (async-profiler), threads (jstack), heap (jmap/jcmd) | any (JDK) |
 | **CDB** | stacks (`~*k`), analyze (`!analyze -v`), inspect — batch-mode Windows debugger | Windows |
-| **Python** | pyspy (sampling flame), dump (thread stacks), cprofile (deterministic stats) | any (cProfile stdlib; py-spy = `pip install py-spy`) |
-| **Node/JS** | cpu (`--cpu-prof`), heap (`--heap-prof`) — V8 profiles → flame graph | any (Node.js) |
+| **Python** | cpu (py-spy sampling), threads (py-spy dump), cprofile (deterministic) | any (cProfile stdlib; py-spy = `pip install py-spy`) |
+| **Node/JS** | cpu (`--cpu-prof`), alloc (`--heap-prof`) — V8 profiles → flame graph | any (Node.js) |
 | **Maven** | build, test, deps, sync | any (mvn or project `mvnw`) |
 | **Gradle** | build, test, deps, sync, tasks | any (gradle or project `gradlew`) |
 | **npm** | build, test, deps, sync, audit, outdated, tasks | any (Node.js) |
@@ -44,7 +44,13 @@ tool supports them — so `devtools_run(suite="npm", tool="deps")` and
 `devtools_run(suite="cargo", tool="deps")` behave identically; only the backend
 implementation differs.
 
-Any sampling run (dtrace `profile`, perf `record`, etw `cpu`, jvm `jfr`/`asprof`, cdb stacks, **py `pyspy`**, **node `cpu`/`heap`**) can be turned into a flame graph with `devtools_flamegraph(run_id=...)` — folded stacks are the universal currency, so flame graphs work the same for native code (Linux `perf script`, macOS dtrace `ustack`, Windows ETW), the JVM, **Python** (py-spy), and **JavaScript** (V8).
+Profiling verbs are unified too — **`cpu`** means a CPU profile whether the backend
+is perf, dtrace, etw, jvm, py, or node; **`alloc`** is allocation profiling
+(jvm/node); **`threads`** is a thread dump (jvm/py). Any sampling run can be turned
+into a flame graph with `devtools_flamegraph(run_id=...)` — folded stacks are the
+universal currency, so flame graphs work the same for native code (Linux `perf
+script`, macOS dtrace `ustack`, Windows ETW), the JVM, **Python** (py-spy), and
+**JavaScript** (V8).
 
 ### Visualization terminal
 

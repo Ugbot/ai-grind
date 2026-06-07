@@ -13,26 +13,26 @@ from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
 
 
 async def detect() -> list[InstalledTool]:
-    """Detect JVM tooling — jcmd drives jfr/threads/heap; asprof is separate."""
+    """Detect JVM tooling — jcmd drives cpu(jfr)/threads/heap; alloc uses async-profiler."""
     info = await check_jvm()
     jdk = bool(info.get("jcmd"))
     tools = {
-        "jfr": jdk and bool(info.get("jfr")),
+        "cpu": jdk and bool(info.get("jfr")),       # JFR CPU profile
         "threads": jdk or bool(info.get("jstack")),
         "heap": jdk or bool(info.get("jmap")),
-        "asprof": bool(info.get("asprof")),
+        "alloc": bool(info.get("asprof")),          # async-profiler allocation profile
     }
-    path_for = {"jfr": info.get("jfr") or "jfr", "threads": info.get("jcmd") or "jstack",
-                "heap": info.get("jcmd") or "jmap", "asprof": info.get("asprof") or "asprof"}
+    path_for = {"cpu": info.get("jfr") or "jfr", "threads": info.get("jcmd") or "jstack",
+                "heap": info.get("jcmd") or "jmap", "alloc": info.get("asprof") or "asprof"}
     return [
         InstalledTool(suite="jvm", name=t, path=path_for[t] or t,
-                      version="JDK" if t != "asprof" else "async-profiler", available=ok)
+                      version="JDK" if t != "alloc" else "async-profiler", available=ok)
         for t, ok in tools.items()
     ]
 
 
 async def run(
-    tool: str = "jfr",
+    tool: str = "cpu",
     binary: str = "",
     args: list[str] | None = None,
     extra_args: list[str] | None = None,
@@ -50,8 +50,8 @@ def format_summary(result: RunBase) -> str:
 
 
 _DF_BUILDERS = {
-    "jfr": jvm_hotspots_df,
-    "asprof": jvm_hotspots_df,
+    "cpu": jvm_hotspots_df,
+    "alloc": jvm_hotspots_df,
     "threads": jvm_threads_df,
     "heap": jvm_heap_df,
     "_default": jvm_hotspots_df,
@@ -62,7 +62,7 @@ def _register() -> None:
     register_backend(
         BackendSpec(
             suite="jvm",
-            tools=["jfr", "threads", "heap", "asprof"],
+            tools=["cpu", "alloc", "threads", "heap"],
             detect=detect,
             run=run,
             df_builders=_DF_BUILDERS,
