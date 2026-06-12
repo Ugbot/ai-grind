@@ -71,6 +71,24 @@ class TestScan:
         assert [link.commit_hash for link in links] == [wanted]
         assert "core path" in links[0].message_snippet
 
+    def test_key_in_commit_body(self, db, repo):
+        tasks.create_project(db, "GR", "Grind")
+        task, _ = tasks.create_task(db, "GR", "t")
+        wanted = _commit(repo, f"feat: big change\n\nDetails here.\nCloses {task.key}.")
+        counters = scan_repo(db, str(repo))
+        assert counters["linked"] == 1
+        links = commits_for_task(db, task.key)
+        assert links[0].commit_hash == wanted
+        assert links[0].message_snippet == "feat: big change"  # snippet stays the subject
+
+    def test_same_key_twice_in_message_links_once(self, db, repo):
+        tasks.create_project(db, "GR", "Grind")
+        task, _ = tasks.create_task(db, "GR", "t")
+        _commit(repo, f"{task.key}: fix\n\nReverts part of {task.key}.")
+        counters = scan_repo(db, str(repo))
+        assert counters["matched"] == 1
+        assert counters["linked"] == 1
+
     def test_rescan_dedupes(self, db, repo):
         tasks.create_project(db, "GR", "Grind")
         task, _ = tasks.create_task(db, "GR", "t")

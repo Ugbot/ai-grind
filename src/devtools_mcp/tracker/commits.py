@@ -61,12 +61,17 @@ def commits_for_task(db: TrackerDB, task_key: str) -> list[CommitLink]:
     return links
 
 
-def _git_log(repo_path: str, max_commits: int) -> list[tuple[str, str]]:
-    """Read (hash, subject) pairs from git log; raises TrackerError on git failure."""
+def _git_log(repo_path: str, max_commits: int) -> list[tuple[str, str, str]]:
+    """Read (hash, subject, full_message) from git log.
+
+    Uses unit/record separators (\\x1f / \\x1e) so multi-line commit bodies
+    parse unambiguously — task keys are scanned in the whole message, not
+    just the subject line.
+    """
     assert 1 <= max_commits <= SCAN_MAX_COMMITS, f"max_commits {max_commits} out of bounds"
     try:
         proc = subprocess.run(
-            ["git", "log", f"--max-count={max_commits}", "--pretty=format:%H%x09%s"],
+            ["git", "log", f"--max-count={max_commits}", "--pretty=format:%H%x1f%s%x1f%B%x1e"],
             cwd=repo_path,
             capture_output=True,
             text=True,
@@ -80,13 +85,15 @@ def _git_log(repo_path: str, max_commits: int) -> list[tuple[str, str]]:
         raise TrackerError(f"git log timed out after {GIT_TIMEOUT_SECONDS}s") from exc
     if proc.returncode != 0:
         raise TrackerError(f"git log failed in {repo_path!r}: {proc.stderr.strip()[:200]}")
-    pairs: list[tuple[str, str]] = []
-    for line in proc.stdout.splitlines()[:max_commits]:  # bounded by max_commits
-        commit_hash, _, subject = line.partition("\t")
-        if commit_hash:
-            pairs.append((commit_hash.strip(), subject.strip()))
-    assert len(pairs) <= max_commits, "git log returned more than requested"
-    return pairs
+    entries: list[tuple[str, str, str]] = []
+    for record in proc.stdout.split("\x1e")[:max_commits]:  # bounded by max_commits
+        fields = record.strip().split("\x1f")
+        if len(fields) != 3 or not fields[0].strip():
+            continue
+        commit_hash, subject, message = fields
+        entries.append((commit_hash.strip(), subject.strip(), message.strip()))
+    assert len(entries) <= max_commits, "git log returned more than requested"
+    return entries
 
 
 def scan_repo(
@@ -102,11 +109,11 @@ def scan_repo(
     """
     if not (1 <= max_commits <= SCAN_MAX_COMMITS):
         raise TrackerError(f"max_commits must be 1..{SCAN_MAX_COMMITS}, got {max_commits}")
-    pairs = _git_log(repo_path, max_commits)
+    entries = _git_log(repo_path, max_commits)
     known_keys = {row[0] for row in db.conn.execute("SELECT key FROM projects").fetchall()}
-    counters = {"scanned": len(pairs), "matched": 0, "linked": 0, "skipped_unknown_key": 0}
-    for commit_hash, subject in pairs:  # bounded by max_commits
-        for task_key in TASK_KEY_SCAN_RE.findall(subject):
+    counters = {"scanned": len(entries), "matched": 0, "linked": 0, "skipped_unknown_key": 0}
+    for commit_hash, subject, message in entries:  # bounded by max_commits
+        for task_key in sorted(set(TASK_KEY_SCAN_RE.findall(message))):
             project_key = task_key.rsplit("-", 1)[0]
             if project_key not in known_keys:
                 counters["skipped_unknown_key"] += 1
