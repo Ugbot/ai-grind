@@ -1,7 +1,7 @@
 {
   "counts": {
     "skill": 24,
-    "command": 23,
+    "command": 13,
     "agent": 3,
     "archive": 1
   },
@@ -236,7 +236,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\build.md",
       "dest": "catalog\\commands\\llm-station\\build.md",
-      "sha256": "d207b46bdf71638c249f0a38970c651d765d9f7f7018fce10df7d2a448a27876"
+      "sha256": "bb97fa51c21c0dc8b17c93543a8addcc31862deaaaf093d64954a448ee61a145"
     },
     {
       "name": "callers",
@@ -244,7 +244,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\callers.md",
       "dest": "catalog\\commands\\llm-station\\callers.md",
-      "sha256": "e8574e9ec36a5a3442ea0bb92d1d611eb1b9eb6bf7b90ee6fe874dfcb8fdc17c"
+      "sha256": "8974d4ef489b553a14ff237c72f2d990bc3ae9cfc5f67149ee131b5f4ced32b8"
     },
     {
       "name": "grep",
@@ -252,7 +252,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\grep.md",
       "dest": "catalog\\commands\\llm-station\\grep.md",
-      "sha256": "b177230f50aa9f2330f52ff730770c669d0bf04f0dcaac4f56a28440eec910bd"
+      "sha256": "50725d388ac70e872478683d2ca9dd74f152fd8baaa67f5e90b407b217b30a7d"
     },
     {
       "name": "refs",
@@ -260,7 +260,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\refs.md",
       "dest": "catalog\\commands\\llm-station\\refs.md",
-      "sha256": "b5731e085626b28aecc02b24a39ddefd1dd5125a276e443f249ab292e7f78f1a"
+      "sha256": "e59ef40e467b9ec3df093683a90e04441659efd88189a8b3dfca69c83d865b54"
     },
     {
       "name": "rename",
@@ -268,7 +268,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\rename.md",
       "dest": "catalog\\commands\\llm-station\\rename.md",
-      "sha256": "1488f1900e764494a602e5fc95d1c2109521904c37c4579d60805c2853d15928"
+      "sha256": "bab162d5f9dcbbe5b1318c04ee9ab58b7b2a4b89e88d2b6205d7fc660e01b0f8"
     },
     {
       "name": "search",
@@ -276,7 +276,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\search.md",
       "dest": "catalog\\commands\\llm-station\\search.md",
-      "sha256": "67eb9a86c3793a09a7a418d8a1e262ea7d56659d37aad58a7c3d59602d01fb75"
+      "sha256": "a5a12d4468bc299d489acea8aeb9d366d7a1ca5cb7f0a4dcefaed42a80bf12c8"
     },
     {
       "name": "start",
@@ -284,7 +284,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\start.md",
       "dest": "catalog\\commands\\llm-station\\start.md",
-      "sha256": "f97713bf626ff6904ec06a6070d19d6061f10ee6a1e7aa0d0610e5cee66bcf92"
+      "sha256": "89af5aab7647e1ed9ed6647a81bb86fb992fa6ca48287a86e1f69581ef8b3f5c"
     },
     {
       "name": "status",
@@ -292,7 +292,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\status.md",
       "dest": "catalog\\commands\\llm-station\\status.md",
-      "sha256": "058398c4f58fef012190564b780e78ce16509c49680ef9fbd02d0c05b2b82834"
+      "sha256": "5c27cb488c0c3ef0f89d91d6a6502857dc074b59ad47027657991adba2caeb22"
     },
     {
       "name": "stop",
@@ -300,7 +300,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\stop.md",
       "dest": "catalog\\commands\\llm-station\\stop.md",
-      "sha256": "8d6d8a0ac28532686e6c871bf589b5f621d0212779f0f542b01c17ce0dc04368"
+      "sha256": "9dbe67c47d2a0a364ed27250500d3653b567654e335cc173c2988055f4a0ee50"
     },
     {
       "name": "task",
@@ -308,87 +308,7 @@
       "category": "llm-station",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\task.md",
       "dest": "catalog\\commands\\llm-station\\task.md",
-      "sha256": "99c729b1f6f5e520a76f5293ea8217d6bd649daef72729444a34707419bab694"
-    },
-    {
-      "name": "ned-build",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-build.md",
-      "dest": "catalog\\commands\\llm-station\\ned-build.md",
-      "sha256": "0c36117bfd059c47d3e807d630ff27afc7506bd2ec9fa1fefa5f03afdbccf409"
-    },
-    {
-      "name": "ned-callers",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-callers.md",
-      "dest": "catalog\\commands\\llm-station\\ned-callers.md",
-      "sha256": "e8574e9ec36a5a3442ea0bb92d1d611eb1b9eb6bf7b90ee6fe874dfcb8fdc17c"
-    },
-    {
-      "name": "ned-grep",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-grep.md",
-      "dest": "catalog\\commands\\llm-station\\ned-grep.md",
-      "sha256": "b177230f50aa9f2330f52ff730770c669d0bf04f0dcaac4f56a28440eec910bd"
-    },
-    {
-      "name": "ned-refs",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-refs.md",
-      "dest": "catalog\\commands\\llm-station\\ned-refs.md",
-      "sha256": "b5731e085626b28aecc02b24a39ddefd1dd5125a276e443f249ab292e7f78f1a"
-    },
-    {
-      "name": "ned-rename",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-rename.md",
-      "dest": "catalog\\commands\\llm-station\\ned-rename.md",
-      "sha256": "c400f3a2d69a04ccaf56d4568b685cbaf99412086fa91dba10bbe681babaf23d"
-    },
-    {
-      "name": "ned-search",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-search.md",
-      "dest": "catalog\\commands\\llm-station\\ned-search.md",
-      "sha256": "67eb9a86c3793a09a7a418d8a1e262ea7d56659d37aad58a7c3d59602d01fb75"
-    },
-    {
-      "name": "ned-start",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-start.md",
-      "dest": "catalog\\commands\\llm-station\\ned-start.md",
-      "sha256": "74ab6d5160907852582202ac8c6ac6dd6211f286c05fb3fbedf4f2ecd2086e4b"
-    },
-    {
-      "name": "ned-status",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-status.md",
-      "dest": "catalog\\commands\\llm-station\\ned-status.md",
-      "sha256": "431d8b56809e4d4db002f38d1b06c529e2f91ddbc16819c48c47e8a62874b466"
-    },
-    {
-      "name": "ned-stop",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-stop.md",
-      "dest": "catalog\\commands\\llm-station\\ned-stop.md",
-      "sha256": "2db88cc9b8ad6f6bacabfb1c6483430f53e430694bf486b1bd479d3416f6f78b"
-    },
-    {
-      "name": "ned-task",
-      "type": "command",
-      "category": "llm-station",
-      "origin": "C:\\code\\llm-station\\.claude\\commands\\ned-task.md",
-      "dest": "catalog\\commands\\llm-station\\ned-task.md",
-      "sha256": "a98dfd545bf4d5a9f05dd9811389d4bf4e6e063ceb83c6e2c5f88bae08f544f0"
+      "sha256": "96f6455483b396d9f9fa8d17dfcde0a35b1017d4bb57d9a4abf07404b52a9719"
     },
     {
       "name": "living-docs-writer",

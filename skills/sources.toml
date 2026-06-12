@@ -223,55 +223,8 @@ src = "C:/code/llm-station/.claude/commands/task.md"
 type = "command"
 category = "llm-station"
 
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-build.md"
-type = "command"
-category = "llm-station"
-
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-callers.md"
-type = "command"
-category = "llm-station"
-
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-grep.md"
-type = "command"
-category = "llm-station"
-
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-refs.md"
-type = "command"
-category = "llm-station"
-
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-rename.md"
-type = "command"
-category = "llm-station"
-
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-search.md"
-type = "command"
-category = "llm-station"
-
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-start.md"
-type = "command"
-category = "llm-station"
-
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-status.md"
-type = "command"
-category = "llm-station"
-
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-stop.md"
-type = "command"
-category = "llm-station"
-
-[[item]]
-src = "C:/code/llm-station/.claude/commands/ned-task.md"
-type = "command"
-category = "llm-station"
+# ned-* command variants removed 2026-06-12: upstream llm-station renamed
+# them to the plain commands (build/callers/grep/...) already listed above.
 
 # ---------------------------------------------------------------- agents ----
 
