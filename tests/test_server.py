@@ -15,14 +15,13 @@ import polars as pl
 import pytest
 from mcp.shared.memory import create_connected_server_and_client_session
 
-from devtools_mcp.models import RunBase
 from devtools_mcp.registry import InstalledTool, ToolRegistry, get_backend
 from devtools_mcp.server import mcp
 from devtools_mcp.valgrind.models import (
-    CallgrindFunction,
-    CallgrindResult,
     CachegrindLine,
     CachegrindResult,
+    CallgrindFunction,
+    CallgrindResult,
     MassifResult,
     MassifSnapshot,
     MemcheckError,
@@ -32,7 +31,6 @@ from devtools_mcp.valgrind.models import (
     ThreadError,
 )
 from devtools_mcp.workspace import AppContext
-
 
 # ---------------------------------------------------------------------------
 # Helpers: randomized data factories
@@ -46,7 +44,9 @@ def _rand_id() -> str:
 def _rand_fn() -> str:
     prefixes = ["alloc", "init", "process", "handle", "compute", "parse", "read", "write"]
     suffixes = ["_data", "_buffer", "_node", "_entry", "_block", "_chunk", ""]
-    return random.choice(prefixes) + random.choice(suffixes) + "_" + "".join(random.choices(string.ascii_lowercase, k=3))
+    return (
+        random.choice(prefixes) + random.choice(suffixes) + "_" + "".join(random.choices(string.ascii_lowercase, k=3))
+    )
 
 
 def _rand_file() -> str:
@@ -82,7 +82,12 @@ def _make_memcheck_result(run_id: str | None = None, num_errors: int | None = No
                 blocks_leaked=random.randint(1, 50) if leaked else None,
                 stack=[
                     StackFrame(ip=f"0x{random.randint(0, 0xFFFFFFFF):08X}", fn=fn, file=src, line=line),
-                    StackFrame(ip=f"0x{random.randint(0, 0xFFFFFFFF):08X}", fn="main", file="main.c", line=random.randint(10, 200)),
+                    StackFrame(
+                        ip=f"0x{random.randint(0, 0xFFFFFFFF):08X}",
+                        fn="main",
+                        file="main.c",
+                        line=random.randint(10, 200),
+                    ),
                 ],
             )
         )
@@ -195,7 +200,12 @@ def _make_threadcheck_result(run_id: str | None = None) -> ThreadCheckResult:
                 what=f"Possible data race during {random.choice(['read', 'write'])} of size {random.choice([1, 4, 8])}",
                 thread_id=random.randint(1, 8),
                 stack=[
-                    StackFrame(ip=f"0x{random.randint(0, 0xFFFFFFFF):08X}", fn=_rand_fn(), file="thread.c", line=random.randint(10, 300)),
+                    StackFrame(
+                        ip=f"0x{random.randint(0, 0xFFFFFFFF):08X}",
+                        fn=_rand_fn(),
+                        file="thread.c",
+                        line=random.randint(10, 300),
+                    ),
                 ],
             )
         )
@@ -226,9 +236,15 @@ def _make_cachegrind_result(run_id: str | None = None) -> CachegrindResult:
         dr = random.randint(100, ir // 2)
         dw = random.randint(50, max(ir // 4, 51))
         vals = {
-            "Ir": ir, "I1mr": random.randint(0, max(ir // 100, 1)), "ILmr": random.randint(0, max(ir // 1000, 1)),
-            "Dr": dr, "D1mr": random.randint(0, max(dr // 10, 1)), "DLmr": random.randint(0, max(dr // 100, 1)),
-            "Dw": dw, "D1mw": random.randint(0, max(dw // 10, 1)), "DLmw": random.randint(0, max(dw // 100, 1)),
+            "Ir": ir,
+            "I1mr": random.randint(0, max(ir // 100, 1)),
+            "ILmr": random.randint(0, max(ir // 1000, 1)),
+            "Dr": dr,
+            "D1mr": random.randint(0, max(dr // 10, 1)),
+            "DLmr": random.randint(0, max(dr // 100, 1)),
+            "Dw": dw,
+            "D1mw": random.randint(0, max(dw // 10, 1)),
+            "DLmw": random.randint(0, max(dw // 100, 1)),
         }
         for e in events:
             summary[e] += vals[e]
@@ -237,9 +253,15 @@ def _make_cachegrind_result(run_id: str | None = None) -> CachegrindResult:
                 file=_rand_file(),
                 function=_rand_fn(),
                 line=random.randint(1, 500),
-                ir=vals["Ir"], i1mr=vals["I1mr"], ilmr=vals["ILmr"],
-                dr=vals["Dr"], d1mr=vals["D1mr"], dlmr=vals["DLmr"],
-                dw=vals["Dw"], d1mw=vals["D1mw"], dlmw=vals["DLmw"],
+                ir=vals["Ir"],
+                i1mr=vals["I1mr"],
+                ilmr=vals["ILmr"],
+                dr=vals["Dr"],
+                d1mr=vals["D1mr"],
+                dlmr=vals["DLmr"],
+                dw=vals["Dw"],
+                d1mw=vals["D1mw"],
+                dlmw=vals["DLmw"],
             )
         )
 
@@ -300,10 +322,19 @@ class TestServerMeta:
     async def test_lists_all_tools(self):
         tool_names = await _list_tools()
         expected = {
-            "devtools_check", "devtools_run", "devtools_list", "devtools_raw",
-            "devtools_analyze", "devtools_query", "devtools_compare",
-            "devtools_search", "devtools_correlate",
-            "debug_start", "debug", "debug_inspect", "debug_stop",
+            "devtools_check",
+            "devtools_run",
+            "devtools_list",
+            "devtools_raw",
+            "devtools_analyze",
+            "devtools_query",
+            "devtools_compare",
+            "devtools_search",
+            "devtools_correlate",
+            "debug_start",
+            "debug",
+            "debug_inspect",
+            "debug_stop",
         }
         assert expected.issubset(tool_names), f"Missing tools: {expected - tool_names}"
 
@@ -352,19 +383,25 @@ class TestDevtoolsRun:
     """Test running tools — we can test the unavailable path without requiring valgrind."""
 
     async def test_run_nonexistent_suite(self):
-        text = await _call_tool("devtools_run", {
-            "suite": "nonexistent",
-            "tool": "fake",
-            "binary": "/bin/ls",
-        })
+        text = await _call_tool(
+            "devtools_run",
+            {
+                "suite": "nonexistent",
+                "tool": "fake",
+                "binary": "/bin/ls",
+            },
+        )
         assert "not available" in text.lower() or "unknown" in text.lower()
 
     async def test_run_unavailable_tool(self):
-        text = await _call_tool("devtools_run", {
-            "suite": "perf",
-            "tool": "stat",
-            "binary": "/bin/ls",
-        })
+        text = await _call_tool(
+            "devtools_run",
+            {
+                "suite": "perf",
+                "tool": "stat",
+                "binary": "/bin/ls",
+            },
+        )
         # On macOS perf won't be available
         assert isinstance(text, str) and len(text) > 0
 
@@ -382,17 +419,23 @@ class TestDevtoolsAnalyze:
         assert "not found" in text.lower()
 
     async def test_query_schema_on_missing_run(self):
-        text = await _call_tool("devtools_query", {
-            "run_id": _rand_id(),
-            "columns": ["schema"],
-        })
+        text = await _call_tool(
+            "devtools_query",
+            {
+                "run_id": _rand_id(),
+                "columns": ["schema"],
+            },
+        )
         assert "not found" in text.lower()
 
     async def test_compare_missing_runs(self):
-        text = await _call_tool("devtools_compare", {
-            "run_id_a": _rand_id(),
-            "run_id_b": _rand_id(),
-        })
+        text = await _call_tool(
+            "devtools_compare",
+            {
+                "run_id_a": _rand_id(),
+                "run_id_b": _rand_id(),
+            },
+        )
         assert "not found" in text.lower()
 
 
@@ -409,10 +452,13 @@ class TestDevtoolsSearch:
         assert "no runs" in text.lower() or "use" in text.lower()
 
     async def test_correlate_missing_runs(self):
-        text = await _call_tool("devtools_correlate", {
-            "run_id_a": _rand_id(),
-            "run_id_b": _rand_id(),
-        })
+        text = await _call_tool(
+            "devtools_correlate",
+            {
+                "run_id_a": _rand_id(),
+                "run_id_b": _rand_id(),
+            },
+        )
         assert "not found" in text.lower()
 
 
@@ -425,23 +471,32 @@ class TestDebugTools:
     """Test debug tool error handling without a real LLDB session."""
 
     async def test_debug_no_session(self):
-        text = await _call_tool("debug", {
-            "session_id": _rand_id(),
-            "action": "run",
-        })
+        text = await _call_tool(
+            "debug",
+            {
+                "session_id": _rand_id(),
+                "action": "run",
+            },
+        )
         assert "no active" in text.lower()
 
     async def test_debug_inspect_no_session(self):
-        text = await _call_tool("debug_inspect", {
-            "session_id": _rand_id(),
-            "what": "backtrace",
-        })
+        text = await _call_tool(
+            "debug_inspect",
+            {
+                "session_id": _rand_id(),
+                "what": "backtrace",
+            },
+        )
         assert "no active" in text.lower()
 
     async def test_debug_stop_no_session(self):
-        text = await _call_tool("debug_stop", {
-            "session_id": _rand_id(),
-        })
+        text = await _call_tool(
+            "debug_stop",
+            {
+                "session_id": _rand_id(),
+            },
+        )
         assert "no active" in text.lower()
 
 
@@ -856,10 +911,12 @@ class TestFormatters:
     def test_format_dataframe_markdown_table(self):
         from devtools_mcp.formatters import format_dataframe
 
-        df = pl.DataFrame({
-            "function": [_rand_fn() for _ in range(5)],
-            "cost": [random.randint(100, 10000) for _ in range(5)],
-        })
+        df = pl.DataFrame(
+            {
+                "function": [_rand_fn() for _ in range(5)],
+                "cost": [random.randint(100, 10000) for _ in range(5)],
+            }
+        )
         text = format_dataframe(df, title="Test Table")
         assert "Test Table" in text
         assert "|" in text

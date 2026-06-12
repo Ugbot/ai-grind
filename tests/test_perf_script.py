@@ -33,7 +33,7 @@ app  1234 1000.3: cycles:
     def test_root_first_order(self):
         samples = parse_perf_script(self.SAMPLE)
         deep = next(s for s in samples if s.weight == 2)
-        assert deep.frames[0] == "main"   # root first
+        assert deep.frames[0] == "main"  # root first
         assert deep.frames[-1] == "work"  # leaf last
 
     def test_strips_offsets(self):

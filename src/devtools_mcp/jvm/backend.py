@@ -17,16 +17,25 @@ async def detect() -> list[InstalledTool]:
     info = await check_jvm()
     jdk = bool(info.get("jcmd"))
     tools = {
-        "cpu": jdk and bool(info.get("jfr")),       # JFR CPU profile
+        "cpu": jdk and bool(info.get("jfr")),  # JFR CPU profile
         "threads": jdk or bool(info.get("jstack")),
         "heap": jdk or bool(info.get("jmap")),
-        "alloc": bool(info.get("asprof")),          # async-profiler allocation profile
+        "alloc": bool(info.get("asprof")),  # async-profiler allocation profile
     }
-    path_for = {"cpu": info.get("jfr") or "jfr", "threads": info.get("jcmd") or "jstack",
-                "heap": info.get("jcmd") or "jmap", "alloc": info.get("asprof") or "asprof"}
+    path_for = {
+        "cpu": info.get("jfr") or "jfr",
+        "threads": info.get("jcmd") or "jstack",
+        "heap": info.get("jcmd") or "jmap",
+        "alloc": info.get("asprof") or "asprof",
+    }
     return [
-        InstalledTool(suite="jvm", name=t, path=path_for[t] or t,
-                      version="JDK" if t != "alloc" else "async-profiler", available=ok)
+        InstalledTool(
+            suite="jvm",
+            name=t,
+            path=path_for[t] or t,
+            version="JDK" if t != "alloc" else "async-profiler",
+            available=ok,
+        )
         for t, ok in tools.items()
     ]
 

@@ -23,10 +23,15 @@ def parse_cargo_tree(text: str) -> list[Dependency]:
         if not m:
             continue
         depth = len(m.group("prefix")) // 4
-        deps.append(Dependency(
-            artifact=m.group("name"), version=m.group("ver"), resolved=m.group("ver"),
-            depth=depth, omitted="(*)" in raw,
-        ))
+        deps.append(
+            Dependency(
+                artifact=m.group("name"),
+                version=m.group("ver"),
+                resolved=m.group("ver"),
+                depth=depth,
+                omitted="(*)" in raw,
+            )
+        )
     return deps
 
 
@@ -67,9 +72,15 @@ def parse_cargo_audit(text: str) -> list[Vulnerability]:
         adv = entry.get("advisory", {}) or {}
         pkg = entry.get("package", {}) or {}
         patched = (entry.get("versions", {}) or {}).get("patched", [])
-        vulns.append(Vulnerability(
-            name=pkg.get("name", ""), severity=(adv.get("severity") or "unknown"),
-            version=pkg.get("version", ""), vulnerable_range=adv.get("id", ""),
-            title=adv.get("title", ""), url=adv.get("url", ""), fix_available=bool(patched),
-        ))
+        vulns.append(
+            Vulnerability(
+                name=pkg.get("name", ""),
+                severity=(adv.get("severity") or "unknown"),
+                version=pkg.get("version", ""),
+                vulnerable_range=adv.get("id", ""),
+                title=adv.get("title", ""),
+                url=adv.get("url", ""),
+                fix_available=bool(patched),
+            )
+        )
     return vulns

@@ -82,11 +82,14 @@ async def run_node(
 
     text = pathlib.Path(prof).read_text(encoding="utf-8", errors="replace")
     samples = parse_cpuprofile(text) if tool == "cpu" else parse_heapprofile(text)
-    base = create_run_base(suite="node", tool=tool, binary=binary, args=args or [],
-                           duration_seconds=time.monotonic() - start, exit_code=rc)
+    base = create_run_base(
+        suite="node", tool=tool, binary=binary, args=args or [], duration_seconds=time.monotonic() - start, exit_code=rc
+    )
     result = NodeResult(
-        **base.model_dump(), stack_samples=samples,
+        **base.model_dump(),
+        stack_samples=samples,
         total_weight=sum(s.weight for s in samples),
-        weight_unit="samples" if tool == "cpu" else "bytes", profile_path=prof,
+        weight_unit="samples" if tool == "cpu" else "bytes",
+        profile_path=prof,
     )
     return None, result, prof

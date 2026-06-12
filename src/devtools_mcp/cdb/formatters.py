@@ -13,8 +13,14 @@ def format_cdb_summary(result: CdbSnapshot) -> str:
 
     if result.analysis:
         parts.append("**Crash analysis (!analyze -v):**")
-        for key in ("EXCEPTION_CODE_STR", "EXCEPTION_CODE", "SYMBOL_NAME", "MODULE_NAME",
-                    "IMAGE_NAME", "FAILURE_BUCKET_ID"):
+        for key in (
+            "EXCEPTION_CODE_STR",
+            "EXCEPTION_CODE",
+            "SYMBOL_NAME",
+            "MODULE_NAME",
+            "IMAGE_NAME",
+            "FAILURE_BUCKET_ID",
+        ):
             if key in result.analysis:
                 parts.append(f"  - {key}: {result.analysis[key]}")
         parts.append("")

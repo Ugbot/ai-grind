@@ -18,16 +18,22 @@ from devtools_mcp.cargo.parsers import parse_cargo_audit, parse_cargo_build, par
 
 
 class TestNpmLs:
-    TREE = json.dumps({
-        "name": "app", "version": "1.0.0",
-        "dependencies": {
-            "express": {"version": "4.18.0", "dependencies": {
-                "accepts": {"version": "1.3.8"},
-                "body-parser": {"version": "1.20.0", "dependencies": {"bytes": {"version": "3.1.2"}}},
-            }},
-            "lodash": {"version": "4.17.0", "invalid": "true"},
-        },
-    })
+    TREE = json.dumps(
+        {
+            "name": "app",
+            "version": "1.0.0",
+            "dependencies": {
+                "express": {
+                    "version": "4.18.0",
+                    "dependencies": {
+                        "accepts": {"version": "1.3.8"},
+                        "body-parser": {"version": "1.20.0", "dependencies": {"bytes": {"version": "3.1.2"}}},
+                    },
+                },
+                "lodash": {"version": "4.17.0", "invalid": "true"},
+            },
+        }
+    )
 
     def test_subdependencies_depth(self):
         deps = parse_npm_ls(self.TREE)
@@ -52,11 +58,18 @@ class TestNpmLs:
 
 
 class TestPnpmList:
-    OUT = json.dumps([{
-        "name": "app", "version": "1.0.0",
-        "dependencies": {"react": {"version": "18.2.0", "dependencies": {"loose-envify": {"version": "1.4.0"}}}},
-        "devDependencies": {"vitest": {"version": "1.0.0"}},
-    }])
+    OUT = json.dumps(
+        [
+            {
+                "name": "app",
+                "version": "1.0.0",
+                "dependencies": {
+                    "react": {"version": "18.2.0", "dependencies": {"loose-envify": {"version": "1.4.0"}}}
+                },
+                "devDependencies": {"vitest": {"version": "1.0.0"}},
+            }
+        ]
+    )
 
     def test_prod_and_dev_scopes(self):
         deps = parse_pnpm_list(self.OUT)
@@ -72,7 +85,7 @@ class TestYarnList:
         '{"type":"tree","data":{"type":"list","trees":['
         '{"name":"express@4.18.0","children":[{"name":"accepts@1.3.8","children":[]}]},'
         '{"name":"@scope/pkg@2.0.0","children":[]}'
-        ']}}\n'
+        "]}}\n"
     )
 
     def test_parses_tree(self):
@@ -88,15 +101,33 @@ class TestYarnList:
 
 
 class TestAudit:
-    NPM_V7 = json.dumps({"vulnerabilities": {
-        "lodash": {"name": "lodash", "severity": "high", "range": "<4.17.21",
-                   "via": [{"title": "Prototype Pollution", "url": "https://x", "severity": "high"}],
-                   "fixAvailable": True},
-    }})
-    NPM_V6 = json.dumps({"advisories": {
-        "1065": {"module_name": "minimist", "severity": "moderate", "title": "ReDoS",
-                 "url": "https://y", "vulnerable_versions": "<1.2.6", "patched_versions": ">=1.2.6"},
-    }})
+    NPM_V7 = json.dumps(
+        {
+            "vulnerabilities": {
+                "lodash": {
+                    "name": "lodash",
+                    "severity": "high",
+                    "range": "<4.17.21",
+                    "via": [{"title": "Prototype Pollution", "url": "https://x", "severity": "high"}],
+                    "fixAvailable": True,
+                },
+            }
+        }
+    )
+    NPM_V6 = json.dumps(
+        {
+            "advisories": {
+                "1065": {
+                    "module_name": "minimist",
+                    "severity": "moderate",
+                    "title": "ReDoS",
+                    "url": "https://y",
+                    "vulnerable_versions": "<1.2.6",
+                    "patched_versions": ">=1.2.6",
+                },
+            }
+        }
+    )
     YARN = '{"type":"auditAdvisory","data":{"advisory":{"module_name":"axios","severity":"critical","title":"SSRF","url":"https://z","vulnerable_versions":"<0.21.1","patched_versions":">=0.21.1"}}}\n'
 
     def test_npm_v7(self):
@@ -174,9 +205,23 @@ test result: FAILED. 1 passed; 1 failed; 1 ignored
         assert any("borrow of moved value" in f for f in failures)
 
     def test_audit_json(self):
-        data = json.dumps({"vulnerabilities": {"list": [
-            {"advisory": {"id": "RUSTSEC-2021-0001", "title": "X", "url": "https://r", "severity": "high"},
-             "package": {"name": "time", "version": "0.1.0"}, "versions": {"patched": [">=0.2.23"]}},
-        ]}})
+        data = json.dumps(
+            {
+                "vulnerabilities": {
+                    "list": [
+                        {
+                            "advisory": {
+                                "id": "RUSTSEC-2021-0001",
+                                "title": "X",
+                                "url": "https://r",
+                                "severity": "high",
+                            },
+                            "package": {"name": "time", "version": "0.1.0"},
+                            "versions": {"patched": [">=0.2.23"]},
+                        },
+                    ]
+                }
+            }
+        )
         v = parse_cargo_audit(data)
         assert v[0].name == "time" and v[0].fix_available

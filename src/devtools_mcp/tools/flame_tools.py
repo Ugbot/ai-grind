@@ -79,8 +79,6 @@ async def devtools_flamegraph(
         parts.append("```")
         parts.append(render_text_tree(tree, min_pct=min_pct, max_depth=max_depth))
         parts.append("```")
-        parts.append(
-            f"_Full per-stack data is queryable: devtools_analyze(run_id=\"{run_id}\")._"
-        )
+        parts.append(f'_Full per-stack data is queryable: devtools_analyze(run_id="{run_id}")._')
 
     return "\n".join(parts)

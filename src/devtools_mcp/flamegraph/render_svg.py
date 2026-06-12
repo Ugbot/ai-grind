@@ -51,8 +51,7 @@ def _layout(root: CallNode, width: int) -> tuple[list[tuple[float, int, float, C
     return rects, max_depth
 
 
-def render_svg(root: CallNode, title: str = "flamegraph", width: int = 1200,
-               href_base: str | None = None) -> str:
+def render_svg(root: CallNode, title: str = "flamegraph", width: int = 1200, href_base: str | None = None) -> str:
     """Render the call tree as a standalone SVG string (icicle, root at top).
 
     If `href_base` is set, each frame becomes a link to
@@ -60,8 +59,10 @@ def render_svg(root: CallNode, title: str = "flamegraph", width: int = 1200,
     """
     total = root.total_weight
     if total <= 0:
-        return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="40">'\
-               f'<text x="8" y="24">empty flamegraph: {_esc(title)}</text></svg>'
+        return (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="40">'
+            f'<text x="8" y="24">empty flamegraph: {_esc(title)}</text></svg>'
+        )
     rects, max_depth = _layout(root, width - 2 * PAD)
     height = HEADER_H + (max_depth + 1) * FRAME_H + PAD
     ns = 'xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"'
@@ -79,12 +80,9 @@ def render_svg(root: CallNode, title: str = "flamegraph", width: int = 1200,
         label = ""
         if w > 36:
             chars = max(0, int(w / 6) - 1)
-            label = (
-                f'<text x="{x + 2:.1f}" y="{y + 11}" pointer-events="none">'
-                f"{_esc(node.name[:chars])}</text>"
-            )
+            label = f'<text x="{x + 2:.1f}" y="{y + 11}" pointer-events="none">' f"{_esc(node.name[:chars])}</text>"
         body = (
-            f'<title>{_esc(tip)}</title>'
+            f"<title>{_esc(tip)}</title>"
             f'<rect x="{x:.1f}" y="{y}" width="{max(w - 0.5, 0.5):.1f}" height="{FRAME_H - 1}" '
             f'fill="{_color(node.name)}"/>{label}'
         )

@@ -59,7 +59,7 @@ class TestJfr:
 
 
 class TestJstack:
-    SAMPLE = '''\
+    SAMPLE = """\
 "main" #1 prio=5 os_prio=0 cpu=10.5ms tid=0x00007f nid=0x1a03 runnable [0x00007ffe]
    java.lang.Thread.State: RUNNABLE
 \tat com.app.Main.loop(Main.java:42)
@@ -69,7 +69,7 @@ class TestJstack:
    java.lang.Thread.State: WAITING (parking)
 \tat jdk.internal.misc.Unsafe.park(Native Method)
 \tat java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
-'''
+"""
 
     def test_parses_threads(self):
         threads, deadlock = parse_jstack(self.SAMPLE)
@@ -98,14 +98,14 @@ class TestJstack:
 
 
 class TestHeapHistogram:
-    SAMPLE = '''\
+    SAMPLE = """\
  num     #instances         #bytes  class name (module)
 -------------------------------------------------------
    1:        524288       33554432  [B (java.base@22)
    2:        131072        4194304  java.lang.String (java.base@22)
    3:         65536        2097152  java.util.HashMap$Node (java.base@22)
 Total       720896       39845888
-'''
+"""
 
     def test_parses_classes(self):
         classes, total = parse_class_histogram(self.SAMPLE)

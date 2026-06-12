@@ -104,6 +104,20 @@ class AppContext:
     registry: object = field(default=None)  # ToolRegistry, set during lifespan
     default_workspace_id: str = ""
     viz_server: object = field(default=None)  # VizServer, started on demand
+    tracker: object = field(default=None)  # TrackerDB, opened lazily on first use
+
+    def get_tracker(self):
+        """Open (or return) the persistent tracker database.
+
+        Lazy so server startup stays unchanged and tests can point
+        DEVTOOLS_MCP_TRACKER_DB at a temp path before first use.
+        """
+        if self.tracker is None:
+            from devtools_mcp.tracker import open_tracker
+
+            self.tracker = open_tracker()
+        assert self.tracker is not None, "tracker failed to open"
+        return self.tracker
 
     def get_workspace(self, workspace_id: str | None = None) -> Workspace:
         """Get workspace by ID, or default."""
@@ -121,9 +135,14 @@ class AppContext:
         return ws
 
     def cleanup_all(self) -> None:
-        """Clean up all workspaces, sessions, and the viz server."""
+        """Clean up all workspaces, sessions, the viz server, and the tracker DB."""
         if self.viz_server is not None:
             with contextlib.suppress(Exception):
                 self.viz_server.stop()
+        if self.tracker is not None:
+            # Close releases the WAL sidecar files (matters on Windows temp dirs).
+            with contextlib.suppress(Exception):
+                self.tracker.close()
+            self.tracker = None
         for ws in self.workspaces.values():
             ws.cleanup()

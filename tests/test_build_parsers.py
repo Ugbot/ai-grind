@@ -159,8 +159,9 @@ help - Displays a help message.
         assert names["help"].group == "Help tasks"
 
     def test_available_tasks_df(self):
-        df = available_tasks_df(BuildResult(run_id="r", tool="tasks", binary="x",
-                                            available_tasks=parse_gradle_tasks(self.TASKS)))
+        df = available_tasks_df(
+            BuildResult(run_id="r", tool="tasks", binary="x", available_tasks=parse_gradle_tasks(self.TASKS))
+        )
         assert "function" in df.columns and df.height == 3
 
 

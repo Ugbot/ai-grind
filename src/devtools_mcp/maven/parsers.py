@@ -9,14 +9,10 @@ from devtools_mcp.build.models import BuildModule, Dependency
 _INFO = re.compile(r"^\[INFO\] ?")
 # tree prefix (groups of 3 chars: "+- ", "\- ", "|  ", "   ") then a coordinate
 _TREE = re.compile(
-    r"^(?P<prefix>(?:[ |]{3}|[+\\]- )*)"
-    r"(?P<coord>[\w.\-]+(?::[\w.\-+]+){3,})"
-    r"(?:\s+\((?P<note>[^)]*)\))?$"
+    r"^(?P<prefix>(?:[ |]{3}|[+\\]- )*)" r"(?P<coord>[\w.\-]+(?::[\w.\-+]+){3,})" r"(?:\s+\((?P<note>[^)]*)\))?$"
 )
 _MODULE = re.compile(r"^(?P<name>.+?)\s+\.{3,}\s+(?P<status>SUCCESS|FAILURE|SKIPPED)(?:\s+\[\s*(?P<dur>[\d.]+)\s*s\])?")
-_RESOLVE = re.compile(
-    r"^\s+(?P<coord>[\w.\-]+:[\w.\-]+:[\w.\-]+:[\w.\-]+(?::[\w.\-]+)?)\s*$"
-)
+_RESOLVE = re.compile(r"^\s+(?P<coord>[\w.\-]+:[\w.\-]+:[\w.\-]+:[\w.\-]+(?::[\w.\-]+)?)\s*$")
 _WITH = re.compile(r"with ([\w.\-]+)")
 MAX_LINES = 500_000
 
@@ -56,9 +52,19 @@ def parse_maven_tree(text: str) -> list[Dependency]:
         w = _WITH.search(note)
         if conflict and w:
             resolved = w.group(1)
-        deps.append(Dependency(group=group, artifact=artifact, version=version,
-                               requested=version, resolved=resolved, scope=scope,
-                               depth=depth, conflict=conflict, omitted=omitted))
+        deps.append(
+            Dependency(
+                group=group,
+                artifact=artifact,
+                version=version,
+                requested=version,
+                resolved=resolved,
+                scope=scope,
+                depth=depth,
+                conflict=conflict,
+                omitted=omitted,
+            )
+        )
     return deps
 
 
@@ -71,8 +77,7 @@ def parse_maven_resolve(text: str) -> list[Dependency]:
         if not m:
             continue
         group, artifact, version, scope = _split_coord(m.group("coord"))
-        deps.append(Dependency(group=group, artifact=artifact, version=version,
-                               resolved=version, scope=scope, depth=1))
+        deps.append(Dependency(group=group, artifact=artifact, version=version, resolved=version, scope=scope, depth=1))
     return deps
 
 
@@ -87,10 +92,11 @@ def parse_maven_build(text: str) -> tuple[bool, list[BuildModule], list[str]]:
         line = _INFO.sub("", raw).rstrip()
         m = _MODULE.match(line)
         if m and not m.group("name").startswith(("BUILD", "Total", "Finished")):
-            modules.append(BuildModule(name=m.group("name").strip(), status=m.group("status"),
-                                       duration=float(m.group("dur") or 0)))
+            modules.append(
+                BuildModule(name=m.group("name").strip(), status=m.group("status"), duration=float(m.group("dur") or 0))
+            )
         elif raw.startswith("[ERROR]"):
-            msg = raw[len("[ERROR]"):].strip()
+            msg = raw[len("[ERROR]") :].strip()
             if msg and not msg.startswith(("[Help", "To see", "Re-run", "For more")) and msg not in seen:
                 seen.add(msg)
                 failures.append(msg)

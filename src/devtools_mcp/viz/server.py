@@ -43,17 +43,24 @@ def _all_runs(app: object) -> list[dict]:
         for rid, run in ws.runs.items():
             backend = get_backend(run.suite) if run.suite in _suites() else None
             has_stacks = bool(backend and backend.stacks and backend.stacks(run))
-            rows.append({
-                "run_id": rid, "suite": run.suite, "tool": run.tool, "binary": run.binary,
-                "when": run.timestamp.strftime("%H:%M:%S"), "exit": run.exit_code,
-                "has_stacks": has_stacks,
-            })
+            rows.append(
+                {
+                    "run_id": rid,
+                    "suite": run.suite,
+                    "tool": run.tool,
+                    "binary": run.binary,
+                    "when": run.timestamp.strftime("%H:%M:%S"),
+                    "exit": run.exit_code,
+                    "has_stacks": has_stacks,
+                }
+            )
     rows.sort(key=lambda r: r["when"], reverse=True)
     return rows
 
 
 def _suites() -> set[str]:
     from devtools_mcp.registry import list_backends
+
     return set(list_backends())
 
 
@@ -95,8 +102,7 @@ class _Handler(BaseHTTPRequestHandler):
             df = _df_for(run)
             backend = get_backend(run.suite)
             table = render.table_from_df(df) if df is not None else "<p class='note'>no table</p>"
-            self._send(render.run_page(meta, backend.format_summary(run), table,
-                                       has_stacks=bool(_stacks_for(run))))
+            self._send(render.run_page(meta, backend.format_summary(run), table, has_stacks=bool(_stacks_for(run))))
         elif kind == "flame":
             self._send(self._flame(run_id, run, query))
         else:  # raw
@@ -113,8 +119,7 @@ class _Handler(BaseHTTPRequestHandler):
             sub = focus(tree, focus_name)
             if sub is not None:
                 tree = sub
-        svg = render_svg(tree, title=f"{run.suite}:{run.tool}", width=1400,
-                         href_base=f"/flame/{run_id}")
+        svg = render_svg(tree, title=f"{run.suite}:{run.tool}", width=1400, href_base=f"/flame/{run_id}")
         return render.flame_page(run_id, svg, tree.total_weight, focus_name)
 
     def _raw_text(self, ws: object, run_id: str, run: object) -> tuple[str, bool]:

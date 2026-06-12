@@ -38,7 +38,8 @@ async def check_npm() -> dict[str, str]:
     if npm:
         try:
             proc = await asyncio.create_subprocess_exec(
-                npm, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+                npm, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+            )
             out, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
             version = "npm " + out.decode("utf-8", "replace").strip()
         except (TimeoutError, OSError):
@@ -47,8 +48,12 @@ async def check_npm() -> dict[str, str]:
 
 
 async def run_npm(
-    tool: str = "deps", binary: str = "", args: list[str] | None = None,
-    extra_args: list[str] | None = None, timeout: int = 1800, **kwargs: object,
+    tool: str = "deps",
+    binary: str = "",
+    args: list[str] | None = None,
+    extra_args: list[str] | None = None,
+    timeout: int = 1800,
+    **kwargs: object,
 ) -> tuple[str | None, BuildResult | None, str]:
     """Run an npm tool in a project directory and normalize the output."""
     project = binary or os.getcwd()
@@ -70,6 +75,7 @@ async def run_npm(
     raw_path = write_raw("devtools-npm-", raw)
     deps = parse_npm_ls(ptext) if tool == "deps" else (parse_npm_outdated(ptext) if tool == "outdated" else [])
     vulns = parse_npm_audit(ptext) if tool == "audit" else []
-    result = assemble("npm", tool, project, "npm " + " ".join(argv),
-                      time.monotonic() - start, rc, raw, deps=deps, vulns=vulns)
+    result = assemble(
+        "npm", tool, project, "npm " + " ".join(argv), time.monotonic() - start, rc, raw, deps=deps, vulns=vulns
+    )
     return None, result, raw_path

@@ -29,8 +29,11 @@ def parse_gradle_deps(text: str) -> list[Dependency]:
         m = _DEP.match(raw)
         if not m:
             s = raw.rstrip()
-            if s and s[0].isalpha() and not s.startswith((
-                "Root project", "Project ", "BUILD", "Deprecated", "No dependencies")):
+            if (
+                s
+                and s[0].isalpha()
+                and not s.startswith(("Root project", "Project ", "BUILD", "Deprecated", "No dependencies"))
+            ):
                 scope = s.split(" ")[0]
             continue
         depth = len(m.group("prefix")) // 5
@@ -45,11 +48,19 @@ def parse_gradle_deps(text: str) -> list[Dependency]:
         artifact = parts[1] if len(parts) >= 2 else parts[0]
         version = parts[2] if len(parts) >= 3 else ""
         final = resolved or version
-        deps.append(Dependency(
-            group=group, artifact=artifact, version=version, requested=version,
-            resolved=final, scope=scope, depth=depth,
-            conflict=bool(resolved) and resolved != version, omitted=omitted,
-        ))
+        deps.append(
+            Dependency(
+                group=group,
+                artifact=artifact,
+                version=version,
+                requested=version,
+                resolved=final,
+                scope=scope,
+                depth=depth,
+                conflict=bool(resolved) and resolved != version,
+                omitted=omitted,
+            )
+        )
     return deps
 
 

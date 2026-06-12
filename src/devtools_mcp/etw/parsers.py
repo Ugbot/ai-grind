@@ -63,9 +63,15 @@ def parse_perfview_csv(text: str) -> list[EtwSample]:
         mod, fn = split_module(name)
         samples.append(
             EtwSample(
-                name=name, module=mod, function=fn,
-                exc=exc, exc_pct=exc_pct, inc=inc, inc_pct=inc_pct,
-                first_ms=float(row.get("First") or 0), last_ms=float(row.get("Last") or 0),
+                name=name,
+                module=mod,
+                function=fn,
+                exc=exc,
+                exc_pct=exc_pct,
+                inc=inc,
+                inc_pct=inc_pct,
+                first_ms=float(row.get("First") or 0),
+                last_ms=float(row.get("Last") or 0),
             )
         )
     assert all(s.exc_pct >= 0 for s in samples), "negative Exc% parsed"

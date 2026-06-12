@@ -41,7 +41,9 @@ async def check_etw() -> dict[str, str]:
     if path:
         return {"installed": "true", "version": "PerfView", "path": path}
     return {
-        "installed": "false", "version": "", "path": "PerfView.exe",
+        "installed": "false",
+        "version": "",
+        "path": "PerfView.exe",
         "error": "PerfView not found. Put it at C:/code/PerfView.exe, on PATH, or set $DEVTOOLS_PERFVIEW.",
     }
 
@@ -69,8 +71,11 @@ def _opt(extra_args: list[str] | None, flag: str) -> str | None:
 
 async def _perfview(pv: str, args: list[str], env: dict[str, str], timeout: int) -> int:
     proc = await asyncio.create_subprocess_exec(
-        pv, *args, stdin=asyncio.subprocess.DEVNULL,
-        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        pv,
+        *args,
+        stdin=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
     )
     try:
         await asyncio.wait_for(proc.communicate(), timeout=timeout)
@@ -127,10 +132,20 @@ async def run_etw(
             return f"binary not found: {binary}", None, ""
         env = _perfview_env(pathlib.Path(binary).parent)
         cap = [
-            "/AcceptEULA", "/NoGui", f"/DataFile:{etl}",
-            "/NoNGenRundown", "/NoClrRundown", "/NoV2Rundown",
-            "/CpuSampleMSec:0.125", "/ThreadTime", "/Zip:false", "/Merge:true",
-            f"/FocusProcess:{process}.exe", "run", binary, *map(str, binary_args),
+            "/AcceptEULA",
+            "/NoGui",
+            f"/DataFile:{etl}",
+            "/NoNGenRundown",
+            "/NoClrRundown",
+            "/NoV2Rundown",
+            "/CpuSampleMSec:0.125",
+            "/ThreadTime",
+            "/Zip:false",
+            "/Merge:true",
+            f"/FocusProcess:{process}.exe",
+            "run",
+            binary,
+            *map(str, binary_args),
         ]
         await _perfview(pv, cap, env, timeout)  # exit-code-2 is expected; check the file
         if not await _wait_for_etl(etl):
@@ -149,8 +164,15 @@ async def run_etw(
     samples = parse_perfview_csv(text)
     stack_samples = parse_folded(pathlib.Path(folded).read_text(encoding="utf-8", errors="replace")) if folded else []
 
-    run_base = create_run_base(suite="etw", tool="cpu", binary=binary, args=binary_args,
-                               duration_seconds=time.monotonic() - start)
-    result = EtwResult(**run_base.model_dump(), process=process, samples=samples,
-                       stack_samples=stack_samples, etl_path=str(etl), csv_path=str(csv_out))
+    run_base = create_run_base(
+        suite="etw", tool="cpu", binary=binary, args=binary_args, duration_seconds=time.monotonic() - start
+    )
+    result = EtwResult(
+        **run_base.model_dump(),
+        process=process,
+        samples=samples,
+        stack_samples=stack_samples,
+        etl_path=str(etl),
+        csv_path=str(csv_out),
+    )
     return None, result, str(csv_out)

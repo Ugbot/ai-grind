@@ -59,8 +59,7 @@ def _format_dump(result: PyResult) -> str:
         parts.append("No threads parsed.")
         return "\n".join(parts)
     states = Counter(t.state or "?" for t in result.threads)
-    parts.append(f"**Threads:** {len(result.threads)} · "
-                 + ", ".join(f"{k}={v}" for k, v in states.most_common()))
+    parts.append(f"**Threads:** {len(result.threads)} · " + ", ".join(f"{k}={v}" for k, v in states.most_common()))
     for t in result.threads[:_TOP]:
         top = t.frames[0] if t.frames else "(no frames)"
         parts.append(f"  - `{t.name or t.tid}` [{t.state}] → {top}")

@@ -26,8 +26,13 @@ def jvm_hotspots_df(result: JvmResult) -> pl.DataFrame:
     ]
     if not rows:
         return pl.DataFrame(
-            schema={"function": pl.Utf8, "exclusive": pl.Int64, "inclusive": pl.Int64,
-                    "exc_pct": pl.Float64, "value": pl.Float64}
+            schema={
+                "function": pl.Utf8,
+                "exclusive": pl.Int64,
+                "inclusive": pl.Int64,
+                "exc_pct": pl.Float64,
+                "value": pl.Float64,
+            }
         )
     return pl.DataFrame(rows).sort("exclusive", descending=True)
 
@@ -48,8 +53,14 @@ def jvm_threads_df(result: JvmResult) -> pl.DataFrame:
         )
     if not rows:
         return pl.DataFrame(
-            schema={"function": pl.Utf8, "thread": pl.Utf8, "state": pl.Utf8,
-                    "daemon": pl.Boolean, "frame_count": pl.Int64, "value": pl.Float64}
+            schema={
+                "function": pl.Utf8,
+                "thread": pl.Utf8,
+                "state": pl.Utf8,
+                "daemon": pl.Boolean,
+                "frame_count": pl.Int64,
+                "value": pl.Float64,
+            }
         )
     return pl.DataFrame(rows)
 
@@ -67,9 +78,7 @@ def jvm_heap_df(result: JvmResult) -> pl.DataFrame:
             }
         )
     if not rows:
-        return pl.DataFrame(
-            schema={"function": pl.Utf8, "instances": pl.Int64, "bytes": pl.Int64, "value": pl.Float64}
-        )
+        return pl.DataFrame(schema={"function": pl.Utf8, "instances": pl.Int64, "bytes": pl.Int64, "value": pl.Float64})
     return pl.DataFrame(rows).sort("bytes", descending=True)
 
 

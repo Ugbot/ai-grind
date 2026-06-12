@@ -15,16 +15,18 @@ def _cf(name: str, url: str = "app.js", line: int = 1) -> dict:
 
 class TestCpuProfile:
     # root -> main -> {work(leaf), io(leaf)}
-    PROFILE = json.dumps({
-        "nodes": [
-            {"id": 1, "callFrame": _cf("(root)"), "children": [2]},
-            {"id": 2, "callFrame": _cf("main"), "children": [3, 4]},
-            {"id": 3, "callFrame": _cf("work")},
-            {"id": 4, "callFrame": _cf("io")},
-        ],
-        "samples": [3, 3, 3, 4],  # work x3, io x1
-        "timeDeltas": [100, 100, 100, 100],
-    })
+    PROFILE = json.dumps(
+        {
+            "nodes": [
+                {"id": 1, "callFrame": _cf("(root)"), "children": [2]},
+                {"id": 2, "callFrame": _cf("main"), "children": [3, 4]},
+                {"id": 3, "callFrame": _cf("work")},
+                {"id": 4, "callFrame": _cf("io")},
+            ],
+            "samples": [3, 3, 3, 4],  # work x3, io x1
+            "timeDeltas": [100, 100, 100, 100],
+        }
+    )
 
     def test_aggregates_samples(self):
         samples = parse_cpuprofile(self.PROFILE)
@@ -40,10 +42,14 @@ class TestCpuProfile:
         assert work.weight == 3
 
     def test_hitcount_fallback_when_no_samples(self):
-        prof = json.dumps({"nodes": [
-            {"id": 1, "callFrame": _cf("(root)"), "children": [2]},
-            {"id": 2, "callFrame": _cf("hot"), "hitCount": 7},
-        ]})
+        prof = json.dumps(
+            {
+                "nodes": [
+                    {"id": 1, "callFrame": _cf("(root)"), "children": [2]},
+                    {"id": 2, "callFrame": _cf("hot"), "hitCount": 7},
+                ]
+            }
+        )
         samples = parse_cpuprofile(prof)
         assert sum(s.weight for s in samples) == 7
 
@@ -56,25 +62,32 @@ class TestCpuProfile:
         assert parse_cpuprofile("nope") == []
 
     def test_hotspots_df(self):
-        df = node_hotspots_df(NodeResult(run_id="r", tool="cpu", binary="app.js",
-                                         stack_samples=parse_cpuprofile(self.PROFILE)))
+        df = node_hotspots_df(
+            NodeResult(run_id="r", tool="cpu", binary="app.js", stack_samples=parse_cpuprofile(self.PROFILE))
+        )
         assert "function" in df.columns
         assert df.filter(df["function"] == "work")["exclusive"][0] == 3
 
 
 class TestHeapProfile:
-    PROFILE = json.dumps({
-        "head": {
-            "callFrame": _cf("(root)"),
-            "selfSize": 0,
-            "children": [
-                {"callFrame": _cf("alloc_a"), "selfSize": 4096, "children": []},
-                {"callFrame": _cf("mid"), "selfSize": 0, "children": [
-                    {"callFrame": _cf("alloc_b"), "selfSize": 2048, "children": []},
-                ]},
-            ],
+    PROFILE = json.dumps(
+        {
+            "head": {
+                "callFrame": _cf("(root)"),
+                "selfSize": 0,
+                "children": [
+                    {"callFrame": _cf("alloc_a"), "selfSize": 4096, "children": []},
+                    {
+                        "callFrame": _cf("mid"),
+                        "selfSize": 0,
+                        "children": [
+                            {"callFrame": _cf("alloc_b"), "selfSize": 2048, "children": []},
+                        ],
+                    },
+                ],
+            }
         }
-    })
+    )
 
     def test_weights_are_bytes(self):
         samples = parse_heapprofile(self.PROFILE)

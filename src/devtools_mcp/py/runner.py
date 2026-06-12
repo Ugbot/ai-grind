@@ -50,9 +50,7 @@ def _duration(extra_args: list[str] | None) -> int:
 
 
 async def _run(cmd: list[str], timeout: int) -> tuple[int, str, str]:
-    proc = await asyncio.create_subprocess_exec(
-        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-    )
+    proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     try:
         out, err = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except TimeoutError:
@@ -97,8 +95,9 @@ async def _run_cprofile(binary: str, args: list[str], timeout: int) -> tuple[str
     return None, _result("cprofile", binary, start, func_stats=parse_pstats(prof), profile_path=prof), prof
 
 
-async def _run_pyspy(binary: str, args: list[str], extra_args: list[str] | None,
-                     timeout: int) -> tuple[str | None, PyResult | None, str]:
+async def _run_pyspy(
+    binary: str, args: list[str], extra_args: list[str] | None, timeout: int
+) -> tuple[str | None, PyResult | None, str]:
     pyspy = find_pyspy()
     if not pyspy:
         return "py-spy not found. Install with `pip install py-spy`.", None, ""
@@ -117,8 +116,18 @@ async def _run_pyspy(binary: str, args: list[str], extra_args: list[str] | None,
     if rc != 0 and not os.path.getsize(raw):
         return f"py-spy failed: {err.strip()}", None, raw
     samples = parse_folded(pathlib.Path(raw).read_text(encoding="utf-8", errors="replace"))
-    return None, _result("cpu", pid or binary, start, pid=pid or "", stack_samples=samples,
-                         total_samples=sum(s.weight for s in samples)), raw
+    return (
+        None,
+        _result(
+            "cpu",
+            pid or binary,
+            start,
+            pid=pid or "",
+            stack_samples=samples,
+            total_samples=sum(s.weight for s in samples),
+        ),
+        raw,
+    )
 
 
 async def _run_dump(binary: str, extra_args: list[str] | None, timeout: int) -> tuple[str | None, PyResult | None, str]:

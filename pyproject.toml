@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "click>=8.3.1",
+    "httpx>=0.28.1",
     "lxml>=6.0.2",
     "mcp>=1.26.0",
     "polars>=1.39.0",
@@ -24,6 +25,8 @@ devtools-mcp = "devtools_mcp.server:main"
 
 [dependency-groups]
 dev = [
+    "black>=25.1.0",
+    "mypy>=1.15.0",
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
     "ruff>=0.15.6",
@@ -31,6 +34,38 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+check_untyped_defs = true
+warn_redundant_casts = true
+no_implicit_optional = true
+ignore_missing_imports = true
+
+# Legacy modules with pre-existing type errors (75 at adoption time).
+# Ratchet: fix a module, remove it from this list — never add to it.
+[[tool.mypy.overrides]]
+module = [
+    "devtools_mcp.build.jsdeps",
+    "devtools_mcp.cargo.runner",
+    "devtools_mcp.jvm.runner",
+    "devtools_mcp.lldb.session",
+    "devtools_mcp.perf.backend",
+    "devtools_mcp.py.runner",
+    "devtools_mcp.server",
+    "devtools_mcp.tools.batch_tools",
+    "devtools_mcp.tools.viz_tools",
+    "devtools_mcp.valgrind.backend",
+    "devtools_mcp.valgrind.details",
+    "devtools_mcp.valgrind.parsers.cachegrind",
+    "devtools_mcp.viz.server",
+    "devtools_mcp.workspace",
+]
+ignore_errors = true
 
 [tool.ruff]
 target-version = "py311"

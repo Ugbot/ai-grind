@@ -32,7 +32,8 @@ async def check_yarn() -> dict[str, str]:
     if yarn:
         try:
             proc = await asyncio.create_subprocess_exec(
-                yarn, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+                yarn, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+            )
             out, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
             version = "yarn " + out.decode("utf-8", "replace").strip()
         except (TimeoutError, OSError):
@@ -41,8 +42,12 @@ async def check_yarn() -> dict[str, str]:
 
 
 async def run_yarn(
-    tool: str = "deps", binary: str = "", args: list[str] | None = None,
-    extra_args: list[str] | None = None, timeout: int = 1800, **kwargs: object,
+    tool: str = "deps",
+    binary: str = "",
+    args: list[str] | None = None,
+    extra_args: list[str] | None = None,
+    timeout: int = 1800,
+    **kwargs: object,
 ) -> tuple[str | None, BuildResult | None, str]:
     """Run a yarn tool in a project directory and normalize the output."""
     project = binary or os.getcwd()
@@ -64,6 +69,7 @@ async def run_yarn(
     raw_path = write_raw("devtools-yarn-", raw)
     deps = parse_yarn_list(ptext) if tool == "deps" else []
     vulns = parse_yarn_audit(ptext) if tool == "audit" else []
-    result = assemble("yarn", tool, project, "yarn " + " ".join(argv),
-                      time.monotonic() - start, rc, raw, deps=deps, vulns=vulns)
+    result = assemble(
+        "yarn", tool, project, "yarn " + " ".join(argv), time.monotonic() - start, rc, raw, deps=deps, vulns=vulns
+    )
     return None, result, raw_path

@@ -33,7 +33,8 @@ async def check_gradle() -> dict[str, str]:
     if gradle:
         try:
             proc = await asyncio.create_subprocess_exec(
-                gradle, "-v", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+                gradle, "-v", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+            )
             out, _ = await asyncio.wait_for(proc.communicate(), timeout=20)
             for line in out.decode("utf-8", "replace").splitlines():
                 if line.startswith("Gradle "):
@@ -89,10 +90,18 @@ async def run_gradle(
     available = parse_gradle_tasks(text) if tool == "tasks" else []
     tests = parse_junit_dir(project, _JUNIT_DIRS) if tool in ("build", "test") else []
 
-    base = create_run_base(suite="gradle", tool=tool, binary=project, args=argv,
-                           duration_seconds=time.monotonic() - start, exit_code=rc)
-    result = BuildResult(**base.model_dump(), command=" ".join(["gradle", *argv]),
-                         success=success, dependencies=deps, tests=tests,
-                         executed_tasks=exec_tasks if tool in ("build", "test") else [],
-                         available_tasks=available, failures=failures, raw_output=tail(text))
+    base = create_run_base(
+        suite="gradle", tool=tool, binary=project, args=argv, duration_seconds=time.monotonic() - start, exit_code=rc
+    )
+    result = BuildResult(
+        **base.model_dump(),
+        command=" ".join(["gradle", *argv]),
+        success=success,
+        dependencies=deps,
+        tests=tests,
+        executed_tasks=exec_tasks if tool in ("build", "test") else [],
+        available_tasks=available,
+        failures=failures,
+        raw_output=tail(text),
+    )
     return None, result, raw_path

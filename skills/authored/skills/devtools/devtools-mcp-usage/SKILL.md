@@ -33,7 +33,8 @@ precisely.
 
 | Goal | suite:tool |
 |---|---|
-| Native CPU profile on **Windows** | `etw:cpu` (PerfView) |
+| Native CPU profile on **Windows** | `etw:cpu` (PerfView) or `vtune:cpu` |
+| Deep Intel analysis (top-down uarch, memory-bound, false sharing) | `vtune:uarch` / `vtune:memory` (see vtune-profiling skill) |
 | Native CPU/syscall profile on macOS | `dtrace:cpu` / `dtrace:syscall` |
 | Native CPU profile on Linux | `perf:cpu` / `perf:stat` |
 | Memory errors / leaks (Linux) | `valgrind:memcheck` |

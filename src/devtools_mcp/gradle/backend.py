@@ -17,8 +17,10 @@ async def detect() -> list[InstalledTool]:
     info = await check_gradle()
     version = info.get("version") or "wrapper"
     path = info.get("path") or "gradlew"
-    return [InstalledTool(suite="gradle", name=t, path=path, version=version, available=True)
-            for t in ("build", "test", "deps", "sync", "tasks")]
+    return [
+        InstalledTool(suite="gradle", name=t, path=path, version=version, available=True)
+        for t in ("build", "test", "deps", "sync", "tasks")
+    ]
 
 
 async def run(

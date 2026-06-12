@@ -26,6 +26,7 @@ import devtools_mcp.perf.backend  # noqa: F401
 import devtools_mcp.pnpm.backend  # noqa: F401
 import devtools_mcp.py.backend  # noqa: F401
 import devtools_mcp.valgrind.backend  # noqa: F401
+import devtools_mcp.vtune.backend  # noqa: F401
 import devtools_mcp.yarn.backend  # noqa: F401
 from devtools_mcp.models import RunBase
 from devtools_mcp.registry import ToolRegistry
@@ -54,15 +55,20 @@ mcp = FastMCP(
     lifespan=app_lifespan,
     instructions=(
         "Unified performance engineering toolkit across native, JVM, Python, and JavaScript. "
-        "Backends: valgrind, lldb, dtrace, perf, etw (Windows/PerfView), jvm "
-        "(jfr/threads/heap/asprof), cdb (Windows debugger), py (pyspy/dump/cprofile), node "
+        "Backends: valgrind, lldb, dtrace, perf, etw (Windows/PerfView), vtune (Intel: "
+        "hotspots/threading/memory/uarch/snapshot), jvm (jfr/threads/heap/asprof), cdb (Windows "
+        "debugger), py (pyspy/dump/cprofile), node "
         "(cpu/heap). Core rule: NEVER flood the model with raw output — every run is stored as a "
         "queryable Polars DataFrame and tools return only bounded summaries + a run_id. "
         "Workflow: devtools_check() to see installed tools; devtools_run(suite, tool, binary) to "
         "run one; devtools_analyze()/devtools_query() to drill into the frame; "
         "devtools_search()/devtools_correlate() across runs; devtools_flamegraph(run_id) for an "
         "SVG + text flame graph from any sampling run; devtools_dashboard() to open a browser "
-        "visualization terminal. LLDB debug_* tools provide interactive sessions."
+        "visualization terminal. LLDB debug_* tools provide interactive sessions. "
+        "tracker_* tools: a persistent SQLite-backed task tracker (mini-JIRA) — projects, "
+        "hierarchical tasks with PROJ-123 keys, acceptance criteria linked to tests, commit "
+        "links, auto-tag rules, GitHub issue sync; query it via tracker_query (bounded views) "
+        "and ask tracker_deps(action='resolve') what needs to happen next (ready/blocked/order)."
     ),
 )
 

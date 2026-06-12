@@ -29,8 +29,13 @@ def etw_hotspots_df(result: EtwResult) -> pl.DataFrame:
     if not rows:
         return pl.DataFrame(
             schema={
-                "function": pl.Utf8, "module": pl.Utf8, "exc_pct": pl.Float64,
-                "inc_pct": pl.Float64, "exc": pl.Float64, "inc": pl.Float64, "value": pl.Float64,
+                "function": pl.Utf8,
+                "module": pl.Utf8,
+                "exc_pct": pl.Float64,
+                "inc_pct": pl.Float64,
+                "exc": pl.Float64,
+                "inc": pl.Float64,
+                "value": pl.Float64,
             }
         )
     return pl.DataFrame(rows)

@@ -36,7 +36,7 @@ async def devtools_dashboard(
         if srv and srv.running:
             n = sum(len(ws.runs) for ws in app.workspaces.values())
             return f"Visualization terminal running at {srv.url} ({n} run(s) available)."
-        return "Visualization terminal is not running. Use devtools_dashboard(action=\"start\")."
+        return 'Visualization terminal is not running. Use devtools_dashboard(action="start").'
 
     if action == "stop":
         if app.viz_server and app.viz_server.running:

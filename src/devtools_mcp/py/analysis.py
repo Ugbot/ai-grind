@@ -29,8 +29,14 @@ def py_funcstats_df(result: PyResult) -> pl.DataFrame:
     ]
     if not rows:
         return pl.DataFrame(
-            schema={"function": pl.Utf8, "ncalls": pl.Int64, "tottime": pl.Float64,
-                    "cumtime": pl.Float64, "percall": pl.Float64, "value": pl.Float64}
+            schema={
+                "function": pl.Utf8,
+                "ncalls": pl.Int64,
+                "tottime": pl.Float64,
+                "cumtime": pl.Float64,
+                "percall": pl.Float64,
+                "value": pl.Float64,
+            }
         )
     return pl.DataFrame(rows).sort("cumtime", descending=True)
 
@@ -49,8 +55,13 @@ def py_threads_df(result: PyResult) -> pl.DataFrame:
     ]
     if not rows:
         return pl.DataFrame(
-            schema={"function": pl.Utf8, "thread": pl.Utf8, "state": pl.Utf8,
-                    "frame_count": pl.Int64, "value": pl.Float64}
+            schema={
+                "function": pl.Utf8,
+                "thread": pl.Utf8,
+                "state": pl.Utf8,
+                "frame_count": pl.Int64,
+                "value": pl.Float64,
+            }
         )
     return pl.DataFrame(rows)
 

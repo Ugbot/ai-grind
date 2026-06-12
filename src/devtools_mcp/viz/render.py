@@ -47,10 +47,11 @@ def page(title: str, body: str, crumbs: str = "") -> str:
 def dashboard(rows: list[dict]) -> str:
     """Landing page: every run across all workspaces."""
     if not rows:
-        return page("devtools-mcp", "<p class='note'>No runs yet. Use devtools_run, "
-                    "then refresh.</p>")
-    out = ["<h2>Runs</h2><table><tr><th>run</th><th>suite:tool</th><th>target</th>"
-           "<th>when</th><th>exit</th><th>views</th></tr>"]
+        return page("devtools-mcp", "<p class='note'>No runs yet. Use devtools_run, " "then refresh.</p>")
+    out = [
+        "<h2>Runs</h2><table><tr><th>run</th><th>suite:tool</th><th>target</th>"
+        "<th>when</th><th>exit</th><th>views</th></tr>"
+    ]
     for r in rows:
         views = [f"<a href='/run/{_h(r['run_id'])}'>data</a>"]
         if r.get("has_stacks"):
@@ -76,8 +77,9 @@ def table_from_df(df: pl.DataFrame, max_rows: int = 200) -> str:
         body_rows.append("<tr>" + "".join(f"<td>{_h(v)}</td>" for v in row) + "</tr>")
     note = ""
     if df.height > max_rows:
-        note = f"<p class='note'>showing {max_rows} of {df.height:,} rows — " \
-               "query precisely with devtools_analyze</p>"
+        note = (
+            f"<p class='note'>showing {max_rows} of {df.height:,} rows — " "query precisely with devtools_analyze</p>"
+        )
     return f"<table><tr>{head}</tr>{''.join(body_rows)}</table>{note}"
 
 
@@ -101,8 +103,7 @@ def flame_page(run_id: str, svg: str, total: int, focus_name: str | None) -> str
     crumbs = f" / <a href='/run/{_h(run_id)}'>run</a> / flame"
     reset = ""
     if focus_name:
-        reset = (f"<p class='note'>focused on <b>{_h(focus_name)}</b> — "
-                 f"<a href='/flame/{_h(run_id)}'>reset</a></p>")
+        reset = f"<p class='note'>focused on <b>{_h(focus_name)}</b> — " f"<a href='/flame/{_h(run_id)}'>reset</a></p>"
     body = (
         f"<h2>Flame graph <span class='pill'>{_h(run_id[:8])}</span></h2>"
         f"<p class='note'>{total:,} samples · click any frame to zoom into its subtree</p>"

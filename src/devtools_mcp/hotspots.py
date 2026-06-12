@@ -12,8 +12,12 @@ from devtools_mcp.flamegraph.tree import build_call_tree, function_stats
 from devtools_mcp.models import StackSample
 
 _SCHEMA = {
-    "function": pl.Utf8, "exclusive": pl.Int64, "inclusive": pl.Int64,
-    "exc_pct": pl.Float64, "inc_pct": pl.Float64, "value": pl.Float64,
+    "function": pl.Utf8,
+    "exclusive": pl.Int64,
+    "inclusive": pl.Int64,
+    "exc_pct": pl.Float64,
+    "inc_pct": pl.Float64,
+    "value": pl.Float64,
 }
 
 

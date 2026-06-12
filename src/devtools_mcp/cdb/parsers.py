@@ -12,8 +12,16 @@ _ADDR = re.compile(r"^[0-9a-fA-F`]+$")
 _SRC = re.compile(r"\[(?P<file>.+?)\s+@\s+(?P<line>\d+)\]\s*$")
 _CALL = re.compile(r"^(?P<mod>[^!\s]+)!(?P<fn>[^+\s]+)(?P<off>\+0x[0-9a-fA-F]+)?")
 _ANALYZE_KEYS = {
-    "SYMBOL_NAME", "MODULE_NAME", "IMAGE_NAME", "FAILURE_BUCKET_ID", "EXCEPTION_CODE",
-    "EXCEPTION_CODE_STR", "FAULTING_IP", "PROCESS_NAME", "STACK_COMMAND", "BUGCHECK_CODE",
+    "SYMBOL_NAME",
+    "MODULE_NAME",
+    "IMAGE_NAME",
+    "FAILURE_BUCKET_ID",
+    "EXCEPTION_CODE",
+    "EXCEPTION_CODE_STR",
+    "FAULTING_IP",
+    "PROCESS_NAME",
+    "STACK_COMMAND",
+    "BUGCHECK_CODE",
 }
 _REG = re.compile(r"\b([a-z]{2,3}[0-9]?)=([0-9a-fA-F`]+)")
 MAX_LINES = 200_000
@@ -33,8 +41,14 @@ def _parse_call_site(rest: str, idx: int) -> CdbStackFrame | None:
     call = " ".join(tokens)
     m = _CALL.match(call)
     if m:
-        return CdbStackFrame(index=idx, module=m.group("mod"), function=m.group("fn"),
-                             offset=m.group("off") or "", file=file_, line=line_)
+        return CdbStackFrame(
+            index=idx,
+            module=m.group("mod"),
+            function=m.group("fn"),
+            offset=m.group("off") or "",
+            file=file_,
+            line=line_,
+        )
     return CdbStackFrame(index=idx, function=call, file=file_, line=line_)
 
 

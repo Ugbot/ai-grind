@@ -40,8 +40,7 @@ def parse_pyspy_dump(text: str) -> list[PyThread]:
     for line in text.splitlines():
         m = _THREAD.match(line)
         if m:
-            current = PyThread(tid=m.group("tid"), state=m.group("state").strip(),
-                               name=m.group("name").strip())
+            current = PyThread(tid=m.group("tid"), state=m.group("state").strip(), name=m.group("name").strip())
             threads.append(current)
             continue
         if current is None:

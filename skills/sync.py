@@ -14,6 +14,7 @@ Targets:
 Only `local` is wiped wholesale. project/global are overwritten per item so
 unrelated skills already present there are left untouched.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -24,8 +25,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 MANIFEST = ROOT / "MANIFEST.json"
-AUTHORED = ROOT / "authored"      # hand-written skills; never touched by harvest.py
-MAX_ITEMS = 200   # bound mirrors harvest.py
+AUTHORED = ROOT / "authored"  # hand-written skills; never touched by harvest.py
+MAX_ITEMS = 200  # bound mirrors harvest.py
 MAX_AUTHORED = 100  # bound on hand-written skills
 
 
@@ -53,7 +54,7 @@ def read_skill_name(md_path: Path) -> str:
     assert md_path.is_file(), f"no skill markdown: {md_path}"
     lines = md_path.read_text(encoding="utf-8").splitlines()
     assert lines and lines[0].strip() == "---", f"no frontmatter: {md_path}"
-    for i in range(1, min(len(lines), 60)):       # bound the header scan
+    for i in range(1, min(len(lines), 60)):  # bound the header scan
         if lines[i].strip() == "---":
             break
         if lines[i].startswith("name:"):
@@ -109,8 +110,7 @@ def sync_flat(item: dict, base: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Flatten catalog/ into a loadable mirror.")
-    ap.add_argument("--target", choices=("local", "project", "global"),
-                    default="local")
+    ap.add_argument("--target", choices=("local", "project", "global"), default="local")
     args = ap.parse_args()
 
     items = load_manifest()
@@ -138,9 +138,11 @@ def main() -> int:
 
     assert counts["skill"] == len(seen_skills), "skill count/name-set mismatch"
     print(f"synced -> {base}  (target={args.target})")
-    print(f"  skills={counts['skill']} (harvested={counts['skill'] - authored} "
-          f"authored={authored}) commands={counts['command']} "
-          f"agents={counts['agent']} skipped(archive)={counts['skipped']}")
+    print(
+        f"  skills={counts['skill']} (harvested={counts['skill'] - authored} "
+        f"authored={authored}) commands={counts['command']} "
+        f"agents={counts['agent']} skipped(archive)={counts['skipped']}"
+    )
     return 0
 
 

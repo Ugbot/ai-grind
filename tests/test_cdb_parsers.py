@@ -85,8 +85,10 @@ STACK_TEXT:
 
 
 class TestParseRegisters:
-    SAMPLE = "rax=0000000000000000 rbx=00007ffd12340000 rcx=0000000000000001\n" \
-             "rip=00007ffd12340014 rsp=000000d4fd3ff568 rbp=0000000000000000\n"
+    SAMPLE = (
+        "rax=0000000000000000 rbx=00007ffd12340000 rcx=0000000000000001\n"
+        "rip=00007ffd12340014 rsp=000000d4fd3ff568 rbp=0000000000000000\n"
+    )
 
     def test_parses_registers(self):
         regs = parse_registers(self.SAMPLE)

@@ -46,9 +46,11 @@ async def check_cdb() -> dict[str, str]:
     if path:
         return {"installed": "true", "version": "cdb", "path": path}
     return {
-        "installed": "false", "version": "", "path": "cdb.exe",
+        "installed": "false",
+        "version": "",
+        "path": "cdb.exe",
         "error": "cdb not found. Install Debugging Tools for Windows (Windows SDK) "
-                 "or `winget install Microsoft.WinDbg`, or set $DEVTOOLS_CDB.",
+        "or `winget install Microsoft.WinDbg`, or set $DEVTOOLS_CDB.",
     }
 
 
@@ -87,9 +89,7 @@ async def run_cdb(
         return "Need a live exe (binary) or a crash dump (--dump path).", None, ""
 
     start = time.monotonic()
-    proc = await asyncio.create_subprocess_exec(
-        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
-    )
+    proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
     try:
         out, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except TimeoutError:
@@ -108,5 +108,11 @@ def parse_cdb_output(tool: str, text: str, target: str, duration: float) -> CdbS
     threads = parse_stacks(text)
     analysis, exception = parse_analyze(text) if tool == "analyze" else ({}, "")
     registers = parse_registers(text) if tool in ("inspect", "analyze") else {}
-    return CdbSnapshot(**base.model_dump(), threads=threads, analysis=analysis,
-                       exception=exception, registers=registers, raw_output=text)
+    return CdbSnapshot(
+        **base.model_dump(),
+        threads=threads,
+        analysis=analysis,
+        exception=exception,
+        registers=registers,
+        raw_output=text,
+    )

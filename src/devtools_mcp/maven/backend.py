@@ -19,8 +19,10 @@ async def detect() -> list[InstalledTool]:
     path = info.get("path") or "mvnw"
     # Optimistic: a project may carry mvnw even when mvn isn't on PATH; the runner
     # resolves and errors precisely if neither is found.
-    return [InstalledTool(suite="maven", name=t, path=path, version=version, available=True)
-            for t in ("build", "test", "deps", "sync")]
+    return [
+        InstalledTool(suite="maven", name=t, path=path, version=version, available=True)
+        for t in ("build", "test", "deps", "sync")
+    ]
 
 
 async def run(

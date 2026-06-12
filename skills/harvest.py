@@ -5,6 +5,7 @@ hierarchical catalog/ tree. Copy-only: upstream files are never modified.
 Re-running refreshes catalog/ from upstream (idempotent). catalog/ is owned by
 this script and wiped on each run; sync.py reads it but never writes it.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -19,10 +20,9 @@ CATALOG = ROOT / "catalog"
 SOURCES = ROOT / "sources.toml"
 MANIFEST = ROOT / "MANIFEST.json"
 
-MAX_ITEMS = 200          # bound: the work-list is small and explicit
+MAX_ITEMS = 200  # bound: the work-list is small and explicit
 MAX_FILE_BYTES = 1 << 20  # bound: no skill file should exceed 1 MiB
-TYPE_DIR = {"skill": "skills", "command": "commands",
-            "agent": "agents", "archive": "skills"}
+TYPE_DIR = {"skill": "skills", "command": "commands", "agent": "agents", "archive": "skills"}
 
 
 def load_items(path: Path) -> list[dict]:
@@ -52,7 +52,7 @@ def read_skill_name(md_path: Path) -> str:
     lines = md_path.read_text(encoding="utf-8").splitlines()
     assert lines and lines[0].strip() == "---", f"no frontmatter: {md_path}"
     name = ""
-    for i in range(1, min(len(lines), 60)):       # bound the header scan
+    for i in range(1, min(len(lines), 60)):  # bound the header scan
         if lines[i].strip() == "---":
             break
         if lines[i].startswith("name:"):
@@ -81,9 +81,14 @@ def copy_skill(item: dict, seen: set[str]) -> dict:
     assert name not in seen, f"duplicate skill name: {name} (from {src})"
     seen.add(name)
     assert defining.is_file(), f"copy failed: {defining}"
-    return {"name": name, "type": "skill", "category": item["category"],
-            "origin": str(src), "dest": str(defining.relative_to(ROOT)),
-            "sha256": sha256_of(defining)}
+    return {
+        "name": name,
+        "type": "skill",
+        "category": item["category"],
+        "origin": str(src),
+        "dest": str(defining.relative_to(ROOT)),
+        "sha256": sha256_of(defining),
+    }
 
 
 def copy_flat(item: dict) -> dict:
@@ -95,9 +100,14 @@ def copy_flat(item: dict) -> dict:
     dest = dest_dir / src.name
     shutil.copyfile(src, dest)
     assert dest.is_file(), f"copy failed: {dest}"
-    return {"name": src.stem, "type": item["type"], "category": item["category"],
-            "origin": str(src), "dest": str(dest.relative_to(ROOT)),
-            "sha256": sha256_of(dest)}
+    return {
+        "name": src.stem,
+        "type": item["type"],
+        "category": item["category"],
+        "origin": str(src),
+        "dest": str(dest.relative_to(ROOT)),
+        "sha256": sha256_of(dest),
+    }
 
 
 def copy_archive(item: dict) -> dict:
@@ -107,9 +117,14 @@ def copy_archive(item: dict) -> dict:
     dest = CATALOG / "skills" / item["category"]
     shutil.copytree(src, dest)
     assert dest.is_dir(), f"archive copy failed: {dest}"
-    return {"name": src.name, "type": "archive", "category": item["category"],
-            "origin": str(src), "dest": str(dest.relative_to(ROOT)),
-            "sha256": ""}
+    return {
+        "name": src.name,
+        "type": "archive",
+        "category": item["category"],
+        "origin": str(src),
+        "dest": str(dest.relative_to(ROOT)),
+        "sha256": "",
+    }
 
 
 def main() -> int:
@@ -129,15 +144,15 @@ def main() -> int:
         else:
             manifest.append(copy_flat(it))
 
-    counts = {t: sum(1 for m in manifest if m["type"] == t)
-              for t in ("skill", "command", "agent", "archive")}
+    counts = {t: sum(1 for m in manifest if m["type"] == t) for t in ("skill", "command", "agent", "archive")}
     assert len(manifest) == len(items), "manifest/item count mismatch"
-    MANIFEST.write_text(json.dumps(
-        {"counts": counts, "items": manifest}, indent=2), encoding="utf-8")
+    MANIFEST.write_text(json.dumps({"counts": counts, "items": manifest}, indent=2), encoding="utf-8")
 
     print(f"harvested {len(manifest)} items -> {CATALOG}")
-    print(f"  skills={counts['skill']} commands={counts['command']} "
-          f"agents={counts['agent']} archive={counts['archive']}")
+    print(
+        f"  skills={counts['skill']} commands={counts['command']} "
+        f"agents={counts['agent']} archive={counts['archive']}"
+    )
     return 0
 
 

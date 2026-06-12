@@ -38,7 +38,8 @@ async def check_pnpm() -> dict[str, str]:
     if pnpm:
         try:
             proc = await asyncio.create_subprocess_exec(
-                pnpm, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+                pnpm, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+            )
             out, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
             version = "pnpm " + out.decode("utf-8", "replace").strip()
         except (TimeoutError, OSError):
@@ -47,8 +48,12 @@ async def check_pnpm() -> dict[str, str]:
 
 
 async def run_pnpm(
-    tool: str = "deps", binary: str = "", args: list[str] | None = None,
-    extra_args: list[str] | None = None, timeout: int = 1800, **kwargs: object,
+    tool: str = "deps",
+    binary: str = "",
+    args: list[str] | None = None,
+    extra_args: list[str] | None = None,
+    timeout: int = 1800,
+    **kwargs: object,
 ) -> tuple[str | None, BuildResult | None, str]:
     """Run a pnpm tool in a project directory and normalize the output."""
     project = binary or os.getcwd()
@@ -70,6 +75,7 @@ async def run_pnpm(
     raw_path = write_raw("devtools-pnpm-", raw)
     deps = parse_pnpm_list(ptext) if tool == "deps" else (parse_npm_outdated(ptext) if tool == "outdated" else [])
     vulns = parse_npm_audit(ptext) if tool == "audit" else []
-    result = assemble("pnpm", tool, project, "pnpm " + " ".join(argv),
-                      time.monotonic() - start, rc, raw, deps=deps, vulns=vulns)
+    result = assemble(
+        "pnpm", tool, project, "pnpm " + " ".join(argv), time.monotonic() - start, rc, raw, deps=deps, vulns=vulns
+    )
     return None, result, raw_path

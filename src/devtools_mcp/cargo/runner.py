@@ -34,7 +34,8 @@ async def check_cargo() -> dict[str, str]:
     if cargo:
         try:
             proc = await asyncio.create_subprocess_exec(
-                cargo, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+                cargo, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+            )
             out, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
             version = out.decode("utf-8", "replace").strip()
         except (TimeoutError, OSError):
@@ -43,8 +44,12 @@ async def check_cargo() -> dict[str, str]:
 
 
 async def run_cargo(
-    tool: str = "build", binary: str = "", args: list[str] | None = None,
-    extra_args: list[str] | None = None, timeout: int = 1800, **kwargs: object,
+    tool: str = "build",
+    binary: str = "",
+    args: list[str] | None = None,
+    extra_args: list[str] | None = None,
+    timeout: int = 1800,
+    **kwargs: object,
 ) -> tuple[str | None, BuildResult | None, str]:
     """Run a Cargo command in a crate directory and normalize the output."""
     project = binary or os.getcwd()
@@ -73,9 +78,17 @@ async def run_cargo(
     else:
         success = tool in _INFORMATIONAL or rc == 0
 
-    base = create_run_base(suite="cargo", tool=tool, binary=project,
-                           duration_seconds=time.monotonic() - start, exit_code=rc)
-    result = BuildResult(**base.model_dump(), command="cargo " + " ".join(argv),
-                         success=success, dependencies=deps, tests=tests, vulnerabilities=vulns,
-                         failures=failures, raw_output=tail(text))
+    base = create_run_base(
+        suite="cargo", tool=tool, binary=project, duration_seconds=time.monotonic() - start, exit_code=rc
+    )
+    result = BuildResult(
+        **base.model_dump(),
+        command="cargo " + " ".join(argv),
+        success=success,
+        dependencies=deps,
+        tests=tests,
+        vulnerabilities=vulns,
+        failures=failures,
+        raw_output=tail(text),
+    )
     return None, result, raw_path

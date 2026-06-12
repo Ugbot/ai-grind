@@ -63,9 +63,7 @@ def _duration(extra_args: list[str] | None) -> int:
 
 
 async def _run(cmd: list[str], timeout: int) -> tuple[int, str, str]:
-    proc = await asyncio.create_subprocess_exec(
-        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-    )
+    proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     try:
         out, err = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except TimeoutError:
@@ -111,8 +109,9 @@ async def _run_jfr(pid: str, extra_args: list[str] | None, timeout: int) -> tupl
     fd, path = tempfile.mkstemp(prefix="devtools-jfr-", suffix=".jfr")
     os.close(fd)
     start = time.monotonic()
-    rc, _o, err = await _run([jcmd, pid, "JFR.start", "name=devtools", "settings=profile",
-                              f"duration={dur}s", f"filename={path}"], timeout)
+    rc, _o, err = await _run(
+        [jcmd, pid, "JFR.start", "name=devtools", "settings=profile", f"duration={dur}s", f"filename={path}"], timeout
+    )
     if rc != 0:
         return f"JFR.start failed: {err.strip()}", None, ""
     await asyncio.sleep(dur + 2)  # let the recording complete + auto-dump
@@ -120,8 +119,15 @@ async def _run_jfr(pid: str, extra_args: list[str] | None, timeout: int) -> tupl
     if rc != 0:
         return f"jfr print failed: {err.strip()}", None, path
     samples, counts = parse_jfr_json(text)
-    result = _result("cpu", pid, start, stack_samples=samples,
-                     total_samples=sum(s.weight for s in samples), event_counts=counts, jfr_path=path)
+    result = _result(
+        "cpu",
+        pid,
+        start,
+        stack_samples=samples,
+        total_samples=sum(s.weight for s in samples),
+        event_counts=counts,
+        jfr_path=path,
+    )
     return None, result, path
 
 
@@ -158,18 +164,22 @@ async def _run_heap(pid: str, timeout: int) -> tuple[str | None, JvmResult | Non
 async def _run_asprof(pid: str, extra_args: list[str] | None, timeout: int) -> tuple[str | None, JvmResult | None, str]:
     asprof = find_asprof()
     if not asprof:
-        return ("async-profiler not found. Download from github.com/async-profiler/async-profiler "
-                "and set $DEVTOOLS_ASPROF or put `asprof` on PATH."), None, ""
+        return (
+            (
+                "async-profiler not found. Download from github.com/async-profiler/async-profiler "
+                "and set $DEVTOOLS_ASPROF or put `asprof` on PATH."
+            ),
+            None,
+            "",
+        )
     dur = _duration(extra_args)
     # canonical `alloc` verb -> async-profiler allocation event (override with -e in extra_args)
     event = "cpu" if (extra_args and "-e" in extra_args) else "alloc"
     fd, path = tempfile.mkstemp(prefix="devtools-asprof-", suffix=".folded")
     os.close(fd)
     start = time.monotonic()
-    rc, _o, err = await _run(
-        [asprof, "-d", str(dur), "-e", event, "-o", "collapsed", "-f", path, pid], timeout)
+    rc, _o, err = await _run([asprof, "-d", str(dur), "-e", event, "-o", "collapsed", "-f", path, pid], timeout)
     if rc != 0:
         return f"asprof failed: {err.strip()}", None, path
     samples = parse_folded(pathlib.Path(path).read_text(encoding="utf-8", errors="replace"))
-    return None, _result("alloc", pid, start, stack_samples=samples,
-                         total_samples=sum(s.weight for s in samples)), path
+    return None, _result("alloc", pid, start, stack_samples=samples, total_samples=sum(s.weight for s in samples)), path

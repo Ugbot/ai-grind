@@ -17,8 +17,10 @@ async def detect() -> list[InstalledTool]:
     info = await check_cdb()
     tools = ["stacks", "analyze", "inspect"]
     if info.get("installed") == "true":
-        return [InstalledTool(suite="cdb", name=t, path=info["path"], version=info["version"], available=True)
-                for t in tools]
+        return [
+            InstalledTool(suite="cdb", name=t, path=info["path"], version=info["version"], available=True)
+            for t in tools
+        ]
     return [InstalledTool(suite="cdb", name="cdb", path=info.get("path", "cdb.exe"), version="", available=False)]
 
 

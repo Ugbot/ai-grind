@@ -1,10 +1,24 @@
-# devtools-mcp
+# ai-grind
 
-A unified performance engineering **and build** toolkit exposed as an [MCP](https://modelcontextprotocol.io/) server. Gives AI coding assistants (Claude Code, Cursor, etc.) direct access to Valgrind, LLDB, DTrace, perf, **Windows ETW (PerfView), the JVM (JFR/jstack/jmap/async-profiler), the Windows debugger (CDB), Python (py-spy/cProfile), JavaScript (V8), and the Maven, Gradle, npm, pnpm, yarn and Cargo build/package systems** through a normalized, Polars-backed interface — plus **flame graphs** rendered as both an interactive SVG and a bounded text tree, and a browser visualization terminal.
+**An AI toolkit for developers building high-performance code with an LLM in the loop.** It gives your coding assistant real performance tooling it can drive itself, a built-in project tracker so plans never get lost between sessions, and the discipline to never pollute the model's context with raw tool output. Built to work nicely with **Claude Code**; works just as well with **Cursor** or any other [MCP](https://modelcontextprotocol.io/) client.
 
-> **Design rule:** the LLM is never flooded with raw, symbol-heavy tool output. Every run is stored as a queryable [Polars](https://pola.rs/) DataFrame; tools return only bounded summaries (top-N, percentages, a `run_id`) and large artifacts (flame-graph SVGs, raw traces) are written to disk and returned as a path. Drill in on demand with `devtools_analyze` / `devtools_query`.
+## Why this exists
 
-## What it does
+Serious performance tools — VTune, Valgrind, PerfView/ETW, perf, JFR, the debuggers — demand two kinds of expertise: the command-line incantations to run them, and the experience to read what comes back. An LLM actually has both. What it doesn't have is room: one raw profiler dump is tens of thousands of symbol-heavy lines, and pasting that into a conversation destroys the context you're working in. ai-grind handles that noise. Every run is parsed into a queryable [Polars](https://pola.rs/) DataFrame; the model gets a bounded summary and a `run_id`, then **queries for exactly what it needs** instead of getting everything thrown back at once.
+
+The same problem applies to the plan itself. Plans made in chat evaporate between sessions — pause and resume, and the knowledge is gone. So the server carries a **built-in project tracker** (a mini-JIRA in one SQLite file): the LLM writes its plan directly into it — epics, stories, punch-card subtasks, acceptance criteria tied to real tests, dependencies that resolve into "what should happen next" — and that state persists on disk across restarts, sessions, and tools.
+
+> This is a working version, not a final one — it's the toolkit I'm using to build the next one.
+
+## The pieces
+
+1. **devtools-mcp** — the MCP server: 16 backends spanning profilers (VTune, ETW/PerfView, perf, DTrace, Valgrind, JFR/async-profiler, py-spy, V8), debuggers (LLDB, CDB), and build/package systems (Maven, Gradle, npm, pnpm, yarn, Cargo), all behind one normalized vocabulary, with flame graphs and a local browser dashboard for the human in the loop.
+2. **The tracker** — persistent project management driven entirely through MCP tools: tasks with `PROJ-123` keys, hierarchy, status workflow with an acceptance-test close gate, commit linking, auto-tagging, GitHub issue sync, and a dependency resolver.
+3. **The skills library** (`skills/`) — ~50 skills that teach the assistant *how* to use all of this and more: driving each profiler and reading its output, interpreting flame graphs, the tracker workflows, making PowerShell behave on Windows (5.1 vs 7), uv for Python, and project-specific drivers.
+
+> **Design rule (everywhere):** the LLM is never flooded with raw, symbol-heavy tool output. Every run is stored as a queryable Polars DataFrame; tools return only bounded summaries (top-N, percentages, a `run_id`) and large artifacts (flame-graph SVGs, raw traces) are written to disk and returned as a path. Drill in on demand with `devtools_analyze` / `devtools_query`.
+
+## The MCP tools
 
 Instead of dozens of individual tool wrappers, devtools-mcp provides **a few categories of tools** that work uniformly across all backends:
 
@@ -16,6 +30,7 @@ Instead of dozens of individual tool wrappers, devtools-mcp provides **a few cat
 | **Flame** | `devtools_flamegraph` | Render any sampling run as an SVG flame graph + bounded text tree |
 | **Visualize** | `devtools_dashboard` | Launch a local browser "visualization terminal" for all runs |
 | **Debug** | `debug_start`, `debug`, `debug_inspect`, `debug_stop` | Interactive LLDB sessions with structured snapshots |
+| **Track** | `tracker_project`, `tracker_task`, `tracker_status`, `tracker_criteria`, `tracker_tag`, `tracker_commits`, `tracker_deps`, `tracker_issue`, `tracker_query` | Persistent plans, tasks, acceptance gates, and "what's next" |
 
 ### Supported backends
 
@@ -26,6 +41,7 @@ Instead of dozens of individual tool wrappers, devtools-mcp provides **a few cat
 | **DTrace** | cpu, syscall, trace | macOS, Solaris |
 | **perf** | cpu, stat, annotate | Linux |
 | **ETW** (PerfView) | cpu (CPU hotspots Exc%/Inc% + flame graph) | Windows |
+| **VTune** (Intel) | cpu (hotspots), threads (threading), alloc (memory-consumption), memory (memory-access), uarch (top-down), snapshot | Windows, Linux (oneAPI) |
 | **JVM** | cpu (JFR), alloc (async-profiler), threads (jstack), heap (jmap/jcmd) | any (JDK) |
 | **CDB** | stacks (`~*k`), analyze (`!analyze -v`), inspect — batch-mode Windows debugger | Windows |
 | **Python** | cpu (py-spy sampling), threads (py-spy dump), cprofile (deterministic) | any (cProfile stdlib; py-spy = `pip install py-spy`) |
@@ -61,6 +77,43 @@ script`, macOS dtrace `ustack`, Windows ETW), the JVM, **Python** (py-spy), and
 - **interactive flame graph** — click any frame to zoom into its subtree (re-roots), hover for name + %. Pure server-rendered SVG, no JS framework or CDN.
 
 It reads the live workspace, so runs appear as you create them. This is also the seam where agentic/visual tooling can be added later.
+
+### Progress tracker (mini-JIRA)
+
+A persistent, SQLite-backed task tracker built into the server, so the LLM can
+put its plan **directly into durable storage** instead of leaving it in chat.
+Pause a session, resume tomorrow, switch from Claude Code to Cursor — the
+epics, subtasks, acceptance criteria, and "what's next" are all still there.
+Nine `tracker_*` tools over one global database (`~/.devtools-mcp/tracker.db`,
+override with `DEVTOOLS_MCP_TRACKER_DB`):
+
+| Tool | Role |
+|---|---|
+| `tracker_project` | Projects: key namespaces (`GRIND-123`), close policy (advisory/strict) |
+| `tracker_task` | Tasks: create / get / update / move / `breakdown` (punch-card subtasks), 6-level hierarchy |
+| `tracker_status` | Status workflow + the acceptance close gate |
+| `tracker_criteria` | Acceptance criteria linked to tests (`file::test_name`), pass/fail recording |
+| `tracker_tag` | Tags + auto-tag rules (kind / regex / parent-kind, applied at creation) |
+| `tracker_commits` | Commit links: manual or `git log` scan for task keys in messages |
+| `tracker_deps` | Task dependencies + execution-plan resolver: what's ready now, what's blocked by what, parallelizable order |
+| `tracker_issue` | GitHub issue bridge (create from task with criteria checklist, sync drift, close); provider-abstracted, `GITHUB_TOKEN`/`GH_TOKEN` |
+| `tracker_query` | Bounded reporting: `tasks` / `tree` / `rollup` / `criteria` / `commits` / `tags` views |
+
+Same no-token-flood contract as the profiling tools: every response is bounded
+markdown; the data lives in SQLite and is paged through Polars-backed views.
+Workflow skills live in `skills/authored/skills/tracker/`.
+
+### Skills library
+
+`skills/` is the other half of the toolkit: the knowledge that makes the tools
+usable. Around 50 Claude Code skills covering how to drive each profiler and
+*read* its output (etw-profiling, vtune-profiling, flamegraph-reading, jvm /
+python / node profiling), the tracker workflows (tracker-usage, -breakdown,
+-acceptance, -github-sync), build tooling, a full set of
+PowerShell-on-Windows survival guides (5.1 vs 7 idioms, errors, native
+commands, non-interactive automation), and uv for Python projects. Skills are
+managed as a library — harvested + hand-authored sources merged into a
+loadable mirror by `skills/sync.py` — see `skills/README.md`.
 
 ## Install
 
@@ -98,9 +151,13 @@ Then in Claude Code:
 > Run memcheck on ./my_binary and show me the top memory leaks
 
 > Start a debug session on ./crash_repro, set a breakpoint at main, and inspect variables
+
+> Profile ./app with VTune hotspots and show me a flame graph
+
+> Plan this feature in the tracker: epic, stories, subtasks with dependencies — then tell me what to do first
 ```
 
-### As an MCP server (generic)
+### As an MCP server (Cursor and other clients)
 
 The server speaks three transports — pick with `--transport` (or env vars):
 
@@ -181,7 +238,7 @@ Claude Code ←→ MCP Protocol ←→ devtools-mcp server
 ## Testing
 
 ```bash
-# Run full test suite (295 tests)
+# Run full test suite (409 tests)
 uv run pytest tests/ -v
 
 # Tests cover:
@@ -192,6 +249,9 @@ uv run pytest tests/ -v
 # - MCP server endpoints (via in-memory client/server session)
 # - Workspace, registry, index, and formatter internals
 # - Cross-run correlation
+# - The progress tracker (schema/migrations, hierarchy + close gate,
+#   tag rules, git-scan against real temp repos, GitHub via MockTransport,
+#   end-to-end tracker_* tools)
 ```
 
 Windows/JVM/CDB backends are tested with **synthetic** tool output (PerfView CSV,
@@ -217,7 +277,17 @@ src/devtools_mcp/
 │   ├── search_tools.py    # search, correlate
 │   ├── flame_tools.py     # devtools_flamegraph
 │   ├── viz_tools.py       # devtools_dashboard
+│   ├── tracker_tools.py   # tracker_* — the progress tracker (mini-JIRA)
 │   └── debug_tools.py     # start, debug, inspect, stop
+├── tracker/               # Tracker domain layer (SQLite, WAL, migrations)
+│   ├── schema.py db.py    # versioned DDL + connection/transactions
+│   ├── tasks.py           # projects, PROJ-123 keys, hierarchy, close gate
+│   ├── criteria.py        # acceptance criteria <-> tests, gate evaluation
+│   ├── tags.py            # tags + auto-tag rules engine
+│   ├── commits.py         # manual links + git-log key scanning
+│   ├── issues.py          # task -> external issue lifecycle
+│   ├── frames.py          # Polars views (tasks/tree/rollup/...)
+│   └── providers/         # IssueProvider ABC, GitHub REST, GitLab stub
 ├── viz/                   # Browser visualization terminal (stdlib HTTP, dark UI)
 ├── flamegraph/            # Shared engine: fold -> tree -> SVG + text
 │   ├── fold.py            # Brendan-Gregg folded-stack I/O
@@ -231,6 +301,7 @@ src/devtools_mcp/
 ├── dtrace/                # DTrace backend (3 tools)
 ├── perf/                  # perf backend (3 tools)
 ├── etw/                   # Windows ETW backend (PerfView) — CPU hotspots + stacks
+├── vtune/                 # Intel VTune backend — hotspots/threading/memory/uarch + flame graph
 ├── jvm/                   # JVM backend — JFR, threads, heap, async-profiler
 ├── cdb/                   # Windows debugger backend (batch CDB)
 ├── py/                    # Python backend — py-spy, thread dumps, cProfile

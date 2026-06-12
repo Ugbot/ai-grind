@@ -122,15 +122,17 @@ def parse_thread_list(text: str) -> list[LldbThread]:
                     name=match.group(2),
                     queue=match.group(3),
                     stop_reason=match.group(6),
-                    frames=[
-                        LldbStackFrame(
-                            address=match.group(4) or "",
-                            module=module,
-                            function=function,
-                        )
-                    ]
-                    if match.group(4)
-                    else [],
+                    frames=(
+                        [
+                            LldbStackFrame(
+                                address=match.group(4) or "",
+                                module=module,
+                                function=function,
+                            )
+                        ]
+                        if match.group(4)
+                        else []
+                    ),
                 )
             )
 

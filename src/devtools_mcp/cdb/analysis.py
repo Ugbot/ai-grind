@@ -27,9 +27,16 @@ def cdb_frames_df(snapshot: CdbSnapshot) -> pl.DataFrame:
             )
     if not rows:
         return pl.DataFrame(
-            schema={"thread": pl.Int64, "tid": pl.Utf8, "frame_index": pl.Int64,
-                    "function": pl.Utf8, "module": pl.Utf8, "file": pl.Utf8,
-                    "line": pl.Int64, "value": pl.Float64}
+            schema={
+                "thread": pl.Int64,
+                "tid": pl.Utf8,
+                "frame_index": pl.Int64,
+                "function": pl.Utf8,
+                "module": pl.Utf8,
+                "file": pl.Utf8,
+                "line": pl.Int64,
+                "value": pl.Float64,
+            }
         )
     return pl.DataFrame(rows)
 

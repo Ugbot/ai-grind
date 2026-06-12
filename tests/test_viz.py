@@ -16,10 +16,19 @@ from devtools_mcp.workspace import AppContext
 
 class TestRender:
     def test_dashboard_escapes_and_lists(self):
-        html = render.dashboard([
-            {"run_id": "abc12345", "suite": "dtrace", "tool": "profile",
-             "binary": "<script>", "when": "12:00:00", "exit": 0, "has_stacks": True},
-        ])
+        html = render.dashboard(
+            [
+                {
+                    "run_id": "abc12345",
+                    "suite": "dtrace",
+                    "tool": "profile",
+                    "binary": "<script>",
+                    "when": "12:00:00",
+                    "exit": 0,
+                    "has_stacks": True,
+                },
+            ]
+        )
         assert "abc12345" in html
         assert "<script>" not in html.split("<style>")[1]  # body-escaped
         assert "/flame/abc12345" in html
@@ -41,13 +50,18 @@ def served():
     app = AppContext()
     ws = app.create_workspace("default")
     app.default_workspace_id = ws.workspace_id
-    ws.store_run(DTraceResult(
-        run_id="abc12345", suite="dtrace", tool="cpu", binary="./app",
-        stacks=[
-            DTraceStackTrace(frames=["libc`read", "app`process", "app`main"], count=120),
-            DTraceStackTrace(frames=["app`hash", "app`process", "app`main"], count=40),
-        ],
-    ))
+    ws.store_run(
+        DTraceResult(
+            run_id="abc12345",
+            suite="dtrace",
+            tool="cpu",
+            binary="./app",
+            stacks=[
+                DTraceStackTrace(frames=["libc`read", "app`process", "app`main"], count=120),
+                DTraceStackTrace(frames=["app`hash", "app`process", "app`main"], count=40),
+            ],
+        )
+    )
     srv = VizServer(app)
     url = srv.start(port=0)
     yield url

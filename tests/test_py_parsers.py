@@ -14,6 +14,7 @@ from devtools_mcp.py.parsers import parse_pstats, parse_pyspy_dump
 
 def _make_prof() -> str:
     """Generate a real cProfile .prof so we parse the actual binary format."""
+
     def inner(n):
         return sum(i * i for i in range(n))
 
@@ -46,8 +47,7 @@ class TestPstats:
     def test_funcstats_df(self):
         path = _make_prof()
         try:
-            df = py_funcstats_df(PyResult(run_id="r", tool="cprofile", binary="x.py",
-                                          func_stats=parse_pstats(path)))
+            df = py_funcstats_df(PyResult(run_id="r", tool="cprofile", binary="x.py", func_stats=parse_pstats(path)))
             assert "function" in df.columns and "value" in df.columns
             assert df.height > 0
         finally:
@@ -55,7 +55,7 @@ class TestPstats:
 
 
 class TestPyspyDump:
-    SAMPLE = '''\
+    SAMPLE = """\
 Process 4242: python app.py
 Python v3.12.0 (/usr/bin/python3.12)
 
@@ -66,7 +66,7 @@ Thread 4242 (active): "MainThread"
 Thread 4243 (idle): "worker-1"
     wait (queue.py:171)
     run (threading.py:982)
-'''
+"""
 
     def test_parses_threads(self):
         threads = parse_pyspy_dump(self.SAMPLE)
@@ -77,8 +77,7 @@ Thread 4243 (idle): "worker-1"
         assert threads[1].state == "idle"
 
     def test_threads_df(self):
-        df = py_threads_df(PyResult(run_id="r", tool="threads", binary="4242",
-                                    threads=parse_pyspy_dump(self.SAMPLE)))
+        df = py_threads_df(PyResult(run_id="r", tool="threads", binary="4242", threads=parse_pyspy_dump(self.SAMPLE)))
         assert df.height == 2
         assert "state" in df.columns
 

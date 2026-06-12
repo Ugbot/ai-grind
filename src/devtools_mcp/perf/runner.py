@@ -166,8 +166,12 @@ async def _run_perf_record(
         # Also collapse full call stacks (for flame graphs) via `perf script`.
         try:
             script_proc = await asyncio.create_subprocess_exec(
-                "perf", "script", "-i", perf_data,
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                "perf",
+                "script",
+                "-i",
+                perf_data,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
             script_out, _ = await asyncio.wait_for(script_proc.communicate(), timeout=60)
             result.stack_samples = parse_perf_script(script_out.decode("utf-8", "replace"))

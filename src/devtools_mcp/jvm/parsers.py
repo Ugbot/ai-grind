@@ -103,8 +103,10 @@ def parse_class_histogram(text: str) -> tuple[list[JvmHeapClass], int]:
             continue
         classes.append(
             JvmHeapClass(
-                rank=int(m.group(1)), instances=int(m.group(2)),
-                bytes=int(m.group(3)), class_name=m.group(4),
+                rank=int(m.group(1)),
+                instances=int(m.group(2)),
+                bytes=int(m.group(3)),
+                class_name=m.group(4),
             )
         )
     return classes, total_bytes

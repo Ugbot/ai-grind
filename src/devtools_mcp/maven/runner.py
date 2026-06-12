@@ -32,7 +32,8 @@ async def check_maven() -> dict[str, str]:
     if mvn:
         try:
             proc = await asyncio.create_subprocess_exec(
-                mvn, "-v", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+                mvn, "-v", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+            )
             out, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
             version = out.decode("utf-8", "replace").splitlines()[0] if out else ""
         except (TimeoutError, OSError, IndexError):
@@ -56,8 +57,12 @@ async def run_maven(
     if not mvn:
         return "Maven not found. Install it (e.g. `choco install maven`) or add an mvnw wrapper.", None, ""
 
-    goals = {"build": args or ["package"], "test": ["test"],
-             "deps": ["dependency:tree"], "sync": ["dependency:resolve"]}.get(tool)
+    goals = {
+        "build": args or ["package"],
+        "test": ["test"],
+        "deps": ["dependency:tree"],
+        "sync": ["dependency:resolve"],
+    }.get(tool)
     if goals is None:
         return f"Unknown maven tool: {tool} (build|test|deps|sync)", None, ""
 
@@ -72,9 +77,17 @@ async def run_maven(
     deps = parse_maven_tree(text) if tool == "deps" else (parse_maven_resolve(text) if tool == "sync" else [])
     tests = parse_junit_dir(project, _JUNIT_DIRS) if tool in ("build", "test") else []
 
-    base = create_run_base(suite="maven", tool=tool, binary=project, args=goals,
-                           duration_seconds=time.monotonic() - start, exit_code=rc)
-    result = BuildResult(**base.model_dump(), command=" ".join(["mvn", *goals]),
-                         success=success, dependencies=deps, tests=tests, modules=modules,
-                         failures=failures, raw_output=tail(text))
+    base = create_run_base(
+        suite="maven", tool=tool, binary=project, args=goals, duration_seconds=time.monotonic() - start, exit_code=rc
+    )
+    result = BuildResult(
+        **base.model_dump(),
+        command=" ".join(["mvn", *goals]),
+        success=success,
+        dependencies=deps,
+        tests=tests,
+        modules=modules,
+        failures=failures,
+        raw_output=tail(text),
+    )
     return None, result, raw_path
