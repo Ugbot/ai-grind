@@ -8,6 +8,7 @@ paged via tracker_query.
 
 from __future__ import annotations
 
+import anyio
 from mcp.server.fastmcp import Context
 
 from devtools_mcp.formatters import format_dataframe
@@ -392,7 +393,14 @@ async def tracker_commits(
         if action == "scan":
             if not repo:
                 return "scan needs repo (path to a git repository)"
-            counters = commits_mod.scan_repo(db, repo, max_commits)
+            if not (1 <= max_commits <= commits_mod.SCAN_MAX_COMMITS):
+                return f"max_commits must be 1..{commits_mod.SCAN_MAX_COMMITS}, got {max_commits}"
+            # `git log` is a blocking subprocess (up to GIT_TIMEOUT_SECONDS); run
+            # it off the event loop so the server stays responsive during a scan.
+            # DB linking stays on the loop thread — the sqlite connection has
+            # thread affinity and link_entries is a single fast transaction.
+            entries = await anyio.to_thread.run_sync(commits_mod._git_log, repo, max_commits)
+            counters = commits_mod.link_entries(db, repo, entries)
             return (
                 f"Scanned {counters['scanned']} commits in `{repo}`: "
                 f"{counters['matched']} key mentions, {counters['linked']} new links, "
@@ -544,6 +552,52 @@ async def tracker_issue(
     except TrackerError as exc:
         return f"Error: {exc}"
     except NotImplementedError as exc:
+        return f"Error: {exc}"
+
+
+@mcp.tool()
+async def tracker_sync(
+    ctx: Context,
+    action: str,
+    url: str | None = None,
+) -> str:
+    """Local-first collaboration: sync this tracker replica with a peer.
+
+    Every replica keeps a CRDT op-log (hybrid logical clocks, last-writer-wins
+    rows); merge is idempotent and converges regardless of sync order. A peer
+    is any machine running `devtools_dashboard` — its viz server exposes the
+    sync API at /api/crdt/.
+
+    Actions:
+        status — this replica's site id, op count, watermark, known peers
+        sync   — url (e.g. 'http://other-box:8765'): full bidirectional
+                 exchange — pull the peer's ops, merge, push ours
+    """
+    from devtools_mcp.tracker import crdt
+    from devtools_mcp.tracker import sync as sync_mod
+
+    db = _tracker(ctx)
+    try:
+        if action == "status":
+            info = crdt.status(db)
+            peers = "\n".join(f"- `{p['url']}` last synced {p['last_synced']}" for p in info["peers"]) or "- none yet"
+            return (
+                f"**Tracker replica** site `{info['site_id'][:12]}…`\n"
+                f"ops in log: {info['ops']} | watermark: `{info['latest_hlc'] or '—'}`\n"
+                f"**Peers:**\n{peers}"
+            )
+        if action == "sync":
+            if not url:
+                return "sync needs url (a peer's dashboard, e.g. http://host:8765)"
+            counters = sync_mod.sync_once(db, url)
+            return (
+                f"Synced with `{url}` (site `{counters['peer_site'][:12]}…`): "
+                f"pulled {counters['pulled_new']} new ops ({counters['pulled_applied']} applied, "
+                f"{counters['pulled_deferred']} deferred), pushed {counters['pushed']} "
+                f"({counters['pushed_new_on_peer']} new on peer)"
+            )
+        return f"Unknown action {action!r}. One of: status, sync"
+    except TrackerError as exc:
         return f"Error: {exc}"
 
 

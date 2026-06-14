@@ -33,6 +33,35 @@ from devtools_mcp.registry import ToolRegistry
 from devtools_mcp.workspace import AppContext, Workspace
 
 
+def _maybe_start_dashboard(ctx: AppContext) -> None:
+    """Auto-start the visualization terminal when configured (service mode).
+
+    DEVTOOLS_MCP_DASHBOARD=1 (set by `--dashboard`, or defaulted on for network
+    transports) brings the dashboard up with the server so a long-lived shared
+    instance is always visible at DEVTOOLS_MCP_DASHBOARD_PORT (default 8765).
+    Failure to bind is reported on stderr, never fatal — the MCP server is the
+    primary service.
+    """
+    import os
+    import sys
+
+    if os.environ.get("DEVTOOLS_MCP_DASHBOARD", "0") != "1":
+        return
+    from devtools_mcp.viz.server import VizServer
+
+    port = int(os.environ.get("DEVTOOLS_MCP_DASHBOARD_PORT", "8765"))
+    assert 0 <= port <= 65535, f"dashboard port out of range: {port}"
+    srv = VizServer(ctx)
+    try:
+        url = srv.start(port=port)
+    except OSError as exc:
+        print(f"devtools-mcp: dashboard failed to bind port {port}: {exc}", file=sys.stderr)
+        return
+    ctx.viz_server = srv
+    assert ctx.viz_server.running, "dashboard reported started but is not running"
+    print(f"devtools-mcp: dashboard at {url} (tracker at {url}/tracker)", file=sys.stderr)
+
+
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     """Create default workspace, detect tools on startup, clean up on shutdown."""
@@ -43,6 +72,7 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     # Auto-detect installed tools
     ctx.registry = ToolRegistry()
     await ctx.registry.detect_all()
+    _maybe_start_dashboard(ctx)
 
     try:
         yield ctx
@@ -67,8 +97,10 @@ mcp = FastMCP(
         "visualization terminal. LLDB debug_* tools provide interactive sessions. "
         "tracker_* tools: a persistent SQLite-backed task tracker (mini-JIRA) — projects, "
         "hierarchical tasks with PROJ-123 keys, acceptance criteria linked to tests, commit "
-        "links, auto-tag rules, GitHub issue sync; query it via tracker_query (bounded views) "
-        "and ask tracker_deps(action='resolve') what needs to happen next (ready/blocked/order)."
+        "links, auto-tag rules, GitHub issue sync; query it via tracker_query (bounded views), "
+        "ask tracker_deps(action='resolve') what needs to happen next (ready/blocked/order), "
+        "and replicate it across machines with tracker_sync (CRDT local-first; peers are other "
+        "dashboards). The dashboard also renders the tracker as card boards at /tracker."
     ),
 )
 
@@ -118,9 +150,27 @@ def main() -> None:
     )
     ap.add_argument("--host", default=os.environ.get("DEVTOOLS_MCP_HOST", "127.0.0.1"))
     ap.add_argument("--port", type=int, default=int(os.environ.get("DEVTOOLS_MCP_PORT", "8000")))
+    ap.add_argument(
+        "--dashboard",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Also serve the browser dashboard (default: on for http/sse, off for stdio).",
+    )
+    ap.add_argument(
+        "--dashboard-port",
+        type=int,
+        default=int(os.environ.get("DEVTOOLS_MCP_DASHBOARD_PORT", "8765")),
+        help="Dashboard port (default 8765).",
+    )
     args = ap.parse_args()
 
     transport = "streamable-http" if args.transport in ("http", "streamable-http") else args.transport
+    # Service mode: a long-lived shared instance should always be visible, so the
+    # dashboard defaults on for network transports (override with --no-dashboard).
+    dashboard = args.dashboard if args.dashboard is not None else transport != "stdio"
+    os.environ["DEVTOOLS_MCP_DASHBOARD"] = "1" if dashboard else "0"
+    os.environ["DEVTOOLS_MCP_DASHBOARD_PORT"] = str(args.dashboard_port)
+
     if transport != "stdio":
         # Never write to stdout in stdio mode (it is the transport); for network
         # transports, announce on stderr so it doesn't corrupt anything.

@@ -47,6 +47,7 @@ class TestRegistration:
             "tracker_deps",
             "tracker_issue",
             "tracker_query",
+            "tracker_sync",
         }
         assert expected <= names
 

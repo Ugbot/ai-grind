@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import uuid
 
 from devtools_mcp.tracker import criteria as criteria_mod
 from devtools_mcp.tracker import tags as tags_mod
@@ -159,10 +160,11 @@ def create_task(
         key = f"{project.key}-{seq}"
         now = utc_now_iso()
         conn.execute(
-            "INSERT INTO tasks (project_id, key, parent_id, depth, kind, title, description, "
+            "INSERT INTO tasks (uid, project_id, key, parent_id, depth, kind, title, description, "
             "priority, sort_order, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
+                uuid.uuid4().hex,  # global identity for CRDT sync
                 project.id,
                 key,
                 parent.id if parent else None,

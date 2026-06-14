@@ -39,6 +39,7 @@ class Project(BaseModel):
 
 class Task(BaseModel):
     id: int
+    uid: str = ""  # global identity for CRDT sync (schema v3)
     project_id: int
     key: str
     parent_id: int | None = None
@@ -64,6 +65,7 @@ class Task(BaseModel):
 
 class Criterion(BaseModel):
     id: int
+    uid: str = ""  # global identity for CRDT sync (schema v3)
     task_id: int
     text: str
     test_ref: str | None = None

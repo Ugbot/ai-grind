@@ -17,7 +17,7 @@ global SQLite database (`~/.devtools-mcp/tracker.db`, override with the
 profiling tools, **responses are always bounded** — full data is queried in
 pages via `tracker_query`, never dumped.
 
-## The nine tools
+## The ten tools
 
 | Tool | Verbs (`action=`) | Role |
 |---|---|---|
@@ -30,6 +30,7 @@ pages via `tracker_query`, never dumped.
 | `tracker_deps` | add, remove, list, resolve | Dependencies + "what needs to happen" |
 | `tracker_issue` | create, sync, close | GitHub (et al.) issue bridge |
 | `tracker_query` | — (`view=`) | Bounded reporting |
+| `tracker_sync` | status, sync | Local-first CRDT replication between machines |
 
 ## Bootstrap
 
@@ -76,6 +77,18 @@ plus everything it transitively depends on. Declare edges as you plan:
 `tracker_deps(action="add", key="GRIND-13", depends_on="GRIND-12")` — cycles
 are rejected, and closing a task reports which dependents just became
 unblocked.
+
+## Seeing it and sharing it
+
+- **Cards in the browser**: `devtools_dashboard(action="start")`, then open
+  `/tracker` — project cards with progress bars, a per-project board (status
+  columns + the "what needs to happen" plan), and task detail pages.
+- **Multiple machines**: the tracker is a CRDT replica. `tracker_sync(
+  action="sync", url="http://other-box:8765")` exchanges ops with another
+  machine's dashboard and converges (LWW, idempotent, offline-friendly —
+  concurrent PROJ-N allocations are re-keyed deterministically, nothing is
+  lost). `tracker_sync(action="status")` shows this replica's site id and
+  known peers.
 
 ## Daily loop
 

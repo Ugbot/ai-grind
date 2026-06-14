@@ -84,7 +84,7 @@ A persistent, SQLite-backed task tracker built into the server, so the LLM can
 put its plan **directly into durable storage** instead of leaving it in chat.
 Pause a session, resume tomorrow, switch from Claude Code to Cursor — the
 epics, subtasks, acceptance criteria, and "what's next" are all still there.
-Nine `tracker_*` tools over one global database (`~/.devtools-mcp/tracker.db`,
+Ten `tracker_*` tools over one global database (`~/.devtools-mcp/tracker.db`,
 override with `DEVTOOLS_MCP_TRACKER_DB`):
 
 | Tool | Role |
@@ -94,14 +94,36 @@ override with `DEVTOOLS_MCP_TRACKER_DB`):
 | `tracker_status` | Status workflow + the acceptance close gate |
 | `tracker_criteria` | Acceptance criteria linked to tests (`file::test_name`), pass/fail recording |
 | `tracker_tag` | Tags + auto-tag rules (kind / regex / parent-kind, applied at creation) |
-| `tracker_commits` | Commit links: manual or `git log` scan for task keys in messages |
+| `tracker_commits` | Commit links: manual or `git log` scan for task keys in messages (scan runs the subprocess off the event loop and batches links in one transaction — never blocks the server) |
 | `tracker_deps` | Task dependencies + execution-plan resolver: what's ready now, what's blocked by what, parallelizable order |
 | `tracker_issue` | GitHub issue bridge (create from task with criteria checklist, sync drift, close); provider-abstracted, `GITHUB_TOKEN`/`GH_TOKEN` |
 | `tracker_query` | Bounded reporting: `tasks` / `tree` / `rollup` / `criteria` / `commits` / `tags` views |
+| `tracker_sync` | Local-first collaboration: CRDT sync with another replica (see below) |
 
 Same no-token-flood contract as the profiling tools: every response is bounded
-markdown; the data lives in SQLite and is paged through Polars-backed views.
-Workflow skills live in `skills/authored/skills/tracker/`.
+markdown; the data lives in SQLite (WAL, indexed for the tag/kind/rollup and
+reverse-dependency probes) and is paged through Polars-backed views.
+Workflow skills live in `skills/authored/skills/tracker/`. The tracker also
+renders as **cards in the dashboard** — project overview, a per-project board
+(status columns + the execution plan), and task detail pages at `/tracker`.
+
+### Local-first collaboration (CRDT)
+
+The tracker is a **replicated, local-first store**, not just a local file.
+Every replica has a site id and a hybrid logical clock; SQLite triggers
+capture every mutation into an op-log with site-independent payloads (rows
+carry global `uid`s, references use uids — never local rowids). Merging is
+last-writer-wins per row, idempotent, and converges regardless of sync order
+or topology — ops propagate transitively, so two laptops that only ever talk
+to a third machine still end up identical. Concurrent allocation of the same
+human key (both sides mint `PROJ-7` offline) is resolved by deterministic
+re-keying, so no replica ever loses a task.
+
+Syncing is one tool call: `tracker_sync(action="sync", url="http://other-box:8765")`
+— the peer is any machine running `devtools_dashboard`, which serves the sync
+API at `/api/crdt/`. Work fully offline, sync when you meet the network again.
+(v1 is row-level LWW with full-exchange transport; field-level merge and
+incremental vector-clock exchange are the documented upgrade path.)
 
 ### Skills library
 
@@ -149,17 +171,55 @@ python skills/sync.py --target plugin   # rebuild plugin/{skills,commands,agents
 
 ## Usage
 
-### As an MCP server (Claude Code)
+### As a shared local service (recommended)
 
-If you didn't install the plugin (above), add it to your project's `.mcp.json`
-manually, pointing `--directory` at your clone:
+Run **one instance** on the machine; every project — and every client — talks
+to it over HTTP. The dashboard comes up with it, so the UI is always there:
+
+```powershell
+.\scripts\devtools-service.ps1 start     # MCP at http://127.0.0.1:8000/mcp, dashboard at :8765
+.\scripts\devtools-service.ps1 status    # is it up?
+.\scripts\devtools-service.ps1 install   # also start automatically at login
+```
+
+(Equivalent manual command: `uv run devtools-mcp --transport http --port 8000`
+— network transports auto-start the dashboard; `--no-dashboard` to opt out.)
+
+Then point clients at the URL — **once, at user scope**, so all projects get it:
+
+```bash
+# Claude Code (all projects):
+claude mcp add --transport http devtools-mcp http://127.0.0.1:8000/mcp --scope user
+```
+
+Or per project — `.mcp.json` (Claude Code) and `.cursor/mcp.json` (Cursor),
+both already in this repo:
+
+```json
+// .mcp.json (Claude Code)
+{ "mcpServers": { "devtools-mcp": { "type": "http", "url": "http://127.0.0.1:8000/mcp" } } }
+
+// .cursor/mcp.json (Cursor)
+{ "mcpServers": { "devtools-mcp": { "type": "streamable-http", "url": "http://127.0.0.1:8000/mcp" } } }
+```
+
+Why this shape: one process owns the tracker DB and the run workspace, so every
+project's profiling runs and tasks land in the same dashboard; restart the
+service and Claude Code reconnects automatically (exponential backoff). If the
+service is down, the MCP server just shows as unavailable — `/mcp` in Claude
+Code retries it once you've started the service.
+
+### As a per-project stdio server (alternative)
+
+The classic spawn-per-session model still works (this is also what the plugin
+install above wires up automatically) — in `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "devtools-mcp": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/ai-grind", "devtools-mcp"]
+      "args": ["run", "--directory", "C:\\path\\to\\ai-grind", "devtools-mcp"]
     }
   }
 }
@@ -260,7 +320,7 @@ Claude Code ←→ MCP Protocol ←→ devtools-mcp server
 ## Testing
 
 ```bash
-# Run full test suite (409 tests)
+# Run full test suite (437 tests)
 uv run pytest tests/ -v
 
 # Tests cover:

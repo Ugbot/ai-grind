@@ -8,6 +8,7 @@ The close gate reports both lists; policy enforcement lives in tasks.set_status.
 from __future__ import annotations
 
 import sqlite3
+import uuid
 
 from devtools_mcp.tracker.db import TrackerDB, TrackerError, utc_now_iso
 from devtools_mcp.tracker.models import Criterion
@@ -26,8 +27,8 @@ def add_criterion(db: TrackerDB, task_id: int, text: str, test_ref: str | None =
         if count >= MAX_CRITERIA_PER_TASK:
             raise TrackerError(f"Criteria limit reached ({MAX_CRITERIA_PER_TASK}) for task")
         cursor = conn.execute(
-            "INSERT INTO acceptance_criteria (task_id, text, test_ref, created_at) " "VALUES (?, ?, ?, ?)",
-            (task_id, text.strip(), test_ref, utc_now_iso()),
+            "INSERT INTO acceptance_criteria (uid, task_id, text, test_ref, created_at) " "VALUES (?, ?, ?, ?, ?)",
+            (uuid.uuid4().hex, task_id, text.strip(), test_ref, utc_now_iso()),
         )
         new_id = cursor.lastrowid
         assert new_id is not None and new_id > 0, "insert returned no rowid"

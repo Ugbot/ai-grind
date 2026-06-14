@@ -72,6 +72,32 @@ def _get(url: str) -> str:
     return urllib.request.urlopen(url, timeout=5).read().decode()
 
 
+class TestServiceMode:
+    async def test_lifespan_autostarts_dashboard(self, monkeypatch, tmp_path):
+        from devtools_mcp.server import app_lifespan
+        from devtools_mcp.server import mcp as mcp_app
+        from devtools_mcp.tracker.db import ENV_DB_PATH
+
+        monkeypatch.setenv(ENV_DB_PATH, str(tmp_path / "tracker.db"))
+        monkeypatch.setenv("DEVTOOLS_MCP_DASHBOARD", "1")
+        monkeypatch.setenv("DEVTOOLS_MCP_DASHBOARD_PORT", "0")
+        async with app_lifespan(mcp_app) as ctx:
+            assert ctx.viz_server is not None and ctx.viz_server.running
+            assert _get(ctx.viz_server.url + "/health") == "ok"
+            stopped_url = ctx.viz_server.url
+        # lifespan exit shuts the dashboard down with the server
+        with pytest.raises(OSError):
+            _get(stopped_url + "/health")
+
+    async def test_lifespan_without_flag_stays_dark(self, monkeypatch):
+        from devtools_mcp.server import app_lifespan
+        from devtools_mcp.server import mcp as mcp_app
+
+        monkeypatch.delenv("DEVTOOLS_MCP_DASHBOARD", raising=False)
+        async with app_lifespan(mcp_app) as ctx:
+            assert ctx.viz_server is None
+
+
 class TestServer:
     def test_dashboard_route(self, served):
         body = _get(served + "/")

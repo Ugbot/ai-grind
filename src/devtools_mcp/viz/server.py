@@ -1,11 +1,18 @@
 """Threaded stdlib HTTP server that turns the browser into a visualization
 terminal over the live workspace. Zero third-party deps, no asyncio — safe to run
 alongside the stdio MCP server in a background thread.
+
+Routes: runs (/, /run, /flame, /raw), the tracker board (/tracker...), and the
+CRDT sync API (/api/crdt/...) other replicas pull from / push to. Tracker
+requests open their own short-lived SQLite connection (sqlite3 connections are
+thread-bound; WAL makes the concurrent access safe).
 """
 
 from __future__ import annotations
 
+import json
 import threading
+from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
@@ -14,6 +21,18 @@ from devtools_mcp.registry import get_backend
 from devtools_mcp.viz import render
 
 _RAW_MAX = 200_000
+_PUSH_MAX_BYTES = 50_000_000
+
+
+def _with_tracker(fn: Callable):
+    """Run fn(db) against a request-scoped tracker connection."""
+    from devtools_mcp.tracker.db import open_tracker
+
+    db = open_tracker()
+    try:
+        return fn(db)
+    finally:
+        db.close()
 
 
 def _find_run(app: object, run_id: str):
@@ -76,6 +95,14 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _send_json(self, obj: object, status: int = 200) -> None:
+        data = json.dumps(obj).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_GET(self) -> None:  # noqa: N802 (stdlib API)
         app = self.server.app_ctx  # type: ignore[attr-defined]
         parsed = urlparse(self.path)
@@ -87,10 +114,65 @@ class _Handler(BaseHTTPRequestHandler):
                 self._send("ok")
             elif parts[0] in ("run", "flame", "raw") and len(parts) == 2:
                 self._route_run(app, parts[0], unquote(parts[1]), parse_qs(parsed.query))
+            elif parts[0] == "tracker":
+                self._route_tracker(parts[1:])
+            elif parts[0] == "api":
+                self._route_api_get(parts[1:], parse_qs(parsed.query))
             else:
                 self._send(render.page("not found", "<p>404</p>"), 404)
         except Exception as e:  # never crash the server thread
             self._send(render.page("error", f"<pre>{render._h(e)}</pre>"), 500)
+
+    def do_POST(self) -> None:  # noqa: N802 (stdlib API)
+        parts = [p for p in urlparse(self.path).path.split("/") if p]
+        try:
+            if parts == ["api", "crdt", "push"]:
+                length = int(self.headers.get("Content-Length") or 0)
+                if length <= 0 or length > _PUSH_MAX_BYTES:
+                    self._send_json({"error": f"bad Content-Length {length}"}, 400)
+                    return
+                payload = json.loads(self.rfile.read(length).decode("utf-8", "replace"))
+                from devtools_mcp.tracker import crdt
+
+                counters = _with_tracker(lambda db: crdt.merge_ops(db, payload.get("ops", [])))
+                self._send_json(counters)
+            else:
+                self._send_json({"error": "not found"}, 404)
+        except Exception as e:  # never crash the server thread
+            self._send_json({"error": str(e)}, 500)
+
+    def _route_tracker(self, rest: list[str]) -> None:
+        """HTML tracker views: overview, per-project board, task detail."""
+        from devtools_mcp.viz import tracker_data
+
+        if not rest:
+            self._send(_with_tracker(lambda db: render.tracker_overview(tracker_data.projects_overview(db))))
+        elif rest[0] == "task" and len(rest) == 2:
+            key = unquote(rest[1]).upper()
+            body = _with_tracker(lambda db: tracker_data.task_detail_page(db, key))
+            self._send(body if body else render.page("not found", "<p>404</p>"), 200 if body else 404)
+        elif len(rest) == 1:
+            project_key = unquote(rest[0]).upper()
+            body = _with_tracker(lambda db: tracker_data.board_page(db, project_key))
+            self._send(body if body else render.page("not found", "<p>404</p>"), 200 if body else 404)
+        else:
+            self._send(render.page("not found", "<p>404</p>"), 404)
+
+    def _route_api_get(self, rest: list[str], query: dict) -> None:
+        """JSON CRDT API: status and op pull."""
+        from devtools_mcp.tracker import crdt
+
+        if rest == ["crdt", "status"]:
+            self._send_json(_with_tracker(crdt.status))
+        elif rest == ["crdt", "ops"]:
+            after = (query.get("after") or [None])[0]
+
+            def pull(db):
+                return {"site_id": db.site_id, "ops": crdt.ops_after(db.conn, after)}
+
+            self._send_json(_with_tracker(pull))
+        else:
+            self._send_json({"error": "not found"}, 404)
 
     def _route_run(self, app: object, kind: str, run_id: str, query: dict) -> None:
         ws, run = _find_run(app, run_id)

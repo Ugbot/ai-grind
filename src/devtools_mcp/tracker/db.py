@@ -63,6 +63,24 @@ class TrackerDB:
         fk_on = self.conn.execute("PRAGMA foreign_keys").fetchone()[0]
         assert fk_on == 1, "foreign_keys pragma did not take"
         apply_migrations(self.conn)
+        self._init_crdt()
+
+    def _init_crdt(self) -> None:
+        """Wire this connection into the CRDT layer: identity, clock, capture fn.
+
+        The v3 capture triggers call `crdt_hlc()`; registering it per connection
+        means every mutation through this TrackerDB is stamped, and a connection
+        that skips registration fails loudly instead of silently dropping ops.
+        """
+        from devtools_mcp.tracker import crdt  # deferred: crdt imports this module
+
+        self.site_id = crdt.ensure_identity(self.conn)
+        assert len(self.site_id) >= 8, f"bad site id {self.site_id!r}"
+        self.hlc = crdt.HLC(self.site_id)
+        self.conn.create_function("crdt_hlc", 0, self.hlc.next_str, deterministic=False)
+        watermark = crdt.latest_hlc(self.conn)
+        if watermark is not None:
+            self.hlc.observe(watermark)  # never re-issue a stamp from a past session
 
     @contextlib.contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:

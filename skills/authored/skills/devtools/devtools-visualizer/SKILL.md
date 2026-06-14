@@ -3,9 +3,11 @@ name: devtools-visualizer
 description: >
   Use the devtools-mcp browser visualization terminal — a local web UI for every
   profiling/debugging run. Use when you want to SEE the data a human can explore:
-  interactive (click-to-zoom) flame graphs, the queryable data table per run, and
-  raw logs, across Linux/macOS/Windows. Covers starting/stopping the dashboard and
-  what each view shows. The visual companion to devtools-mcp-usage.
+  interactive (click-to-zoom) flame graphs, the queryable data table per run, raw
+  logs, and the tracker as card boards (projects, status columns, task detail),
+  across Linux/macOS/Windows. Covers starting/stopping the dashboard, what each
+  view shows, and the CRDT sync API it serves for other replicas. The visual
+  companion to devtools-mcp-usage and tracker-usage.
 ---
 
 # The visualization terminal (devtools-mcp `devtools_dashboard`)
@@ -38,6 +40,13 @@ runs appear on refresh; no restart needed.
   its subtree (it re-roots; use "reset" to go back). Server-rendered SVG — no JS
   framework, works offline.
 - **`/raw/<id>`** — raw tool output / logs (bounded).
+- **`/tracker`** — the project-management views, as proper cards: project
+  overview with status chips + progress bars, **`/tracker/<PROJ>`** a board
+  (status columns of task cards + the "what needs to happen" plan with ready
+  and blocked highlighted), **`/tracker/task/<KEY>`** full task detail
+  (criteria checklist, commits, dependencies, children).
+- **`/api/crdt/*`** — the JSON sync API other tracker replicas pull from /
+  push to (`tracker_sync` on another machine points here).
 
 ## Typical flow
 

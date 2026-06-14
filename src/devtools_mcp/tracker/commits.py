@@ -7,6 +7,7 @@ idempotent — the (task, hash, repo) UNIQUE constraint dedupes re-scans.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 
@@ -69,15 +70,20 @@ def _git_log(repo_path: str, max_commits: int) -> list[tuple[str, str, str]]:
     just the subject line.
     """
     assert 1 <= max_commits <= SCAN_MAX_COMMITS, f"max_commits {max_commits} out of bounds"
+    # Never let git block on a credential/pager prompt: those turn the bounded
+    # timeout into an indefinite hang. --no-pager + no terminal prompt + no
+    # optional locks keep `git log` a pure, non-interactive read.
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0"}
     try:
         proc = subprocess.run(
-            ["git", "log", f"--max-count={max_commits}", "--pretty=format:%H%x1f%s%x1f%B%x1e"],
+            ["git", "--no-pager", "log", f"--max-count={max_commits}", "--pretty=format:%H%x1f%s%x1f%B%x1e"],
             cwd=repo_path,
             capture_output=True,
             text=True,
             encoding="utf-8",
             errors="replace",
             timeout=GIT_TIMEOUT_SECONDS,
+            env=env,
         )
     except FileNotFoundError as exc:
         raise TrackerError("git executable not found on PATH") from exc
@@ -96,36 +102,72 @@ def _git_log(repo_path: str, max_commits: int) -> list[tuple[str, str, str]]:
     return entries
 
 
+def link_entries(
+    db: TrackerDB,
+    repo_path: str,
+    entries: list[tuple[str, str, str]],
+) -> dict[str, int]:
+    """Link pre-fetched (hash, subject, message) git-log entries to tasks.
+
+    Returns counters: scanned, matched, linked (new), skipped_unknown_key.
+    Only keys whose project exists in the tracker are linked; an unknown key
+    (e.g. some other convention in messages) is counted, not an error.
+
+    Split out from scan_repo so the blocking git read (`_git_log`) can run off
+    the event loop while every insert here batches into ONE BEGIN IMMEDIATE
+    transaction — not one transaction (and one CRDT-trigger commit) per link,
+    which is what made a large scan crawl and starve the server.
+    """
+    assert isinstance(entries, list), f"entries must be a list, got {type(entries)}"
+    if not repo_path.strip():
+        raise TrackerError("repo_path must not be empty")
+    repo = repo_path.strip()
+    known_keys = {row[0] for row in db.conn.execute("SELECT key FROM projects").fetchall()}
+    counters = {"scanned": len(entries), "matched": 0, "linked": 0, "skipped_unknown_key": 0}
+    with db.transaction() as conn:
+        for commit_hash, subject, message in entries:  # bounded: len(entries) <= SCAN_MAX_COMMITS
+            chash = commit_hash.strip().lower()
+            if not COMMIT_HASH_RE.match(chash):
+                continue  # git never emits a malformed hash; defensive skip
+            snippet = subject.strip()[:SNIPPET_MAX]
+            for task_key in sorted(set(TASK_KEY_SCAN_RE.findall(message))):
+                project_key = task_key.rsplit("-", 1)[0]
+                if project_key not in known_keys:
+                    counters["skipped_unknown_key"] += 1
+                    continue
+                try:
+                    task = get_task(conn, task_key)
+                except TrackerError:
+                    # Known project, but the task number doesn't exist: count, move on.
+                    counters["skipped_unknown_key"] += 1
+                    continue
+                counters["matched"] += 1
+                cursor = conn.execute(
+                    "INSERT OR IGNORE INTO task_commits "
+                    "(task_id, commit_hash, repo_path, message_snippet, linked_at) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (task.id, chash, repo, snippet, utc_now_iso()),
+                )
+                if cursor.rowcount == 1:
+                    counters["linked"] += 1
+    assert counters["linked"] <= counters["matched"], "linked more than matched"
+    assert counters["scanned"] == len(entries), "scanned counter drifted"
+    return counters
+
+
 def scan_repo(
     db: TrackerDB,
     repo_path: str,
     max_commits: int = 500,
 ) -> dict[str, int]:
-    """Scan git log for task keys and auto-link commits.
+    """Scan git log for task keys and auto-link commits (synchronous).
 
-    Returns counters: scanned, matched, linked (new), skipped_unknown_key.
-    Only keys whose project exists in the tracker are linked; an unknown key
-    (e.g. some other convention in messages) is counted, not an error.
+    Thin composition of `_git_log` (blocking subprocess) + `link_entries`
+    (single-transaction DB writes). The async handler offloads `_git_log` to a
+    worker thread and calls `link_entries` directly so the event loop is never
+    blocked; this helper keeps the simple sync path for tests and CLI use.
     """
     if not (1 <= max_commits <= SCAN_MAX_COMMITS):
         raise TrackerError(f"max_commits must be 1..{SCAN_MAX_COMMITS}, got {max_commits}")
     entries = _git_log(repo_path, max_commits)
-    known_keys = {row[0] for row in db.conn.execute("SELECT key FROM projects").fetchall()}
-    counters = {"scanned": len(entries), "matched": 0, "linked": 0, "skipped_unknown_key": 0}
-    for commit_hash, subject, message in entries:  # bounded by max_commits
-        for task_key in sorted(set(TASK_KEY_SCAN_RE.findall(message))):
-            project_key = task_key.rsplit("-", 1)[0]
-            if project_key not in known_keys:
-                counters["skipped_unknown_key"] += 1
-                continue
-            counters["matched"] += 1
-            try:
-                if link_commit(db, task_key, repo_path, commit_hash, subject):
-                    counters["linked"] += 1
-            except TrackerError:
-                # Key looks like ours but the task number doesn't exist; count, move on.
-                counters["skipped_unknown_key"] += 1
-                counters["matched"] -= 1
-    assert counters["linked"] <= counters["matched"], "linked more than matched"
-    assert counters["scanned"] <= max_commits, "scanned more than requested"
-    return counters
+    return link_entries(db, repo_path, entries)
