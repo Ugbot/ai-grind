@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: llm_station
+      POSTGRES_USER: llm_station
+      POSTGRES_PASSWORD: llm_station_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U llm_station"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: .
+    command: >
+      sh -c "cd /app/src/llm_station && alembic upgrade head"
+    environment:
+      LLM_STATION_DATABASE_URL: postgresql+asyncpg://llm_station:llm_station_dev@db/llm_station
+      PYTHONPATH: /app/src
+    depends_on:
+      db:
+        condition: service_healthy
+
+  platform:
+    build: .
+    command: uvicorn llm_station.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      LLM_STATION_DATABASE_URL: postgresql+asyncpg://llm_station:llm_station_dev@db/llm_station
+      PYTHONPATH: /app/src
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src  # mount for --reload to pick up edits
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
