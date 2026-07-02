@@ -76,6 +76,8 @@ async def _perfview(pv: str, args: list[str], env: dict[str, str], timeout: int)
         stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        env=env,  # _NT_SYMBOL_PATH (exe dir + MS server) — without this,
+                  # PerfView never resolves the profiled binary's own PDB
     )
     try:
         await asyncio.wait_for(proc.communicate(), timeout=timeout)
