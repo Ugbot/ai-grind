@@ -126,18 +126,40 @@ cd ai-grind
 uv sync
 ```
 
+### As a Claude Code plugin (recommended)
+
+This repo is a self-contained Claude Code **plugin marketplace**
+(`.claude-plugin/marketplace.json`) shipping one plugin, `devtools-mcp`, that
+bundles the MCP server **and** the full skills library (48 skills, 10 commands,
+3 agents). Install it in Claude Code:
+
+```
+/plugin marketplace add Ugbot/ai-grind
+/plugin install devtools-mcp@ai-grind
+```
+
+The plugin wires up the MCP server automatically via `${CLAUDE_PLUGIN_ROOT}` —
+no hand-edited `.mcp.json` path. It still needs `uv` on `PATH` and the repo's
+Python deps (`uv sync` runs on first launch). To iterate on bundled skills, edit
+`skills/authored/` (or `skills/catalog/`) and regenerate the committed bundle:
+
+```bash
+python skills/sync.py --target plugin   # rebuild plugin/{skills,commands,agents}
+```
+
 ## Usage
 
 ### As an MCP server (Claude Code)
 
-Add to your project's `.mcp.json`:
+If you didn't install the plugin (above), add it to your project's `.mcp.json`
+manually, pointing `--directory` at your clone:
 
 ```json
 {
   "mcpServers": {
     "devtools-mcp": {
       "command": "uv",
-      "args": ["run", "--directory", "C:\\Users\\Capta\\ai-grind", "devtools-mcp"]
+      "args": ["run", "--directory", "/path/to/ai-grind", "devtools-mcp"]
     }
   }
 }

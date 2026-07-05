@@ -1,13 +1,22 @@
-# Python-generated files
+# Python-generated files (anchored to repo root so they don't shadow source
+# packages such as src/devtools_mcp/build/)
 __pycache__/
 *.py[oc]
-build/
-dist/
-wheels/
+/build/
+/dist/
+/wheels/
 *.egg-info
 
 # Virtual environments
 .venv
+
+# Tooling caches (mypy/pytest/ruff each write their own inner .gitignore too,
+# but pin them here so ignoring survives a cache wipe)
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Compiled test fixtures (rebuild from source)
 tests/fixtures/target
@@ -21,3 +30,18 @@ skills/loadable/
 .claude/commands/
 .claude/agents/
 .claude/settings.local.json
+
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+

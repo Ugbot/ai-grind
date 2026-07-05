@@ -8,11 +8,14 @@ flat target tree.
 
 Targets:
   local   (default)  ->  skills/loadable/{skills,commands,agents}/   [fully owned, wiped]
+  plugin             ->  <repo>/plugin/{skills,commands,agents}/     [fully owned, wiped]
   project            ->  <repo>/.claude/{skills,commands,agents}/    [per-item overwrite]
   global             ->  ~/.claude/{skills,commands,agents}/         [per-item overwrite]
 
-Only `local` is wiped wholesale. project/global are overwritten per item so
-unrelated skills already present there are left untouched.
+`local` and `plugin` are wiped wholesale (fully owned, derived output).
+project/global are overwritten per item so unrelated skills already present
+there are left untouched. The `plugin` mirror is the flat bundle the Claude Code
+plugin (.claude-plugin/plugin.json) points at -- it is committed, not gitignored.
 """
 
 from __future__ import annotations
@@ -21,20 +24,23 @@ import argparse
 import json
 import shutil
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 ROOT = Path(__file__).resolve().parent
 MANIFEST = ROOT / "MANIFEST.json"
 AUTHORED = ROOT / "authored"  # hand-written skills; never touched by harvest.py
 MAX_ITEMS = 200  # bound mirrors harvest.py
 MAX_AUTHORED = 100  # bound on hand-written skills
+MAX_MISSING = 10  # tolerate a few upstream-only assets absent from a partial checkout
 
 
 def target_base(name: str) -> tuple[Path, bool]:
     """Resolve the target root and whether it is wholly owned (safe to wipe)."""
-    assert name in ("local", "project", "global"), f"bad target: {name}"
+    assert name in ("local", "plugin", "project", "global"), f"bad target: {name}"
     if name == "local":
         return ROOT / "loadable", True
+    if name == "plugin":
+        return ROOT.parent / "plugin", True
     if name == "project":
         return ROOT.parent / ".claude", False
     return Path.home() / ".claude", False
@@ -47,6 +53,17 @@ def load_manifest() -> list[dict]:
     items = data.get("items", [])
     assert 0 < len(items) <= MAX_ITEMS, f"manifest size out of bounds: {len(items)}"
     return items
+
+
+def dest_path(rel: str) -> Path:
+    """Resolve a manifest `dest` under ROOT, tolerating Windows or POSIX separators.
+
+    MANIFEST.json may be written on either platform, so normalize both `\\` and
+    `/` into an OS-native relative path before joining.
+    """
+    assert rel, "empty manifest dest"
+    parts = PureWindowsPath(rel).parts if "\\" in rel else PurePosixPath(rel).parts
+    return ROOT.joinpath(*parts)
 
 
 def read_skill_name(md_path: Path) -> str:
@@ -82,35 +99,43 @@ def sync_authored(base: Path, seen: set[str]) -> int:
     return len(found)
 
 
-def sync_skill(item: dict, base: Path, seen: set[str]) -> None:
-    """Copy a catalog skill folder (SKILL.md + any assets) to base/skills/<name>/."""
+def sync_skill(item: dict, base: Path, seen: set[str]) -> bool:
+    """Copy a catalog skill folder to base/skills/<name>/. Returns False if absent.
+
+    A manifest entry whose source is missing from this checkout (partial clone,
+    upstream-only asset) is skipped, not fatal -- the caller records and reports it.
+    """
     name = item["name"]
     assert name not in seen, f"duplicate skill name in mirror: {name}"
+    src_folder = dest_path(item["dest"]).parent
+    if not (src_folder / "SKILL.md").is_file():
+        return False
     seen.add(name)
-    src_folder = (ROOT / item["dest"]).parent
-    assert (src_folder / "SKILL.md").is_file(), f"missing SKILL.md: {src_folder}"
     dest = base / "skills" / name
     if dest.exists():
         shutil.rmtree(dest)
     shutil.copytree(src_folder, dest)
     assert (dest / "SKILL.md").is_file(), f"skill sync failed: {dest}"
+    return True
 
 
-def sync_flat(item: dict, base: Path) -> None:
-    """Copy a command/agent .md to base/<type>s/<filename>."""
-    src = ROOT / item["dest"]
-    assert src.is_file(), f"missing source: {src}"
+def sync_flat(item: dict, base: Path) -> bool:
+    """Copy a command/agent .md to base/<type>s/<filename>. Returns False if absent."""
+    src = dest_path(item["dest"])
+    if not src.is_file():
+        return False
     sub = "commands" if item["type"] == "command" else "agents"
     dest_dir = base / sub
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / src.name
     shutil.copyfile(src, dest)
     assert dest.is_file(), f"flat sync failed: {dest}"
+    return True
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Flatten catalog/ into a loadable mirror.")
-    ap.add_argument("--target", choices=("local", "project", "global"), default="local")
+    ap.add_argument("--target", choices=("local", "plugin", "project", "global"), default="local")
     args = ap.parse_args()
 
     items = load_manifest()
@@ -122,16 +147,21 @@ def main() -> int:
 
     seen_skills: set[str] = set()
     counts = {"skill": 0, "command": 0, "agent": 0, "skipped": 0}
+    missing: list[str] = []
     for it in items:
         kind = it["type"]
         if kind == "archive":
             counts["skipped"] += 1
             continue
-        if kind == "skill":
-            sync_skill(it, base, seen_skills)
+        copied = sync_skill(it, base, seen_skills) if kind == "skill" else sync_flat(it, base)
+        if copied:
+            counts[kind] += 1
         else:
-            sync_flat(it, base)
-        counts[kind] += 1
+            missing.append(f"{kind}:{it.get('name', it['dest'])}")
+
+    # A few upstream-only assets may be absent from a partial checkout; that is
+    # tolerable. Wholesale absence means a broken catalog -- fail loud instead.
+    assert len(missing) <= MAX_MISSING, f"too many missing sources ({len(missing)}) -- run harvest.py?"
 
     authored = sync_authored(base, seen_skills)
     counts["skill"] += authored
@@ -143,6 +173,10 @@ def main() -> int:
         f"authored={authored}) commands={counts['command']} "
         f"agents={counts['agent']} skipped(archive)={counts['skipped']}"
     )
+    if missing:
+        print(f"  WARNING: {len(missing)} manifest source(s) absent from this checkout, skipped:")
+        for m in missing:
+            print(f"    - {m}")
     return 0
 
 
