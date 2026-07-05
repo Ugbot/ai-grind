@@ -1,0 +1,33 @@
+{
+  "name": "devtools-mcp",
+  "displayName": "devtools-mcp — unified perf engineering",
+  "version": "0.2.0",
+  "description": "Normalized, Polars-backed MCP interface over Valgrind, LLDB, DTrace, perf, ETW/PerfView, Intel VTune, the JVM, CDB, Python, Node/JS and the Maven/Gradle/npm/pnpm/yarn/Cargo build systems — plus flame graphs, a browser visualization terminal, and a SQLite progress tracker. Bundles the full skills library (profiling, debugging, PowerShell, code-intel).",
+  "author": {
+    "name": "Darach Ennis",
+    "email": "darach@gmail.com"
+  },
+  "homepage": "https://github.com/darach/ai-grind",
+  "repository": "https://github.com/darach/ai-grind",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "profiling",
+    "performance",
+    "debugging",
+    "valgrind",
+    "perf",
+    "vtune",
+    "flamegraph",
+    "jvm",
+    "skills"
+  ],
+  "mcpServers": "./.mcp.json",
+  "skills": "./plugin/skills",
+  "commands": "./plugin/commands",
+  "agents": [
+    "./plugin/agents/frontend-backend-connectivity-checker.md",
+    "./plugin/agents/living-docs-writer.md",
+    "./plugin/agents/test-bench-runner.md"
+  ]
+}

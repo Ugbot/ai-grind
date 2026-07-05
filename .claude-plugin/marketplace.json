@@ -1,0 +1,17 @@
+{
+  "name": "ai-grind",
+  "owner": {
+    "name": "Darach Ennis",
+    "email": "darach@gmail.com"
+  },
+  "description": "Marketplace for the devtools-mcp performance-engineering plugin — a unified MCP server plus a bundled skills library (profiling, debugging, PowerShell, code-intel).",
+  "plugins": [
+    {
+      "name": "devtools-mcp",
+      "source": ".",
+      "description": "Unified perf-engineering MCP server (Valgrind/LLDB/DTrace/perf/ETW/VTune/JVM/CDB/Python/Node + build systems, flame graphs, viz terminal, progress tracker) with the full skills library bundled.",
+      "category": "development",
+      "keywords": ["mcp", "profiling", "performance", "debugging", "skills"]
+    }
+  ]
+}

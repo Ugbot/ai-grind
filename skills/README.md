@@ -23,9 +23,16 @@ keeps two trees:
 ```bash
 python harvest.py                 # upstream  -> catalog/   (+ MANIFEST.json)
 python sync.py --target local     # catalog/  -> loadable/             (default)
+python sync.py --target plugin    # catalog/  -> <repo>/plugin/  (committed plugin bundle)
 python sync.py --target project   # catalog/  -> <repo>/.claude/       (load here)
 python sync.py --target global    # catalog/  -> ~/.claude/   (load everywhere)
 ```
+
+The `plugin` target is the flat, **committed** bundle the Claude Code plugin
+(`.claude-plugin/plugin.json`) points at (`plugin/{skills,commands,agents}/`).
+Re-run it after editing skills, then commit `plugin/`. `sync.py` skips (with a
+loud warning) any manifest source absent from the checkout, so a partial clone
+still builds.
 
 `harvest.py` is idempotent: it wipes and rebuilds `catalog/` from the explicit
 list in `sources.toml`. `sync.py --target local` wipes and rebuilds `loadable/`;
