@@ -25,10 +25,9 @@ tests/fixtures/target.dSYM/
 # Generated loadable skill mirror (rebuild with: python skills/sync.py)
 skills/loadable/
 
-# Generated client mirrors (rebuild with: python skills/sync.py --target agents|codex|cursor)
+# Generated client mirror (rebuild with: python skills/sync.py --target agents)
+# .codex/ and .cursor/ are hand-written client configs — committed source.
 .agents/
-.codex/
-.cursor/rules/
 
 # Profiler droppings
 PerfViewData*

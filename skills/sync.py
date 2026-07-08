@@ -9,13 +9,18 @@ flat target tree.
 Targets:
   local   (default)  ->  skills/loadable/{skills,commands,agents}/   [fully owned, wiped]
   plugin             ->  <repo>/plugin/{skills,commands,agents}/     [fully owned, wiped]
+  agents             ->  <repo>/.agents/skills/                      [fully owned, wiped; skills only]
   project            ->  <repo>/.claude/{skills,commands,agents}/    [per-item overwrite]
   global             ->  ~/.claude/{skills,commands,agents}/         [per-item overwrite]
 
-`local` and `plugin` are wiped wholesale (fully owned, derived output).
-project/global are overwritten per item so unrelated skills already present
-there are left untouched. The `plugin` mirror is the flat bundle the Claude Code
-plugin (.claude-plugin/plugin.json) points at -- it is committed, not gitignored.
+`local`, `plugin` and `agents` are wiped wholesale (fully owned, derived
+output). project/global are overwritten per item so unrelated skills already
+present there are left untouched. The `plugin` mirror is the flat bundle the
+Claude Code plugin (.claude-plugin/plugin.json) points at -- it is committed,
+not gitignored. The `agents` mirror feeds clients that read the agents.md
+convention (skills/<name>/SKILL.md only; commands/agents are Claude-specific)
+-- it is generated, gitignored output. Hand-written client configs (.codex/,
+.cursor/rules/) are committed source, not sync targets.
 """
 
 from __future__ import annotations
@@ -36,11 +41,13 @@ MAX_MISSING = 10  # tolerate a few upstream-only assets absent from a partial ch
 
 def target_base(name: str) -> tuple[Path, bool]:
     """Resolve the target root and whether it is wholly owned (safe to wipe)."""
-    assert name in ("local", "plugin", "project", "global"), f"bad target: {name}"
+    assert name in ("local", "plugin", "agents", "project", "global"), f"bad target: {name}"
     if name == "local":
         return ROOT / "loadable", True
     if name == "plugin":
         return ROOT.parent / "plugin", True
+    if name == "agents":
+        return ROOT.parent / ".agents", True
     if name == "project":
         return ROOT.parent / ".claude", False
     return Path.home() / ".claude", False
@@ -135,8 +142,9 @@ def sync_flat(item: dict, base: Path) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Flatten catalog/ into a loadable mirror.")
-    ap.add_argument("--target", choices=("local", "plugin", "project", "global"), default="local")
+    ap.add_argument("--target", choices=("local", "plugin", "agents", "project", "global"), default="local")
     args = ap.parse_args()
+    skills_only = args.target == "agents"  # commands/agents .md are Claude-specific
 
     items = load_manifest()
     base, owned = target_base(args.target)
@@ -150,7 +158,7 @@ def main() -> int:
     missing: list[str] = []
     for it in items:
         kind = it["type"]
-        if kind == "archive":
+        if kind == "archive" or (skills_only and kind != "skill"):
             counts["skipped"] += 1
             continue
         copied = sync_skill(it, base, seen_skills) if kind == "skill" else sync_flat(it, base)
