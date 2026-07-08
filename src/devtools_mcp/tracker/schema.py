@@ -295,11 +295,51 @@ MIGRATION_V4: tuple[str, ...] = (
     "CREATE INDEX idx_tasks_project_kind ON tasks(project_id, kind)",
 )
 
+# v5: local agent collaboration — file-touch activity + advisory file claims.
+# Site-local like tag_rules/external_refs: deliberately NOT CRDT-synced (no
+# capture triggers, not in SYNC_TABLES). Claims are transient machine-local
+# leases; the upcoming team collab server supersedes them across machines.
+MIGRATION_V5: tuple[str, ...] = (
+    """
+    CREATE TABLE file_activity (
+        id          INTEGER PRIMARY KEY,
+        session_id  TEXT NOT NULL,
+        agent_label TEXT NOT NULL DEFAULT '',
+        task_key    TEXT,
+        repo_root   TEXT NOT NULL COLLATE NOCASE,
+        file_path   TEXT NOT NULL COLLATE NOCASE
+                    CHECK (length(file_path) BETWEEN 1 AND 512),
+        op          TEXT NOT NULL CHECK (op IN ('edit', 'write', 'read')),
+        tool_name   TEXT NOT NULL DEFAULT '',
+        ts          TEXT NOT NULL
+    )
+    """,
+    "CREATE INDEX idx_activity_repo_path ON file_activity(repo_root, file_path, ts)",
+    "CREATE INDEX idx_activity_session ON file_activity(session_id, ts)",
+    """
+    CREATE TABLE file_claims (
+        id          INTEGER PRIMARY KEY,
+        session_id  TEXT NOT NULL,
+        agent_label TEXT NOT NULL DEFAULT '',
+        task_key    TEXT,
+        repo_root   TEXT NOT NULL COLLATE NOCASE,
+        file_path   TEXT NOT NULL COLLATE NOCASE
+                    CHECK (length(file_path) BETWEEN 1 AND 512),
+        claimed_at  TEXT NOT NULL,
+        expires_at  TEXT NOT NULL,
+        released_at TEXT
+    )
+    """,
+    "CREATE UNIQUE INDEX idx_claims_active ON file_claims(repo_root, file_path) WHERE released_at IS NULL",
+    "CREATE INDEX idx_claims_session ON file_claims(session_id, released_at)",
+)
+
 MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
     (1, MIGRATION_V1),
     (2, MIGRATION_V2),
     (3, MIGRATION_V3),
     (4, MIGRATION_V4),
+    (5, MIGRATION_V5),
 )
 
 assert 0 < len(MIGRATIONS) <= MIGRATIONS_MAX, "migration count out of bounds"

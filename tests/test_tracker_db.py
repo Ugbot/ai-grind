@@ -27,6 +27,8 @@ EXPECTED_TABLES = {
     "task_tags",
     "tag_rules",
     "external_refs",
+    "file_activity",
+    "file_claims",
 }
 
 
@@ -99,6 +101,64 @@ class TestMigrations:
         assert len(rows) == len(MIGRATIONS)
         for row in rows:
             assert row["applied_at"].endswith("+00:00")
+
+
+class TestV5Migration:
+    def test_upgrades_v4_db_preserving_rows(self, tmp_path):
+        """A DB stopped at v4 migrates to v5 on reopen with existing rows intact."""
+        import sqlite3
+
+        path = tmp_path / "old.db"
+        conn = sqlite3.connect(path)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("BEGIN")
+        conn.execute("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)")
+        for version, statements in MIGRATIONS[:4]:
+            if version == 3:
+                # insert before the v3 capture triggers exist — they call the
+                # Python-registered crdt_hlc(), absent on this raw connection
+                conn.execute(
+                    "INSERT INTO projects (key, name, created_at) VALUES (?, ?, ?)",
+                    ("OLD", "pre-v5 project", utc_now_iso()),
+                )
+            for stmt in statements:
+                conn.execute(stmt)
+            conn.execute(
+                "INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)",
+                (version, utc_now_iso()),
+            )
+        conn.commit()
+        conn.close()
+        db = open_tracker(path)
+        try:
+            assert schema_version(db.conn) == MIGRATIONS[-1][0]
+            row = db.conn.execute("SELECT key FROM projects").fetchone()
+            assert row["key"] == "OLD"
+            names = {r[0] for r in db.conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+            assert {"file_activity", "file_claims"} <= names
+        finally:
+            db.close()
+
+    def test_active_claim_unique_index(self, db):
+        """The partial unique index rejects a second active claim at the SQL level."""
+        import sqlite3
+
+        args = ("s1", "", None, "/repo", "src/x.py", utc_now_iso(), utc_now_iso())
+        insert = (
+            "INSERT INTO file_claims "
+            "(session_id, agent_label, task_key, repo_root, file_path, claimed_at, expires_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)"
+        )
+        with db.transaction() as conn:
+            conn.execute(insert, args)
+        with pytest.raises(sqlite3.IntegrityError), db.transaction() as conn:
+            conn.execute(insert, ("s2", *args[1:]))
+        with db.transaction() as conn:  # released claim frees the slot
+            conn.execute("UPDATE file_claims SET released_at = ?", (utc_now_iso(),))
+            conn.execute(insert, ("s2", *args[1:]))
+        count = db.conn.execute("SELECT COUNT(*) FROM file_claims").fetchone()[0]
+        assert count == 2
 
 
 class TestTransactions:

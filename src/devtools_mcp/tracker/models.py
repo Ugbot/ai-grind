@@ -105,6 +105,50 @@ class CommitLink(BaseModel):
         return link
 
 
+class FileTouch(BaseModel):
+    id: int
+    session_id: str
+    agent_label: str = ""
+    task_key: str | None = None
+    repo_root: str
+    file_path: str
+    op: str = "edit"
+    tool_name: str = ""
+    ts: str
+
+    @classmethod
+    def from_row(cls, row: sqlite3.Row) -> FileTouch:
+        assert row is not None, "FileTouch.from_row given None"
+        touch = cls(**dict(row))
+        assert touch.file_path, "empty file_path in db"
+        assert touch.op in ("edit", "write", "read"), f"bad op in db: {touch.op}"
+        return touch
+
+
+class FileClaim(BaseModel):
+    id: int
+    session_id: str
+    agent_label: str = ""
+    task_key: str | None = None
+    repo_root: str
+    file_path: str
+    claimed_at: str
+    expires_at: str
+    released_at: str | None = None
+
+    @classmethod
+    def from_row(cls, row: sqlite3.Row) -> FileClaim:
+        assert row is not None, "FileClaim.from_row given None"
+        claim = cls(**dict(row))
+        assert claim.file_path, "empty file_path in db"
+        assert claim.expires_at, "empty expires_at in db"
+        return claim
+
+    @property
+    def active(self) -> bool:
+        return self.released_at is None
+
+
 class TagRule(BaseModel):
     id: int
     project_id: int | None = None
