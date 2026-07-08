@@ -68,11 +68,16 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     ctx = AppContext()
     ws = ctx.create_workspace("default")
     ctx.default_workspace_id = ws.workspace_id
+    loaded = ctx.hydrate_all_runs()
 
     # Auto-detect installed tools
     ctx.registry = ToolRegistry()
     await ctx.registry.detect_all()
     _maybe_start_dashboard(ctx)
+    if loaded:
+        import sys
+
+        print(f"devtools-mcp: loaded {loaded} persisted run(s) from disk", file=sys.stderr)
 
     try:
         yield ctx

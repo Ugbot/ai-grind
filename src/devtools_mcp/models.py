@@ -19,6 +19,23 @@ class RunBase(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     exit_code: int = 0
     duration_seconds: float = 0.0
+    # Enrichment (persisted in meta.json / optional on RunBase)
+    label: str = ""
+    notes: str = ""
+    tags: list[str] = Field(default_factory=list)
+    task_key: str = ""
+    parent_run_id: str = ""
+    batch_id: str = ""
+    workspace_id: str = ""
+    workspace_name: str = ""
+    git_commit: str = ""
+    git_branch: str = ""
+    git_dirty: bool = False
+    cwd: str = ""
+    hostname: str = ""
+    tool_version: str = ""
+    tool_path: str = ""
+    stored_summary: str = ""
 
 
 def create_run_base(
