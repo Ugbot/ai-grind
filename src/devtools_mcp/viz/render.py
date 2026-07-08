@@ -45,6 +45,15 @@ h3{font-size:14px;margin:18px 0 8px;color:#c5cfdb}
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;
   transition:border-color .12s,transform .12s,box-shadow .12s}
 .card:hover{border-color:var(--border-hi);transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.card-hit{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;
+  position:relative;transition:border-color .12s,transform .12s,box-shadow .12s}
+.card-hit:hover{border-color:var(--border-hi);transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.card-overlay{position:absolute;inset:0;z-index:1;border-radius:10px}
+.card-body{position:relative;z-index:2;pointer-events:none}
+.card-actions{position:relative;z-index:3;margin-top:8px;font-size:12px}
+.card-actions a{pointer-events:auto;margin-right:8px}
+.card-desc{color:var(--muted);font-size:12.5px;margin:6px 0;line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .card h4{margin:0 0 6px;font-size:13.5px;color:#e8eef6;font-weight:600}
 .card .sub{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -82,11 +91,25 @@ tr:hover td{background:var(--card-hi)}
 pre{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto}
 .pill{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:10px;
   padding:0 8px;color:var(--muted);font-size:11px;font-family:var(--mono)}
-.flame{background:#fff;border-radius:10px;overflow:auto;margin-top:8px}
+.flame{background:#1a2332;border-radius:10px;overflow:auto;margin-top:8px}
+.flame.light{background:#fff}
+.status-strip{color:var(--faint);font-size:12px;margin-left:auto}
+.filter-form{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.filter-form input,.filter-form select{background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:6px 10px;border-radius:7px;font-size:13px}
+.filter-form button{background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:7px;cursor:pointer}
+.warn{color:var(--progress);font-size:12.5px;margin:8px 0}
+.btn{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:7px;
+  padding:4px 10px;font-size:12px;color:var(--text);cursor:pointer}
+.subnav{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.subnav a{font-size:12.5px}
+.copy-btn{cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+  border-radius:5px;padding:0 6px;font-size:11px}
 .empty{border:1px dashed var(--border);border-radius:12px;padding:34px;text-align:center;color:var(--muted)}
 .section{margin-top:22px}
 .ready{border-left:3px solid var(--done)}
 .stuck{border-left:3px solid var(--blocked)}
+.waiting{border-left:3px solid var(--progress)}
 .desc{color:#aeb9c6;font-size:13px;white-space:pre-wrap;margin:10px 0}
 .check{list-style:none;padding:0;margin:6px 0}
 .check li{padding:3px 0;color:var(--muted)}
@@ -98,80 +121,202 @@ def _h(s: object) -> str:
     return html.escape(str(s if s is not None else ""))
 
 
-def page(title: str, body: str, crumbs: str = "", active: str = "runs") -> str:
-    """Wrap body in the shared shell (header, nav, content column)."""
-    tabs = [("runs", "/", "Runs"), ("tracker", "/tracker", "Tracker")]
-    nav = "".join(f"<a href='{href}' class='{'on' if key == active else ''}'>{label}</a>" for key, href, label in tabs)
+def _snippet(text: str, max_len: int = 160) -> str:
+    """One-line preview for card bodies."""
+    clean = " ".join((text or "").split())
+    if not clean:
+        return ""
+    if len(clean) <= max_len:
+        return _h(clean)
+    return _h(clean[: max_len - 1]) + "…"
+
+
+def _clickable_card(href: str, body: str, actions: str = "", extra_class: str = "", aria: str = "") -> str:
+    """Card with full-surface click target; actions sit above the overlay."""
+    aria_attr = f" aria-label='{_h(aria)}'" if aria else ""
+    actions_html = f"<div class='card-actions'>{actions}</div>" if actions else ""
     return (
-        f"<!doctype html><html><head><meta charset='utf-8'><title>{_h(title)}</title>"
-        f"<style>{_CSS}</style></head><body>"
+        f"<div class='card-hit {extra_class}'>"
+        f"<a class='card-overlay' href='{href}'{aria_attr}></a>"
+        f"<div class='card-body'>{body}</div>"
+        f"{actions_html}</div>"
+    )
+
+
+def page(
+    title: str,
+    body: str,
+    crumbs: str = "",
+    active: str = "runs",
+    status: dict | None = None,
+    auto_refresh: bool = False,
+) -> str:
+    """Wrap body in the shared shell (header, nav, content column)."""
+    tabs = [
+        ("runs", "/", "Runs"),
+        ("search", "/search", "Search"),
+        ("tracker", "/tracker", "Tracker"),
+        ("tools", "/tools", "Tools"),
+    ]
+    nav = "".join(f"<a href='{href}' class='{'on' if key == active else ''}'>{label}</a>" for key, href, label in tabs)
+    status_html = ""
+    if status:
+        parts = []
+        if status.get("runs") is not None:
+            parts.append(f"{status['runs']} runs")
+        if status.get("projects") is not None:
+            parts.append(f"{status['projects']} projects")
+        if status.get("mcp"):
+            parts.append("MCP ok")
+        status_html = f"<span class='status-strip'>{' · '.join(parts)}</span>"
+    refresh = "<meta http-equiv='refresh' content='30'>" if auto_refresh else ""
+    script = "<script>setInterval(()=>location.reload(),30000)</script>" if auto_refresh else ""
+    return (
+        f"<!doctype html><html><head><meta charset='utf-8'>{refresh}"
+        f"<title>{_h(title)}</title><style>{_CSS}</style></head><body>"
         f"<header><span class='brand'><span class='dot'></span>devtools-mcp</span>"
-        f"<nav>{nav}</nav><span class='crumbs'>{crumbs}</span></header>"
-        f"<div class='wrap'>{body}</div></body></html>"
+        f"<nav>{nav}</nav>{status_html}<span class='crumbs'>{crumbs}</span></header>"
+        f"<div class='wrap'>{body}</div>{script}</body></html>"
     )
 
 
 # --- runs ---------------------------------------------------------------------
 
 
-def dashboard(rows: list[dict]) -> str:
+def dashboard(rows: list[dict], filters: dict | None = None, status: dict | None = None) -> str:
     """Landing page: every run across all workspaces, as cards."""
+    filt = filters or {}
+    form = (
+        "<form class='filter-form' method='get' action='/'>"
+        f"<input name='q' placeholder='binary or label' value='{_h(filt.get('q', ''))}'>"
+        f"<input name='suite' placeholder='suite' value='{_h(filt.get('suite', ''))}'>"
+        f"<input name='tool' placeholder='tool' value='{_h(filt.get('tool', ''))}'>"
+        f"<input name='task_key' placeholder='task key' value='{_h(filt.get('task_key', ''))}'>"
+        "<button type='submit'>Filter</button>"
+        "<a class='btn' href='/'>Clear</a></form>"
+    )
     if not rows:
-        body = "<h2>Runs</h2><div class='empty'>No runs yet. Use <code>devtools_run</code>, " "then refresh.</div>"
-        return page("devtools-mcp", body, active="runs")
+        body = (
+            "<h2>Runs</h2>" + form + "<div class='empty'>No runs yet. Start the service, then use "
+            "<code>devtools_run</code> from Cursor or Claude. Runs persist across restarts.</div>"
+        )
+        return page("devtools-mcp", body, active="runs", status=status, auto_refresh=True)
     cards = []
     for r in rows:
-        views = [f"<a href='/run/{_h(r['run_id'])}'>data</a>"]
+        rid = r["run_id"]
+        title = r.get("label") or r.get("binary") or "(no target)"
+        actions = [f"<a href='/run/{_h(rid)}'>open</a>"]
         if r.get("has_stacks"):
-            views.append(f"<a href='/flame/{_h(r['run_id'])}'>flame</a>")
-        views.append(f"<a href='/raw/{_h(r['run_id'])}'>raw</a>")
+            actions.append(f"<a href='/flame/{_h(rid)}'>flame</a>")
+        actions.append(f"<a href='/raw/{_h(rid)}'>raw</a>")
         exit_note = "" if not r.get("exit") else f"<span class='badge'>exit {_h(r['exit'])}</span>"
-        cards.append(
-            f"<div class='card'><div class='row spread'>"
+        dur = r.get("duration", "")
+        when = r.get("when_full") or r.get("when", "")
+        task = ""
+        if r.get("task_key"):
+            task = f"<span class='key'>{_h(r['task_key'])}</span> "
+        tags = "".join(f"<span class='tag'>{_h(t)}</span>" for t in (r.get("tag_list") or []))
+        git = f"<span class='pill'>{_h(r.get('git_commit', ''))}</span>" if r.get("git_commit") else ""
+        preview = r.get("preview") or ""
+        desc_html = f"<div class='card-desc'>{_snippet(preview, 200)}</div>" if preview else ""
+        body = (
+            f"<div class='row spread'>"
             f"<span class='badge suite'>{_h(r['suite'])}:{_h(r['tool'])}</span>"
-            f"<span class='pill'>{_h(r['run_id'][:8])}</span></div>"
-            f"<h4 class='mono'>{_h(r['binary'] or '(no target)')}</h4>"
-            f"<div class='row spread'><span class='sub'>{_h(r['when'])} {exit_note}</span>"
-            f"<span>{' · '.join(views)}</span></div></div>"
+            f"<span class='pill'>{_h(rid[:8])}</span></div>"
+            f"<h4 class='mono'>{_h(title)}</h4>"
+            f"{desc_html}"
+            f"<div class='row'>{task}{tags}{git}</div>"
+            f"<div class='row spread'><span class='sub'>{_h(when)} {dur} {exit_note}</span></div>"
         )
-    body = f"<h2>Runs <span class='count'>{len(rows)}</span></h2><div class='grid'>{''.join(cards)}</div>"
-    return page("devtools-mcp", body, active="runs")
+        cards.append(
+            _clickable_card(
+                f"/run/{_h(rid)}",
+                body,
+                " · ".join(actions),
+                aria=f"Open run {rid}",
+            )
+        )
+    body = f"<h2>Runs <span class='count'>{len(rows)}</span></h2>{form}<div class='grid'>{''.join(cards)}</div>"
+    return page("devtools-mcp", body, active="runs", status=status, auto_refresh=True)
 
 
-def table_from_df(df: pl.DataFrame, max_rows: int = 200) -> str:
+def table_from_df(
+    df: pl.DataFrame,
+    max_rows: int = 200,
+    offset: int = 0,
+    total: int | None = None,
+    page_url: str = "",
+) -> str:
     """Render a Polars DataFrame as a bounded HTML table."""
     if df.is_empty():
         return "<p class='note'>(no rows)</p>"
-    shown = df.head(max_rows)
+    total_rows = total if total is not None else df.height
+    shown = df.slice(offset, max_rows)
     head = "".join(f"<th>{_h(c)}</th>" for c in shown.columns)
     body_rows = []
     for row in shown.iter_rows():
         body_rows.append("<tr>" + "".join(f"<td>{_h(v)}</td>" for v in row) + "</tr>")
     note = ""
-    if df.height > max_rows:
-        note = (
-            f"<p class='note'>showing {max_rows} of {df.height:,} rows — query precisely " "with devtools_analyze</p>"
-        )
-    return f"<table><tr>{head}</tr>{''.join(body_rows)}</table>{note}"
+    end = offset + len(shown)
+    if total_rows > end or offset > 0:
+        note = f"<p class='note'>rows {offset + 1}-{end} of {total_rows:,}"
+        if page_url:
+            next_off = offset + max_rows
+            if next_off < total_rows:
+                note += f" · <a href='{_h(page_url)}&offset={next_off}'>next</a>"
+            if offset > 0:
+                prev = max(0, offset - max_rows)
+                note += f" · <a href='{_h(page_url)}&offset={prev}'>prev</a>"
+        note += "</p>"
+    return f"<table><caption>data table</caption><tr>{head}</tr>{''.join(body_rows)}</table>{note}"
 
 
-def run_page(meta: dict, summary: str, table_html: str, has_stacks: bool) -> str:
-    """A single run: summary + queryable table + view links."""
+def run_page(
+    meta: dict,
+    summary: str,
+    table_html: str,
+    has_stacks: bool,
+    status: dict | None = None,
+) -> str:
+    """A single run: metadata, summary + queryable table + view links."""
     rid = meta["run_id"]
     crumbs = f"<a href='/run/{_h(rid)}'>{_h(meta['suite'])}:{_h(meta['tool'])}</a>"
-    links = [f"<a href='/raw/{_h(rid)}'>raw output</a>"]
+    links = [
+        f"<a href='/raw/{_h(rid)}'>raw</a>",
+        f"<a href='/compare?a={_h(rid)}'>compare</a>",
+        f"<a href='/run/{_h(rid)}/export'>export</a>",
+        f"<form method='post' action='/run/{_h(rid)}/delete' style='display:inline'>"
+        "<button class='btn' type='submit'>delete</button></form>",
+    ]
     if has_stacks:
-        links.insert(0, f"<a href='/flame/{_h(rid)}'>flame graph</a>")
+        links.insert(0, f"<a href='/flame/{_h(rid)}'>flame</a>")
+    meta_lines = [
+        f"duration {meta.get('duration', '')}",
+        f"exit {meta.get('exit_code', '')}",
+        f"workspace {meta.get('workspace_name', '')}",
+    ]
+    if meta.get("task_key"):
+        meta_lines.append(f"task <a href='/tracker/task/{_h(meta['task_key'])}'>{_h(meta['task_key'])}</a>")
+    if meta.get("git_commit"):
+        meta_lines.append(f"git {meta.get('git_commit')} ({meta.get('git_branch', '')})")
+    if meta.get("tags"):
+        meta_lines.append(f"tags {meta.get('tags')}")
+    if meta.get("label"):
+        meta_lines.append(f"label {meta.get('label')}")
+    if meta.get("notes"):
+        meta_lines.append(f"notes {meta.get('notes')}")
     body = (
-        f"<h2>{_h(meta['suite'])}:{_h(meta['tool'])} <span class='pill'>{_h(rid[:8])}</span></h2>"
-        f"<p class='note mono'>{_h(meta['binary'])} · {' · '.join(links)}</p>"
+        f"<h2>{_h(meta['suite'])}:{_h(meta['tool'])} "
+        f"<span class='pill'>{_h(rid)}</span></h2>"
+        f"<p class='note mono'>{_h(meta.get('binary', ''))}</p>"
+        f"<p class='note'>{' · '.join(meta_lines)} · {' · '.join(links)}</p>"
         f"<pre>{_h(summary)}</pre><h3>Data</h3>{table_html}"
     )
-    return page(f"run {rid[:8]}", body, crumbs, active="runs")
+    return page(f"run {rid[:8]}", body, crumbs, active="runs", status=status)
 
 
-def flame_page(run_id: str, svg: str, total: int, focus_name: str | None) -> str:
-    """Interactive flame graph: the SVG (click-to-zoom links) + breadcrumb."""
+def flame_page(run_id: str, svg: str, total: int, focus_name: str | None, hotspots_html: str = "") -> str:
+    """Interactive flame graph: the SVG (click-to-zoom links) + optional hotspot table."""
     crumbs = f"<a href='/run/{_h(run_id)}'>run</a> / flame"
     reset = ""
     if focus_name:
@@ -179,17 +324,62 @@ def flame_page(run_id: str, svg: str, total: int, focus_name: str | None) -> str
     body = (
         f"<h2>Flame graph <span class='pill'>{_h(run_id[:8])}</span></h2>"
         f"<p class='note'>{total:,} samples · click any frame to zoom into its subtree</p>"
-        f"{reset}<div class='flame'>{svg}</div>"
+        f"{reset}<div class='flame'>{svg}</div>{hotspots_html}"
     )
     return page(f"flame {run_id[:8]}", body, crumbs, active="runs")
 
 
-def raw_page(run_id: str, text: str, truncated: bool) -> str:
+def raw_page(run_id: str, text: str, truncated: bool, size: int = 0) -> str:
     """Raw tool output / logs viewer."""
     crumbs = f"<a href='/run/{_h(run_id)}'>run</a> / raw"
-    note = "<p class='note'>truncated — full output via devtools_raw</p>" if truncated else ""
+    note = ""
+    if truncated:
+        note = (
+            f"<p class='note'>preview truncated ({size:,} bytes) — "
+            f"<a href='/raw/{_h(run_id)}/download'>download full</a></p>"
+        )
     body = f"<h2>Raw output <span class='pill'>{_h(run_id[:8])}</span></h2>{note}<pre>{_h(text)}</pre>"
     return page(f"raw {run_id[:8]}", body, crumbs, active="runs")
+
+
+def search_page(results_html: str, query: dict, status: dict | None = None) -> str:
+    form = (
+        "<form class='filter-form' method='get' action='/search'>"
+        f"<input name='q' placeholder='search' value='{_h(query.get('q', ''))}'>"
+        f"<input name='suite' placeholder='suite' value='{_h(query.get('suite', ''))}'>"
+        f"<input name='function_pattern' placeholder='function' value='{_h(query.get('function_pattern', ''))}'>"
+        "<button type='submit'>Search</button></form>"
+    )
+    body = f"<h2>Cross-run search</h2>{form}{results_html}"
+    return page("search", body, active="search", status=status)
+
+
+def compare_page(html: str, a: str, b: str, status: dict | None = None) -> str:
+    form = (
+        "<form class='filter-form' method='get' action='/compare'>"
+        f"<input name='a' placeholder='run_id a' value='{_h(a)}'>"
+        f"<input name='b' placeholder='run_id b' value='{_h(b)}'>"
+        "<button type='submit'>Compare</button></form>"
+    )
+    body = f"<h2>Compare runs</h2>{form}{html}"
+    return page("compare", body, active="runs", status=status)
+
+
+def correlate_page(html: str, a: str, b: str, join_on: str, status: dict | None = None) -> str:
+    form = (
+        "<form class='filter-form' method='get' action='/correlate'>"
+        f"<input name='a' value='{_h(a)}'>"
+        f"<input name='b' value='{_h(b)}'>"
+        f"<input name='join_on' value='{_h(join_on)}' placeholder='join_on'>"
+        "<button type='submit'>Correlate</button></form>"
+    )
+    body = f"<h2>Correlate runs</h2>{form}{html}"
+    return page("correlate", body, active="runs", status=status)
+
+
+def tools_page(check_html: str, status: dict | None = None) -> str:
+    body = f"<h2>Installed tools</h2><pre>{_h(check_html)}</pre>"
+    return page("tools", body, active="tools", status=status)
 
 
 # --- tracker ------------------------------------------------------------------
@@ -218,22 +408,35 @@ def _tags_html(tags_csv: str) -> str:
 
 def task_card(task: dict, extra_class: str = "", footnote: str = "") -> str:
     """One project-management card: key, kind, title, status, tags, progress."""
+    key = task["key"]
     prio = "●" * (6 - int(task.get("priority", 3)))
     kids = task.get("n_children") or 0
     kid_note = f"<span class='badge'>{kids} sub</span>" if kids else ""
     status = task.get("status", "open")
-    return (
-        f"<div class='card {extra_class}'>"
+    parent_html = ""
+    if task.get("parent"):
+        parent_html = f"<div class='sub'>parent {_h(task['parent'])}</div>"
+    desc = task.get("description") or ""
+    desc_html = f"<div class='card-desc'>{_snippet(desc, 180)}</div>" if desc.strip() else ""
+    body = (
         f"<div class='row spread'>"
-        f"<a class='key' href='/tracker/task/{_h(task['key'])}'>{_h(task['key'])}</a>"
+        f"<span class='key'>{_h(key)}</span>"
         f"<span class='badge kind-{_h(task.get('kind', 'task'))}'>{_h(task.get('kind', 'task'))}</span></div>"
         f"<h4>{_h(task['title'])}</h4>"
+        f"{parent_html}{desc_html}"
         f"<div class='row spread'>"
         f"<span class='st {_h(status)}'>{_h(STATUS_LABEL.get(status, '?'))}</span>"
         f"<span class='prio' title='priority {_h(task.get('priority', 3))}'>{prio}</span></div>"
         f"<div>{_tags_html(task.get('tags', ''))} {kid_note}</div>"
         f"{_progress_bar(task.get('n_passed') or 0, task.get('n_criteria') or 0)}"
-        f"{footnote}</div>"
+        f"{footnote}"
+    )
+    return _clickable_card(
+        f"/tracker/task/{_h(key)}",
+        body,
+        f"<a href='/tracker/task/{_h(key)}'>open</a>",
+        extra_class=extra_class,
+        aria=f"Open task {key}",
     )
 
 
@@ -252,23 +455,46 @@ def tracker_overview(projects: list[dict]) -> str:
         chips = " ".join(
             f"<span class='st {s}'>{p['by_status'].get(s, 0)}</span>" for s in STATUS_ORDER if p["by_status"].get(s, 0)
         )
-        cards.append(
-            f"<div class='card'><div class='row spread'>"
-            f"<a class='key' href='/tracker/{_h(p['key'])}'>{_h(p['key'])}</a>"
+        desc = p.get("description") or ""
+        desc_html = f"<div class='card-desc'>{_snippet(desc, 200)}</div>" if desc.strip() else ""
+        body = (
+            f"<div class='row spread'>"
+            f"<span class='key'>{_h(p['key'])}</span>"
             f"<span class='badge'>{_h(p['close_policy'])}</span></div>"
             f"<h4>{_h(p['name'])}</h4>"
-            f"<div class='sub'>{_h(p['description'] or '')}</div>"
+            f"{desc_html}"
             f"<div class='row spread' style='margin-top:8px'>{chips}"
-            f"<span class='sub'>{done}/{total} done</span></div>"
-            f"{_progress_bar(done, total)}</div>"
+            f"<span class='sub'>{done}/{total} tasks</span></div>"
+            f"{_progress_bar(p.get('criteria_passed', 0), p.get('criteria_total', 0) or 1)}"
+        )
+        cards.append(
+            _clickable_card(
+                f"/tracker/{_h(p['key'])}",
+                body,
+                f"<a href='/tracker/{_h(p['key'])}'>open board</a>",
+                aria=f"Open project {p['key']}",
+            )
         )
     body = f"<h2>Projects <span class='count'>{len(projects)}</span></h2>" f"<div class='grid'>{''.join(cards)}</div>"
     return page("tracker", body, active="tracker")
 
 
-def tracker_board(project: dict, tasks_rows: list[dict], plan: dict | None) -> str:
+def tracker_board(
+    project: dict,
+    tasks_rows: list[dict],
+    plan: dict | None,
+    total_tasks: int = 0,
+    shown: int = 0,
+) -> str:
     """Per-project board: status columns of cards + the execution plan."""
     crumbs = f"<a href='/tracker/{_h(project['key'])}'>{_h(project['key'])}</a>"
+    subnav = _tracker_subnav(project["key"])
+    overflow = ""
+    if total_tasks > shown:
+        overflow = (
+            f"<p class='warn'>Showing {shown} of {total_tasks} tasks — "
+            "use tracker filters or sub-views for full lists.</p>"
+        )
     columns = []
     for status in STATUS_ORDER:
         in_col = [t for t in tasks_rows if t.get("status") == status]
@@ -282,21 +508,38 @@ def tracker_board(project: dict, tasks_rows: list[dict], plan: dict | None) -> s
     plan_html = _plan_section(plan) if plan else ""
     body = (
         f"<h2>{_h(project['key'])} — {_h(project['name'])} "
-        f"<span class='count'>{len(tasks_rows)} tasks</span></h2>"
-        f"<div class='board'>{''.join(columns)}</div>{plan_html}"
+        f"<span class='count'>{shown} tasks</span></h2>"
+        f"{subnav}{overflow}<div class='board'>{''.join(columns)}</div>{plan_html}"
     )
     return page(f"{project['key']} board", body, crumbs, active="tracker")
 
 
+def _tracker_subnav(project_key: str) -> str:
+    links = [
+        ("board", f"/tracker/{_h(project_key)}"),
+        ("tree", f"/tracker/{_h(project_key)}/tree"),
+        ("rollup", f"/tracker/{_h(project_key)}/rollup"),
+        ("criteria", f"/tracker/{_h(project_key)}/criteria"),
+        ("commits", f"/tracker/{_h(project_key)}/commits"),
+        ("sync", "/tracker/sync"),
+    ]
+    return "<div class='subnav'>" + " · ".join(f"<a href='{u}'>{label}</a>" for label, u in links) + "</div>"
+
+
 def _plan_section(plan: dict) -> str:
-    """'What needs to happen': ready cards highlighted, blocked with blockers."""
+    """'What needs to happen': ready, blocked, waiting on children."""
     ready = plan.get("ready", [])
     blocked = plan.get("blocked", [])
-    if not ready and not blocked:
+    waiting = plan.get("waiting_on_children", [])
+    if not ready and not blocked and not waiting:
         return ""
     parts = ["<div class='section'><h3>What needs to happen</h3><div class='grid'>"]
     for task in ready[:12]:
         parts.append(task_card(task, extra_class="ready"))
+    if len(ready) > 12:
+        parts.append(f"<p class='note'>+{len(ready) - 12} more ready</p>")
+    for task in waiting[:12]:
+        parts.append(task_card(task, extra_class="waiting", footnote="<div class='sub'>open subtasks remain</div>"))
     for task, blockers in blocked[:12]:
         chips = " ".join(f"<a class='key' href='/tracker/task/{_h(b)}'>{_h(b)}</a>" for b in blockers[:5])
         parts.append(task_card(task, extra_class="stuck", footnote=f"<div class='sub'>waiting on {chips}</div>"))
@@ -304,24 +547,62 @@ def _plan_section(plan: dict) -> str:
     return "".join(parts)
 
 
-def task_detail(task: dict, criteria: list[dict], commits: list[dict], related: dict) -> str:
+def task_detail(
+    task: dict,
+    criteria: list[dict],
+    commits: list[dict],
+    related: dict,
+    issues: list[dict] | None = None,
+    linked_runs: list[str] | None = None,
+) -> str:
     """One task, fully expanded: description, criteria, commits, links."""
     key = task["key"]
     crumbs = f"<a href='/tracker/{_h(task['project'])}'>{_h(task['project'])}</a> / {_h(key)}"
     checks = []
     for c in criteria:
-        mark = {"pass": "✅", "fail": "❌"}.get(c.get("last_result") or "", "⬜")
+        result = c.get("last_result") or ""
+        mark = {"pass": "[pass]", "fail": "[fail]"}.get(result, "[ ]")
         ref = f" <code>{_h(c['test_ref'])}</code>" if c.get("test_ref") else ""
-        checks.append(f"<li>{mark} <b>{_h(c['text'])}</b>{ref}</li>")
+        run_at = f" <span class='sub'>{_h(c.get('last_run_at', ''))}</span>" if c.get("last_run_at") else ""
+        cid = c.get("id", "")
+        toggles = (
+            f"<form method='post' action='/tracker/task/{_h(key)}/criteria/{cid}' style='display:inline'>"
+            "<button class='btn' name='result' value='pass' type='submit'>pass</button> "
+            "<button class='btn' name='result' value='fail' type='submit'>fail</button></form>"
+        )
+        checks.append(f"<li>{mark} <b>{_h(c['text'])}</b>{ref}{run_at} {toggles}</li>")
     checks_html = f"<h3>Acceptance criteria</h3><ul class='check'>{''.join(checks)}</ul>" if checks else ""
     commit_rows = "".join(
-        f"<li><code>{_h(c['commit_hash'][:12])}</code> {_h(c['message_snippet'])}</li>" for c in commits[:10]
+        f"<li><code>{_h(c['commit_hash'])}</code> "
+        f"<span class='sub'>{_h(c.get('repo_path', ''))}</span> "
+        f"{_h(c['message_snippet'])} "
+        f"<span class='sub'>{_h(c.get('linked_at', ''))}</span></li>"
+        for c in commits[:50]
     )
     commits_html = f"<h3>Commits</h3><ul class='check'>{commit_rows}</ul>" if commit_rows else ""
+    issue_rows = ""
+    for iss in issues or []:
+        url = iss.get("url") or ""
+        label = f"{iss.get('provider', '')} #{iss.get('ref_id', '')} ({iss.get('state', '')})"
+        if url:
+            synced = _h(iss.get("last_synced", ""))
+            issue_rows += f"<li><a href='{_h(url)}'>{_h(label)}</a> <span class='sub'>{synced}</span></li>"
+        else:
+            issue_rows += f"<li>{_h(label)}</li>"
+    issues_html = f"<h3>External issues</h3><ul class='check'>{issue_rows}</ul>" if issue_rows else ""
+    runs_html = ""
+    if linked_runs:
+        links = " ".join(f"<a href='/run/{_h(r)}'>{_h(r[:8])}</a>" for r in linked_runs[:20])
+        runs_html = f"<h3>Linked profiling runs</h3><p>{links}</p>"
     rel_parts = []
+    if task.get("parent"):
+        rel_parts.append(
+            f"<div class='sub'>parent: <a class='key' href='/tracker/task/{_h(task['parent'])}'>"
+            f"{_h(task['parent'])}</a></div>"
+        )
     for label, keys in related.items():
         if keys:
-            chips = " ".join(f"<a class='key' href='/tracker/task/{_h(k)}'>{_h(k)}</a>" for k in keys[:10])
+            chips = " ".join(f"<a class='key' href='/tracker/task/{_h(k)}'>{_h(k)}</a>" for k in keys[:30])
             rel_parts.append(f"<div class='sub'>{_h(label)}: {chips}</div>")
     desc = f"<div class='desc'>{_h(task.get('description') or '')}</div>" if task.get("description") else ""
     body = (
@@ -330,8 +611,37 @@ def task_detail(task: dict, criteria: list[dict], commits: list[dict], related: 
         f"<span class='badge kind-{_h(task.get('kind', 'task'))}'>{_h(task.get('kind'))}</span>"
         f"<span class='st {_h(task.get('status'))}'>{_h(STATUS_LABEL.get(task.get('status', ''), '?'))}</span>"
         f"<span class='badge'>priority {_h(task.get('priority'))}</span>"
+        f"<span class='badge'>depth {_h(task.get('depth', ''))}</span>"
         f"{_tags_html(task.get('tags', ''))}</div>"
-        f"{desc}{''.join(rel_parts)}{checks_html}{commits_html}"
+        f"{desc}{''.join(rel_parts)}{issues_html}{checks_html}{commits_html}{runs_html}"
         f"<p class='note'>created {_h(task.get('created_at'))} · updated {_h(task.get('updated_at'))}</p>"
+        f"<form method='post' action='/tracker/task/{_h(key)}/status' style='margin-top:12px'>"
+        f"<select name='status'>"
+        + "".join(f"<option value='{s}'>{STATUS_LABEL[s]}</option>" for s in STATUS_ORDER)
+        + "</select><button type='submit'>Update status</button></form>"
     )
     return page(f"{key}", body, crumbs, active="tracker")
+
+
+def tracker_tree(project_key: str, lines: list[str]) -> str:
+    pre = "\n".join(lines) if lines else "(empty)"
+    body = f"<h2>{_h(project_key)} tree</h2><pre>{_h(pre)}</pre>"
+    return page(f"{project_key} tree", body, active="tracker")
+
+
+def tracker_table_page(
+    project_key: str,
+    view: str,
+    table_html: str,
+    global_page: bool = False,
+) -> str:
+    title = view if global_page else f"{project_key} {view}"
+    crumbs = f"<a href='/tracker/{_h(project_key)}'>{_h(project_key)}</a> / {view}" if project_key else ""
+    subnav = _tracker_subnav(project_key) if project_key else ""
+    body = f"<h2>{_h(title)}</h2>{subnav}{table_html}"
+    return page(title, body, crumbs, active="tracker")
+
+
+def tracker_sync(status: dict) -> str:
+    body = f"<h2>CRDT sync</h2><pre>{_h(str(status))}</pre>"
+    return page("sync", body, active="tracker")

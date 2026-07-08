@@ -65,9 +65,12 @@ async def devtools_analyze(
     if not builder:
         return f"No DataFrame builder for {run.suite}:{run.tool}"
 
-    df = builder(run)
+    df = ws.get_dataframe(run_id)
+    if df is None:
+        df = builder(run)
     if df.is_empty():
         return f"No data in run `{run_id}` ({run.suite}:{run.tool})"
+    ws.cache_dataframe(run_id, df)
 
     spec = build_filter_spec(
         file_pattern=file_pattern,
@@ -141,7 +144,11 @@ async def devtools_query(
     if not builder:
         return f"No DataFrame builder for {run.suite}:{run.tool}"
 
-    df = builder(run)
+    df = ws.get_dataframe(run_id)
+    if df is None:
+        df = builder(run)
+    if not df.is_empty():
+        ws.cache_dataframe(run_id, df)
 
     if columns == ["schema"]:
         schema_info = [f"- `{col}`: {dtype}" for col, dtype in df.schema.items()]

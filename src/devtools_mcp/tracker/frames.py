@@ -22,7 +22,7 @@ TREE_MAX_LINES: int = 500
 _TASKS_SQL = """
 SELECT
     t.key, p.key AS project, parent.key AS parent, t.depth, t.kind, t.status,
-    t.priority, t.title,
+    t.priority, t.title, t.description,
     (SELECT COUNT(*) FROM tasks c WHERE c.parent_id = t.id) AS n_children,
     (SELECT COUNT(*) FROM acceptance_criteria ac WHERE ac.task_id = t.id) AS n_criteria,
     (SELECT COUNT(*) FROM acceptance_criteria ac
@@ -44,6 +44,7 @@ _TASK_SCHEMA: dict[str, type[pl.DataType]] = {
     "status": pl.String,
     "priority": pl.Int64,
     "title": pl.String,
+    "description": pl.String,
     "n_children": pl.Int64,
     "n_criteria": pl.Int64,
     "n_passed": pl.Int64,
@@ -167,6 +168,55 @@ def tags_frame(conn: sqlite3.Connection, project: str | None = None) -> pl.DataF
         sql += " WHERE p.key = ?"
         params.append(project.strip().upper())
     sql += " GROUP BY tg.name ORDER BY COUNT(tt.task_id) DESC, tg.name LIMIT ?"
+    params.append(FRAME_MAX_ROWS)
+    return _frame(conn.execute(sql, params).fetchall(), schema)
+
+
+def deps_frame(conn: sqlite3.Connection, project: str | None = None) -> pl.DataFrame:
+    """Task dependency edges with status of depends_on task."""
+    schema = {
+        "task": pl.String,
+        "depends_on": pl.String,
+        "depends_on_status": pl.String,
+        "created_at": pl.String,
+    }
+    sql = (
+        "SELECT t.key, d.key, d.status, td.created_at "
+        "FROM task_deps td "
+        "JOIN tasks t ON t.id = td.task_id "
+        "JOIN tasks d ON d.id = td.depends_on_id "
+        "JOIN projects p ON p.id = t.project_id"
+    )
+    params: list[object] = []
+    if project is not None:
+        sql += " WHERE p.key = ?"
+        params.append(project.strip().upper())
+    sql += " ORDER BY t.key, d.key LIMIT ?"
+    params.append(FRAME_MAX_ROWS)
+    return _frame(conn.execute(sql, params).fetchall(), schema)
+
+
+def issues_frame(conn: sqlite3.Connection, project: str | None = None) -> pl.DataFrame:
+    """External issue links (GitHub/GitLab)."""
+    schema = {
+        "task": pl.String,
+        "provider": pl.String,
+        "ref_id": pl.String,
+        "repo": pl.String,
+        "url": pl.String,
+        "state": pl.String,
+        "last_synced": pl.String,
+    }
+    sql = (
+        "SELECT t.key, er.provider, er.ref_id, er.repo, er.url, er.state, er.last_synced "
+        "FROM external_refs er JOIN tasks t ON t.id = er.task_id "
+        "JOIN projects p ON p.id = t.project_id"
+    )
+    params: list[object] = []
+    if project is not None:
+        sql += " WHERE p.key = ?"
+        params.append(project.strip().upper())
+    sql += " ORDER BY t.key LIMIT ?"
     params.append(FRAME_MAX_ROWS)
     return _frame(conn.execute(sql, params).fetchall(), schema)
 

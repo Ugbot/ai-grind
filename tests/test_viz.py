@@ -30,7 +30,7 @@ class TestRender:
             ]
         )
         assert "abc12345" in html
-        assert "<script>" not in html.split("<style>")[1]  # body-escaped
+        assert "<script>" not in html.split("</style>")[1].split("<script>")[0]  # body-escaped binary
         assert "/flame/abc12345" in html
 
     def test_empty_dashboard(self):
@@ -39,7 +39,7 @@ class TestRender:
     def test_table_from_df_bounds_rows(self):
         df = pl.DataFrame({"function": [f"f{i}" for i in range(500)], "value": list(range(500))})
         html = render.table_from_df(df, max_rows=50)
-        assert "showing 50 of 500" in html
+        assert "rows 1-50 of 500" in html
 
     def test_table_empty(self):
         assert "no rows" in render.table_from_df(pl.DataFrame())

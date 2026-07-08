@@ -42,6 +42,22 @@ def lldb_frames_df(snapshot: LldbSnapshot) -> pl.DataFrame:
     return pl.DataFrame(rows)
 
 
+def lldb_registers_df(snapshot: LldbSnapshot) -> pl.DataFrame:
+    """Register dump as name/value rows."""
+    if not snapshot.registers:
+        return pl.DataFrame(schema={"register": pl.Utf8, "value": pl.Utf8})
+    rows = [{"register": k, "value": v} for k, v in snapshot.registers.items()]
+    return pl.DataFrame(rows)
+
+
+def lldb_raw_lines_df(snapshot: LldbSnapshot) -> pl.DataFrame:
+    """Line-oriented raw output for memory/expression/disassemble snapshots."""
+    lines = (snapshot.raw_output or "").splitlines()
+    if not lines:
+        return pl.DataFrame(schema={"line_no": pl.Int64, "text": pl.Utf8})
+    return pl.DataFrame({"line_no": list(range(len(lines))), "text": lines})
+
+
 def lldb_threads_df(snapshot: LldbSnapshot) -> pl.DataFrame:
     """Thread summary — one row per thread with stop reason and frame count."""
     rows = []

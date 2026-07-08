@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from devtools_mcp.lldb.analysis import lldb_breakpoints_df, lldb_frames_df, lldb_threads_df, lldb_variables_df
+from devtools_mcp.lldb.analysis import (
+    lldb_breakpoints_df,
+    lldb_frames_df,
+    lldb_raw_lines_df,
+    lldb_registers_df,
+    lldb_threads_df,
+    lldb_variables_df,
+)
 from devtools_mcp.lldb.formatters import format_snapshot_summary
 from devtools_mcp.lldb.models import LldbSnapshot
 from devtools_mcp.lldb.session import check_lldb
@@ -41,6 +48,10 @@ _DF_BUILDERS = {
     "threads": lldb_threads_df,
     "variables": lldb_variables_df,
     "breakpoints": lldb_breakpoints_df,
+    "registers": lldb_registers_df,
+    "memory": lldb_raw_lines_df,
+    "expression": lldb_raw_lines_df,
+    "disassemble": lldb_raw_lines_df,
     "_default": lldb_frames_df,
 }
 

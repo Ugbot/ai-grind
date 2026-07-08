@@ -10,6 +10,7 @@ from __future__ import annotations
 import random
 import string
 import uuid
+from pathlib import Path
 
 import polars as pl
 import pytest
@@ -302,9 +303,11 @@ async def _list_tools() -> set[str]:
 
 
 @pytest.fixture
-def app_ctx() -> AppContext:
+def app_ctx(tmp_path: Path) -> AppContext:
     """Create a standalone AppContext with a workspace for unit-level tests."""
-    ctx = AppContext()
+    from devtools_mcp.store.run_store import RunStore
+
+    ctx = AppContext(run_store=RunStore(tmp_path))
     ws = ctx.create_workspace("test")
     ctx.default_workspace_id = ws.workspace_id
     ctx.registry = ToolRegistry()
@@ -536,7 +539,8 @@ class TestWorkspaceOps:
         raw_file = tmp_path / "raw.xml"
         raw_file.write_text("<valgrindoutput/>")
         ws.store_run(result, str(raw_file))
-        assert ws.get_raw_path(result.run_id) == str(raw_file)
+        assert Path(ws.get_raw_path(result.run_id)).is_file()
+        assert Path(ws.get_raw_path(result.run_id)).read_text() == "<valgrindoutput/>"
 
     def test_list_runs_populated(self, app_ctx):
         ws = app_ctx.get_workspace()

@@ -153,9 +153,12 @@ async def tracker_task(
     Actions:
         create    — project + title; optional kind (epic/story/task/subtask/spike/test),
                     parent (task key), description, priority 1-5. Auto-applies tag rules.
+                    Always supply a short description — it appears on dashboard cards at
+                    http://127.0.0.1:8765/tracker (what/why, acceptance hints, links).
         get       — key: rich detail (children, criteria, tags, commits, external refs)
         update    — key + any of title/description/kind/priority (kind='task' is
-                    the parameter default and therefore ignored on update)
+                    the parameter default and therefore ignored on update). Use
+                    description for context the dashboard cards should show.
         move      — key + parent (reparent) or to_root=True, and/or before (sibling
                     key to reorder in front of). Hierarchy is bounded at 6 levels.
         breakdown — key + subtasks (list of titles, max 20): punch-card decomposition;
@@ -626,6 +629,8 @@ async def tracker_query(
         criteria — all criteria with task keys
         commits  — all commit links
         tags     — tag usage counts
+        deps     — dependency edges
+        issues   — external issue links
     Pass columns=["schema"] to list a view's columns. limit is capped at 200.
     """
     db = _tracker(ctx)
@@ -645,9 +650,11 @@ async def tracker_query(
             "criteria": lambda: frames.criteria_frame(db.conn, project),
             "commits": lambda: frames.commits_frame(db.conn, project),
             "tags": lambda: frames.tags_frame(db.conn, project),
+            "deps": lambda: frames.deps_frame(db.conn, project),
+            "issues": lambda: frames.issues_frame(db.conn, project),
         }
         if view not in builders:
-            return f"Unknown view {view!r}. One of: tasks, tree, rollup, criteria, commits, tags"
+            return f"Unknown view {view!r}. One of: tasks, tree, rollup, criteria, " "commits, tags, deps, issues"
         df = builders[view]()
     except TrackerError as exc:
         return f"Error: {exc}"

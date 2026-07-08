@@ -5,7 +5,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import Context
 
 from devtools_mcp.formatters import format_dataframe
-from devtools_mcp.index import build_index, correlate_runs, search_index
+from devtools_mcp.index import build_index, correlate_runs, get_index_skipped, search_index
 from devtools_mcp.server import get_app_ctx, mcp
 
 
@@ -70,6 +70,9 @@ async def devtools_search(
     if query:
         header += f", query: `{query}`"
     header += ")\n"
+    skipped = get_index_skipped(ws)
+    if skipped:
+        header += f"\n*Skipped {len(skipped)} run(s) during index build.*\n"
 
     return header + "\n" + format_dataframe(results, max_rows=limit)
 

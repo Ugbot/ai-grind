@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import random
 
-from devtools_mcp.flamegraph import build_call_tree, emit_folded, focus, parse_folded, render_svg
+from devtools_mcp.flamegraph import build_call_tree, emit_folded, focus, parse_folded
+from devtools_mcp.flamegraph.render_svg import render_svg  # used by viz server browser page; not MCP tool API
 from devtools_mcp.flamegraph.render_text import render_text_tree, top_table
 from devtools_mcp.flamegraph.tree import MAX_DEPTH, function_stats, top_dispatchers, top_leaves
 from devtools_mcp.models import StackSample
