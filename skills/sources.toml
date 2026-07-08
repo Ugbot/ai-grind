@@ -226,6 +226,22 @@ category = "llm-station"
 # ned-* command variants removed 2026-06-12: upstream llm-station renamed
 # them to the plain commands (build/callers/grep/...) already listed above.
 
+# ------------------------------------------------------- gestalt2 commands ----
+
+[[item]]
+src = "C:/code/Gestalt2/.claude/commands/clean-test-data.md"
+type = "command"
+category = "dev-tools"
+note = "Remove ephemeral test databases and scratch files from any project root"
+
+# ---------------------------------------------------------------- global commands ----
+
+[[item]]
+src = "C:/Users/Capta/.claude/commands/sync-to-ai-grind.md"
+type = "command"
+category = "dev-tools"
+note = "Register a project's skills/commands in ai-grind sources.toml and rebuild the loadable mirror"
+
 # ---------------------------------------------------------------- agents ----
 
 [[item]]

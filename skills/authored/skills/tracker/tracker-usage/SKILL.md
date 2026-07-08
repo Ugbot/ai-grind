@@ -48,6 +48,18 @@ tracker_task(action="create", project="GRIND", title="Ship the tracker", kind="e
   is legal; closing to `done` runs the acceptance gate — see tracker-acceptance).
 - Priority: 1 (highest) to 5.
 
+## Descriptions for the dashboard
+
+Task **descriptions** are not optional fluff — they are what humans (and you on
+refresh) see on kanban cards at `http://127.0.0.1:8765/tracker`. On every
+`tracker_task(action="create", …)` and meaningful `update`, include `description`:
+
+- What the task delivers (1–2 sentences)
+- Constraints, files, or commands if relevant
+- How you'll know it's done (pointer to criteria)
+
+Epics/stories should summarize scope; subtasks can be punch-card sized.
+
 ## Querying without flooding
 
 `tracker_query(view=…)` is the only reporting surface. Views:

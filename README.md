@@ -209,6 +209,17 @@ service and Claude Code reconnects automatically (exponential backoff). If the
 service is down, the MCP server just shows as unavailable — `/mcp` in Claude
 Code retries it once you've started the service.
 
+### Cursor setup
+
+1. `uv sync` (once)
+2. `.\scripts\devtools-service.ps1 start`
+3. Open **Cursor → Settings → MCP** — project [`.cursor/mcp.json`](.cursor/mcp.json) registers `devtools-mcp` at `http://127.0.0.1:8000/mcp`
+4. **Reload MCP** if the service was started after Cursor opened
+5. Smoke test: ask the agent to run `devtools_check`
+6. Optional login autostart: `.\scripts\devtools-service.ps1 install`
+
+Dashboard (auto-starts with the service): `http://127.0.0.1:8765` — Runs, Search, Tracker board, installed-tools status.
+
 ### As a per-project stdio server (alternative)
 
 The classic spawn-per-session model still works (this is also what the plugin

@@ -33,11 +33,30 @@ function Test-Dashboard {
     }
 }
 
+function Test-Mcp {
+    try {
+        $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/mcp" -UseBasicParsing -TimeoutSec 2 -Method GET
+        return ($r.StatusCode -lt 500)
+    } catch {
+        return $false
+    }
+}
+
 function Show-Status {
-    if (Test-Dashboard) {
+    $dash = Test-Dashboard
+    $mcp = Test-Mcp
+    if ($dash -or $mcp) {
         Write-Host "devtools-mcp service is RUNNING"
-        Write-Host "  MCP (streamable HTTP): http://127.0.0.1:$Port/mcp"
-        Write-Host "  Dashboard:             http://127.0.0.1:$DashboardPort  (tracker: /tracker)"
+        if ($mcp) {
+            Write-Host "  MCP (streamable HTTP): http://127.0.0.1:$Port/mcp  [OK]"
+        } else {
+            Write-Host "  MCP (streamable HTTP): http://127.0.0.1:$Port/mcp  [NOT RESPONDING]"
+        }
+        if ($dash) {
+            Write-Host "  Dashboard:             http://127.0.0.1:$DashboardPort  (tracker: /tracker)  [OK]"
+        } else {
+            Write-Host "  Dashboard:             http://127.0.0.1:$DashboardPort  [NOT RESPONDING]"
+        }
     } else {
         Write-Host "devtools-mcp service is NOT running. Start it with:"
         Write-Host "  $PSCommandPath start"

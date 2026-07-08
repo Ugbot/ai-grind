@@ -1,7 +1,7 @@
 {
   "counts": {
-    "skill": 24,
-    "command": 13,
+    "skill": 27,
+    "command": 15,
     "agent": 3,
     "archive": 1
   },
@@ -45,6 +45,30 @@
       "origin": "C:\\code\\marbledb\\.claude\\skills\\perfview-etw-trace.md",
       "dest": "catalog\\skills\\profiling\\perfview-etw-trace\\SKILL.md",
       "sha256": "cf23777458a2fee8c4e5cdfa6bc50eee97090737d0eeb18d0d6521d671d9677f"
+    },
+    {
+      "name": "profile-change",
+      "type": "skill",
+      "category": "profiling",
+      "origin": "C:\\code\\llm-station\\src\\ralph\\skills\\profile-change\\SKILL.md",
+      "dest": "catalog\\skills\\profiling\\profile-change\\SKILL.md",
+      "sha256": "2e697b09a85338e142d3a884f8d8e27b7486adb9f9f5a68c02ed7a721e5004c7"
+    },
+    {
+      "name": "worktree-bench",
+      "type": "skill",
+      "category": "profiling",
+      "origin": "C:\\code\\llm-station\\src\\ralph\\skills\\worktree-bench\\SKILL.md",
+      "dest": "catalog\\skills\\profiling\\worktree-bench\\SKILL.md",
+      "sha256": "d76d8bc2ce08b080e4ee0fdc955cc0743924e9ae584a98dee0b3475fe19423c0"
+    },
+    {
+      "name": "perf-bisect",
+      "type": "skill",
+      "category": "profiling",
+      "origin": "C:\\code\\llm-station\\src\\ralph\\skills\\perf-bisect\\SKILL.md",
+      "dest": "catalog\\skills\\profiling\\perf-bisect\\SKILL.md",
+      "sha256": "d141347551fa7a874cac23c0539d8686cb72c89a1731ac751f3940a3561715ae"
     },
     {
       "name": "llm-station-analyze",
@@ -309,6 +333,22 @@
       "origin": "C:\\code\\llm-station\\.claude\\commands\\task.md",
       "dest": "catalog\\commands\\llm-station\\task.md",
       "sha256": "96f6455483b396d9f9fa8d17dfcde0a35b1017d4bb57d9a4abf07404b52a9719"
+    },
+    {
+      "name": "clean-test-data",
+      "type": "command",
+      "category": "dev-tools",
+      "origin": "C:\\code\\Gestalt2\\.claude\\commands\\clean-test-data.md",
+      "dest": "catalog\\commands\\dev-tools\\clean-test-data.md",
+      "sha256": "385d2af38357e2bf6cd969238df1294a23f9bac076e3932b252b5639af767e6a"
+    },
+    {
+      "name": "sync-to-ai-grind",
+      "type": "command",
+      "category": "dev-tools",
+      "origin": "C:\\Users\\Capta\\.claude\\commands\\sync-to-ai-grind.md",
+      "dest": "catalog\\commands\\dev-tools\\sync-to-ai-grind.md",
+      "sha256": "1e9358e2639fabc776dfcc2baabdd4dda630974473e8c7294ef1fa58c97ba492"
     },
     {
       "name": "living-docs-writer",
