@@ -20,7 +20,9 @@ precisely.
 
 1. **`devtools_check()`** — see which suites/tools are installed on this machine.
 2. **`devtools_run(suite, tool, binary, args=…, extra_args=…)`** — run a tool.
-   Returns a bounded summary + `run_id`.
+   Returns a bounded summary + `run_id`. Always set **`label`** (short title) and
+   **`notes`** (what you profiled and why) — they appear on dashboard run cards at
+   `http://127.0.0.1:8765`. Link runs to tracker work with **`task_key`** (`PROJ-123`).
 3. **`devtools_analyze(run_id, …)`** / **`devtools_query(run_id, columns=…)`** —
    filter/group/sort/paginate the stored DataFrame. `columns=["schema"]` lists
    available columns first.
@@ -60,7 +62,20 @@ A perf/ETW/JFR run can contain tens of thousands of symbol-resolved nodes. Askin
 for all of it wastes context and buries the signal. The summary gives you the
 top-N; `devtools_analyze` lets you ask exactly what you need — e.g. group by
 module, filter to your own namespace, sort by exclusive %, or sample. Reach for
-`devtools_raw(run_id)` only as a last resort (it truncates at 50 KB).
+`devtools_raw(run_id)` only as a last resort (it truncates at 200 KB).
+
+## Dashboard metadata (cards)
+
+The browser UI at `http://127.0.0.1:8765` shows **clickable cards** for runs and
+tracker tasks. Populate them when you create work:
+
+| Surface | Fields to set | Shown on card |
+|---------|---------------|---------------|
+| Runs | `label`, `notes`, `tags`, `task_key` on `devtools_run` | title, preview text, tags, task link |
+| Tracker tasks | `description` on `tracker_task` create/update | title + description preview (3 lines) |
+| Projects | `description` on `tracker_project` create | project card preview |
+
+Use descriptions for **what / why / done-when** in plain language — not just the title repeated.
 
 See also: [[flamegraph-reading]], [[etw-profiling]], [[jvm-profiling]],
 [[jvm-threads-heap]], [[cdb-windows-debug]].

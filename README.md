@@ -125,6 +125,26 @@ API at `/api/crdt/`. Work fully offline, sync when you meet the network again.
 (v1 is row-level LWW with full-exchange transport; field-level merge and
 incremental vector-clock exchange are the documented upgrade path.)
 
+### Agent collaboration (local)
+
+Run several agents on one machine — Claude Code, Cursor, Codex, side by side —
+without them silently stepping on each other's edits. **Claude Code hooks**
+(`hooks/`, wired up automatically by the plugin) report every Edit/Write to
+the local service; the tracker records who touched what, and if another
+session is on the same file the agent gets a warning injected straight into
+its context. Agents can also take **advisory claims** (self-expiring leases,
+heartbeated by their own edits) on files before a big refactor via the
+`tracker_files` tool — by default a contested file warns, and with
+`DEVTOOLS_MCP_COLLAB_MODE=ask` it surfaces a permission prompt to the human
+instead. Everything links to tracker tasks (`DEVTOOLS_MCP_TASK=GRIND-42`), the
+**`/collab`** dashboard page shows sessions, claims and contested files live,
+and `tracker_query(view="activity"|"claims")` gives the bounded tables. See
+the `agent-collab` skill for the workflow.
+
+> **Coming soon:** a multi-user **team collab server** that extends this
+> across machines and teammates. The local layer is its single-machine
+> precursor and will sync into it.
+
 ### Skills library
 
 `skills/` is the other half of the toolkit: the knowledge that makes the tools
@@ -152,8 +172,8 @@ uv sync
 
 This repo is a self-contained Claude Code **plugin marketplace**
 (`.claude-plugin/marketplace.json`) shipping one plugin, `devtools-mcp`, that
-bundles the MCP server **and** the full skills library (48 skills, 10 commands,
-3 agents). Install it in Claude Code:
+bundles the MCP server **and** the full skills library (49 skills, 15 commands,
+3 agents), plus the agent-collab hooks. Install it in Claude Code:
 
 ```
 /plugin marketplace add Ugbot/ai-grind
