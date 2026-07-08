@@ -145,7 +145,15 @@ def task_detail_page(db: TrackerDB, key: str, linked_runs: list[str] | None = No
         "waits on": [dep.key for dep in deps_mod.deps_of(db.conn, task.id)],
         "blocks": [dep.key for dep in deps_mod.dependents_of(db.conn, task.id)],
     }
-    return render.task_detail(row, criteria_rows, commit_rows, related, issue_rows, linked_runs or [])
+    activity_rows = [
+        dict(r)
+        for r in db.conn.execute(
+            "SELECT session_id, agent_label, file_path, op, ts FROM file_activity "
+            "WHERE task_key = ? ORDER BY ts DESC LIMIT 50",
+            (task.key,),
+        ).fetchall()
+    ]
+    return render.task_detail(row, criteria_rows, commit_rows, related, issue_rows, linked_runs or [], activity_rows)
 
 
 def tree_page(db: TrackerDB, project_key: str) -> str | None:
@@ -194,3 +202,18 @@ def sync_page(db: TrackerDB) -> str:
 
     status = crdt.status(db)
     return render.tracker_sync(status)
+
+
+def collab_page(db: TrackerDB) -> str:
+    """Local agent collaboration overview: sessions, claims, recent touches."""
+    from devtools_mcp.tracker import activity as activity_mod
+
+    sessions = activity_mod.sessions_overview(db.conn)
+    claims = [c.model_dump() for c in activity_mod.active_claims(db.conn)]
+    recent = [t.model_dump() for t in activity_mod.recent_activity(db.conn, limit=100)]
+    holders: dict[tuple[str, str], set[str]] = {}
+    for entry in claims + recent:  # bounded: <= LIST_MAX + 100
+        path = (entry["repo_root"], entry["file_path"])
+        holders.setdefault(path, set()).add(entry["session_id"])
+    contested = {path for path, sessions_on in holders.items() if len(sessions_on) > 1}
+    return render.collab_page(sessions, claims, recent, contested)

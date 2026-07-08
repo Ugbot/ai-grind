@@ -7,6 +7,7 @@ import json
 import urllib.parse
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from devtools_mcp.flamegraph.render_svg import render_svg  # browser viz page only; not MCP tool API
@@ -16,6 +17,8 @@ from devtools_mcp.viz import render
 
 _RAW_MAX = 200_000
 _PUSH_MAX_BYTES = 50_000_000
+_TOUCH_MAX_BYTES = 64_000
+_TOUCH_FILES_MAX = 50
 _TABLE_PAGE = 50
 
 
@@ -185,6 +188,10 @@ class _Handler(BaseHTTPRequestHandler):
                 self._route_run(app, parts, query)
             elif parts[0] == "tracker":
                 self._route_tracker(parts[1:], query)
+            elif parts[0] == "collab":
+                from devtools_mcp.viz import tracker_data
+
+                self._send(_with_tracker(tracker_data.collab_page))
             elif parts[0] == "api":
                 self._route_api_get(parts[1:], query)
             else:
@@ -207,6 +214,11 @@ class _Handler(BaseHTTPRequestHandler):
 
                 counters = _with_tracker(lambda db: crdt.merge_ops(db, payload.get("ops", [])))
                 self._send_json(counters)
+            elif parts == ["api", "collab", "touch"]:
+                if length <= 0 or length > _TOUCH_MAX_BYTES:
+                    self._send_json({"error": f"bad Content-Length {length}"}, 400)
+                    return
+                self._post_collab_touch(json.loads(body))
             elif len(parts) == 4 and parts[0] == "tracker" and parts[1] == "task" and parts[3] == "status":
                 key = unquote(parts[2]).upper()
                 fields = urllib.parse.parse_qs(body)
@@ -227,6 +239,45 @@ class _Handler(BaseHTTPRequestHandler):
                 self._send_json({"error": "not found"}, 404)
         except Exception as e:
             self._send_json({"error": str(e)}, 500)
+
+    def _post_collab_touch(self, payload: dict) -> None:
+        """Ingest a file-touch report from an agent hook (lenient by design —
+        the hook path must never break editing, so bad optional fields are
+        dropped rather than rejected; only session_id/files are mandatory)."""
+        from devtools_mcp.tracker import activity
+        from devtools_mcp.tracker.db import TrackerError
+        from devtools_mcp.tracker.tasks import TASK_KEY_RE
+
+        session_id = str(payload.get("session_id") or "").strip()
+        files = payload.get("files") or []
+        if not session_id or not isinstance(files, list) or not files:
+            self._send_json({"error": "session_id and files are required"}, 400)
+            return
+        files = [str(f) for f in files[:_TOUCH_FILES_MAX]]
+        cwd = str(payload.get("cwd") or "") or "."
+        agent = str(payload.get("agent") or "")
+        tool = str(payload.get("tool") or "")
+        op = str(payload.get("op") or "edit")
+        if op not in ("edit", "write", "read"):
+            op = "edit"
+        task_key = str(payload.get("task_key") or "").strip().upper() or None
+        if task_key and not TASK_KEY_RE.match(task_key):
+            task_key = None  # lenient: bad key is dropped, not an error
+
+        def ingest(db):
+            recorded = activity.record_touches(
+                db, session_id, cwd, files, agent_label=agent, task_key=task_key, tool_name=tool, op=op
+            )
+            conflicts: list[dict] = []
+            for path in files[:10]:  # bounded conflict check
+                root, rel = activity.normalize(cwd, path)
+                conflicts += activity.conflicts_for(db.conn, session_id, root, rel)
+            return {"recorded": recorded, "conflicts": conflicts}
+
+        try:
+            self._send_json(_with_tracker(ingest))
+        except TrackerError as exc:
+            self._send_json({"error": str(exc)}, 400)
 
     def _post_task_status(self, key: str, status: str) -> None:
         from devtools_mcp.tracker import tasks as tasks_mod
@@ -352,6 +403,32 @@ class _Handler(BaseHTTPRequestHandler):
                 return {"site_id": db.site_id, "ops": crdt.ops_after(db.conn, after)}
 
             self._send_json(_with_tracker(pull))
+        elif rest == ["collab", "conflicts"]:
+            from devtools_mcp.tracker import activity
+
+            session = (query.get("session") or [""])[0]
+            path = (query.get("path") or [""])[0]
+            cwd = (query.get("cwd") or [""])[0]
+            if not session or not path:
+                self._send_json({"error": "session and path are required"}, 400)
+                return
+
+            def check(db):
+                root, rel = activity.normalize(cwd or str(Path(path).parent), path)
+                return {"file": rel, "conflicts": activity.conflicts_for(db.conn, session, root, rel)}
+
+            self._send_json(_with_tracker(check))
+        elif rest == ["collab", "status"]:
+            from devtools_mcp.tracker import activity
+
+            def overview(db):
+                return {
+                    "sessions": activity.sessions_overview(db.conn),
+                    "claims": [c.model_dump() for c in activity.active_claims(db.conn)],
+                    "recent": [t.model_dump() for t in activity.recent_activity(db.conn, limit=100)],
+                }
+
+            self._send_json(_with_tracker(overview))
         else:
             self._send_json({"error": "not found"}, 404)
 

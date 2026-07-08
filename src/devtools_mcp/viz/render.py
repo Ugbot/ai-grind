@@ -156,6 +156,7 @@ def page(
         ("runs", "/", "Runs"),
         ("search", "/search", "Search"),
         ("tracker", "/tracker", "Tracker"),
+        ("collab", "/collab", "Collab"),
         ("tools", "/tools", "Tools"),
     ]
     nav = "".join(f"<a href='{href}' class='{'on' if key == active else ''}'>{label}</a>" for key, href, label in tabs)
@@ -554,6 +555,7 @@ def task_detail(
     related: dict,
     issues: list[dict] | None = None,
     linked_runs: list[str] | None = None,
+    activity: list[dict] | None = None,
 ) -> str:
     """One task, fully expanded: description, criteria, commits, links."""
     key = task["key"]
@@ -594,6 +596,15 @@ def task_detail(
     if linked_runs:
         links = " ".join(f"<a href='/run/{_h(r)}'>{_h(r[:8])}</a>" for r in linked_runs[:20])
         runs_html = f"<h3>Linked profiling runs</h3><p>{links}</p>"
+    activity_html = ""
+    if activity:
+        touch_rows = "".join(
+            f"<li><code>{_h(t.get('file_path', ''))}</code> {_h(t.get('op', ''))} "
+            f"by <b>{_h(t.get('agent_label') or t.get('session_id', ''))}</b> "
+            f"<span class='sub'>{_h(t.get('ts', ''))}</span></li>"
+            for t in activity[:50]
+        )
+        activity_html = f"<h3>File activity</h3><ul class='check'>{touch_rows}</ul>"
     rel_parts = []
     if task.get("parent"):
         rel_parts.append(
@@ -613,7 +624,7 @@ def task_detail(
         f"<span class='badge'>priority {_h(task.get('priority'))}</span>"
         f"<span class='badge'>depth {_h(task.get('depth', ''))}</span>"
         f"{_tags_html(task.get('tags', ''))}</div>"
-        f"{desc}{''.join(rel_parts)}{issues_html}{checks_html}{commits_html}{runs_html}"
+        f"{desc}{''.join(rel_parts)}{issues_html}{checks_html}{commits_html}{runs_html}{activity_html}"
         f"<p class='note'>created {_h(task.get('created_at'))} · updated {_h(task.get('updated_at'))}</p>"
         f"<form method='post' action='/tracker/task/{_h(key)}/status' style='margin-top:12px'>"
         f"<select name='status'>"
@@ -645,3 +656,59 @@ def tracker_table_page(
 def tracker_sync(status: dict) -> str:
     body = f"<h2>CRDT sync</h2><pre>{_h(str(status))}</pre>"
     return page("sync", body, active="tracker")
+
+
+def collab_page(
+    sessions: list[dict],
+    claims: list[dict],
+    recent: list[dict],
+    contested: set[tuple[str, str]],
+) -> str:
+    """Local agent collaboration: who is working where, right now.
+
+    `contested` marks (repo_root, file_path) pairs touched or claimed by more
+    than one session — those rows get the conflict (stuck) border.
+    """
+    session_cards = "".join(
+        f"<div class='card'><h4>{_h(s.get('agent_label') or s.get('session_id', ''))}</h4>"
+        f"<div class='sub'>session <code>{_h(str(s.get('session_id', ''))[:16])}</code></div>"
+        f"<div class='row'><span class='badge'>{_h(s.get('touches', 0))} touches</span>"
+        f"<span class='badge'>{_h(s.get('claims', 0))} claims</span></div>"
+        f"<div class='sub'>last seen {_h(s.get('last_seen', ''))}</div></div>"
+        for s in sessions[:50]
+    )
+    sessions_html = (
+        f"<div class='grid'>{session_cards}</div>"
+        if session_cards
+        else "<div class='empty'>No agent sessions yet — touches arrive via the "
+        "Claude Code hooks or <code>tracker_files</code>.</div>"
+    )
+    claim_rows = "".join(
+        f"<li class='{'stuck' if (c.get('repo_root', ''), c.get('file_path', '')) in contested else ''}'>"
+        f"<code>{_h(c.get('file_path', ''))}</code> held by "
+        f"<b>{_h(c.get('agent_label') or c.get('session_id', ''))}</b>"
+        + (f" on <span class='key'>{_h(c['task_key'])}</span>" if c.get("task_key") else "")
+        + f" <span class='sub'>expires {_h(c.get('expires_at', ''))} · {_h(c.get('repo_root', ''))}</span></li>"
+        for c in claims[:100]
+    )
+    claims_html = f"<ul class='check'>{claim_rows}</ul>" if claim_rows else "<p class='note'>no active claims</p>"
+    touch_rows = "".join(
+        f"<li class='{'stuck' if (t.get('repo_root', ''), t.get('file_path', '')) in contested else ''}'>"
+        f"<code>{_h(t.get('file_path', ''))}</code> {_h(t.get('op', ''))} by "
+        f"<b>{_h(t.get('agent_label') or t.get('session_id', ''))}</b>"
+        + (f" on <span class='key'>{_h(t['task_key'])}</span>" if t.get("task_key") else "")
+        + f" <span class='sub'>{_h(t.get('ts', ''))} · {_h(t.get('repo_root', ''))}</span></li>"
+        for t in recent[:100]
+    )
+    touches_html = f"<ul class='check'>{touch_rows}</ul>" if touch_rows else "<p class='note'>no recent activity</p>"
+    body = (
+        "<h2>Agent collaboration</h2>"
+        "<p class='note'>File touches and advisory claims from every agent on this machine, "
+        "reported by hooks and <code>tracker_files</code>. Highlighted rows are contested — "
+        "more than one session on the same file. A multi-user team collab server is "
+        "<b>coming soon</b>; this local view is its single-machine precursor.</p>"
+        f"<div class='section'><h3>Sessions</h3>{sessions_html}</div>"
+        f"<div class='section'><h3>Active claims</h3>{claims_html}</div>"
+        f"<div class='section'><h3>Recent touches</h3>{touches_html}</div>"
+    )
+    return page("collab", body, active="collab", auto_refresh=True)
