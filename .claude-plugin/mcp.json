@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "devtools-mcp": {
+      "command": "uv",
+      "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}", "devtools-mcp"]
+    }
+  }
+}

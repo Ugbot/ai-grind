@@ -7,8 +7,8 @@
     "name": "Darach Ennis",
     "email": "darach@gmail.com"
   },
-  "homepage": "https://github.com/darach/ai-grind",
-  "repository": "https://github.com/darach/ai-grind",
+  "homepage": "https://github.com/Ugbot/ai-grind",
+  "repository": "https://github.com/Ugbot/ai-grind",
   "license": "MIT",
   "keywords": [
     "mcp",
@@ -22,7 +22,7 @@
     "jvm",
     "skills"
   ],
-  "mcpServers": "./.mcp.json",
+  "mcpServers": "./.claude-plugin/mcp.json",
   "skills": "./plugin/skills",
   "commands": "./plugin/commands",
   "agents": [

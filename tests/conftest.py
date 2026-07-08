@@ -11,6 +11,14 @@ import uuid
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _isolated_data_dir(tmp_path, monkeypatch):
+    """Point the persistent run store at a temp dir so tests never read or
+    pollute the real ~/.devtools-mcp (server-level tests go through the real
+    lifespan, which loads every persisted run at startup)."""
+    monkeypatch.setenv("DEVTOOLS_MCP_DATA", str(tmp_path / "devtools-data"))
+
+
 def _random_hex(n: int = 8) -> str:
     return "0x" + "".join(random.choices("0123456789ABCDEF", k=n))
 
