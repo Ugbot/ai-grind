@@ -47,6 +47,8 @@ def _maybe_start_dashboard(ctx: AppContext) -> None:
 
     if os.environ.get("DEVTOOLS_MCP_DASHBOARD", "0") != "1":
         return
+    if ctx.viz_server is not None and ctx.viz_server.running:
+        return  # already started eagerly in service mode (main)
     from devtools_mcp.viz.server import VizServer
 
     port = int(os.environ.get("DEVTOOLS_MCP_DASHBOARD_PORT", "8765"))
@@ -62,22 +64,35 @@ def _maybe_start_dashboard(ctx: AppContext) -> None:
     print(f"devtools-mcp: dashboard at {url} (tracker at {url}/tracker)", file=sys.stderr)
 
 
-@asynccontextmanager
-async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
-    """Create default workspace, detect tools on startup, clean up on shutdown."""
+# Set by main() in service mode: FastMCP's streamable-http lifespan only runs
+# on the first client session, so a shared instance bootstraps its context (and
+# dashboard) eagerly at boot and the lifespan adopts it instead of re-creating.
+_EAGER_CTX: AppContext | None = None
+
+
+def _bootstrap_ctx() -> AppContext:
+    """Default workspace + persisted runs — shared by eager boot and the lifespan."""
+    import sys
+
     ctx = AppContext()
     ws = ctx.create_workspace("default")
     ctx.default_workspace_id = ws.workspace_id
     loaded = ctx.hydrate_all_runs()
+    if loaded:
+        print(f"devtools-mcp: loaded {loaded} persisted run(s) from disk", file=sys.stderr)
+    assert ctx.default_workspace_id, "bootstrap produced no default workspace"
+    return ctx
+
+
+@asynccontextmanager
+async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
+    """Adopt the eager service context (or create one), detect tools, clean up."""
+    ctx = _EAGER_CTX if _EAGER_CTX is not None else _bootstrap_ctx()
 
     # Auto-detect installed tools
     ctx.registry = ToolRegistry()
     await ctx.registry.detect_all()
     _maybe_start_dashboard(ctx)
-    if loaded:
-        import sys
-
-        print(f"devtools-mcp: loaded {loaded} persisted run(s) from disk", file=sys.stderr)
 
     try:
         yield ctx
@@ -183,6 +198,13 @@ def main() -> None:
         mcp.settings.port = args.port
         path = mcp.settings.sse_path if transport == "sse" else mcp.settings.streamable_http_path
         print(f"devtools-mcp: {transport} on http://{args.host}:{args.port}{path}", file=sys.stderr)
+        if dashboard:
+            # Service mode: the streamable-http lifespan only fires on the first
+            # client session, so bring the context + dashboard up eagerly — the
+            # dashboard (and its collab ingest API) must be reachable from boot.
+            global _EAGER_CTX
+            _EAGER_CTX = _bootstrap_ctx()
+            _maybe_start_dashboard(_EAGER_CTX)
 
     mcp.run(transport=transport)
 

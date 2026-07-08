@@ -22,7 +22,7 @@ import sys
 import urllib.parse
 import urllib.request
 
-TIMEOUT_S = 0.5
+TIMEOUT_S = 2.0  # see report_touch.py — cold tracker open can exceed 0.5s
 
 
 def _target_file(tool_input: dict) -> str:

@@ -20,7 +20,10 @@ import os
 import sys
 import urllib.request
 
-TIMEOUT_S = 0.5
+# 2s: interpreter startup dominates hook latency; the first request after a
+# service boot pays a cold tracker open (WAL + migration check) that can
+# exceed half a second. Claude Code's own hook timeout (5s) is the hard cap.
+TIMEOUT_S = 2.0
 FILES_MAX = 50
 
 

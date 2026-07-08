@@ -38,6 +38,10 @@ function Test-Mcp {
         $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/mcp" -UseBasicParsing -TimeoutSec 2 -Method GET
         return ($r.StatusCode -lt 500)
     } catch {
+        # 5.1 throws on 4xx: a plain GET to a streamable-http MCP endpoint is
+        # 406 Not Acceptable by design — any HTTP status < 500 means alive.
+        $resp = $_.Exception.Response
+        if ($null -ne $resp -and [int]$resp.StatusCode -lt 500) { return $true }
         return $false
     }
 }
