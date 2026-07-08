@@ -13,6 +13,7 @@ dependencies = [
     "lxml>=6.0.2",
     "mcp>=1.26.0",
     "polars>=1.39.0",
+    "pycrdt>=0.14.1",
     "pydantic>=2.12.5",
 ]
 

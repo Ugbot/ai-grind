@@ -145,6 +145,23 @@ the `agent-collab` skill for the workflow.
 > across machines and teammates. The local layer is its single-machine
 > precursor and will sync into it.
 
+### Live skills (CRDT documents)
+
+Skills don't have to be static files. A **live skill** is a SKILL.md whose
+source of truth is a CRDT text document ([pycrdt](https://github.com/y-crdt/pycrdt)
+— Yrs under the hood): agents edit it in place with the `skill_live` tool
+(`create` / `append` / `patch` with find-replace semantics), and every change
+is **materialized** to a real `~/.claude/skills/<name>/SKILL.md`
+(`DEVTOOLS_MCP_LIVE_SKILLS_DIR` overrides), so the file Claude loads is always
+the current merged state. `skill_live(action="sync", url="http://other-box:8765")`
+exchanges state-vector diffs with any peer dashboard — concurrent edits from
+different agents or machines merge at character level instead of one side
+clobbering the other. An agent that learns a better incantation appends it to
+the skill; after the next sync, every machine's copy teaches it.
+
+Prefer `append`/`patch` over rewriting whole documents: concurrent full
+rewrites both survive a CRDT merge (that's the point) and duplicate content.
+
 ### Skills library
 
 `skills/` is the other half of the toolkit: the knowledge that makes the tools
@@ -172,7 +189,7 @@ uv sync
 
 This repo is a self-contained Claude Code **plugin marketplace**
 (`.claude-plugin/marketplace.json`) shipping one plugin, `devtools-mcp`, that
-bundles the MCP server **and** the full skills library (49 skills, 15 commands,
+bundles the MCP server **and** the full skills library (50 skills, 15 commands,
 3 agents), plus the agent-collab hooks. Install it in Claude Code:
 
 ```

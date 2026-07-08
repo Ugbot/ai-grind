@@ -32,6 +32,16 @@ def _with_tracker(fn: Callable):
         db.close()
 
 
+def _with_skilldocs(fn: Callable):
+    from devtools_mcp.skilldocs import SkillDocStore
+
+    store = SkillDocStore()
+    try:
+        return fn(store)
+    finally:
+        store.close()
+
+
 def _find_run(app: object, run_id: str):
     for ws in getattr(app, "workspaces", {}).values():
         try:
@@ -219,6 +229,11 @@ class _Handler(BaseHTTPRequestHandler):
                     self._send_json({"error": f"bad Content-Length {length}"}, 400)
                     return
                 self._post_collab_touch(json.loads(body))
+            elif len(parts) == 3 and parts[:2] == ["api", "skilldoc"] and parts[2] in ("exchange", "push"):
+                if length <= 0 or length > _PUSH_MAX_BYTES:
+                    self._send_json({"error": f"bad Content-Length {length}"}, 400)
+                    return
+                self._post_skilldoc(parts[2], json.loads(body))
             elif len(parts) == 4 and parts[0] == "tracker" and parts[1] == "task" and parts[3] == "status":
                 key = unquote(parts[2]).upper()
                 fields = urllib.parse.parse_qs(body)
@@ -239,6 +254,36 @@ class _Handler(BaseHTTPRequestHandler):
                 self._send_json({"error": "not found"}, 404)
         except Exception as e:
             self._send_json({"error": str(e)}, 500)
+
+    def _post_skilldoc(self, action: str, payload: dict) -> None:
+        """Live-skill sync API: exchange (sv -> missing diff + our sv) and push."""
+        import base64
+
+        from devtools_mcp.skilldocs import SkillDocError
+
+        name = str(payload.get("name") or "").strip()
+        if not name:
+            self._send_json({"error": "name is required"}, 400)
+            return
+
+        def handle(store):
+            if action == "exchange":
+                their_sv = base64.b64decode(payload.get("sv", "") or "")
+                if not store.exists(name):
+                    return {"update": "", "sv": ""}
+                update = store.diff(name, their_sv if their_sv else None)
+                return {
+                    "update": base64.b64encode(update).decode("ascii"),
+                    "sv": base64.b64encode(store.state(name)).decode("ascii"),
+                }
+            update = base64.b64decode(payload.get("update", "") or "")
+            path = store.apply(name, update)
+            return {"applied": True, "materialized": str(path) if path else None}
+
+        try:
+            self._send_json(_with_skilldocs(handle))
+        except SkillDocError as exc:
+            self._send_json({"error": str(exc)}, 400)
 
     def _post_collab_touch(self, payload: dict) -> None:
         """Ingest a file-touch report from an agent hook (lenient by design —
@@ -403,6 +448,8 @@ class _Handler(BaseHTTPRequestHandler):
                 return {"site_id": db.site_id, "ops": crdt.ops_after(db.conn, after)}
 
             self._send_json(_with_tracker(pull))
+        elif rest == ["skilldoc", "list"]:
+            self._send_json(_with_skilldocs(lambda store: {"skills": store.list_skills()}))
         elif rest == ["collab", "conflicts"]:
             from devtools_mcp.tracker import activity
 
