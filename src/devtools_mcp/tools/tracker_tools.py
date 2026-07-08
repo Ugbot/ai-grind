@@ -8,11 +8,14 @@ paged via tracker_query.
 
 from __future__ import annotations
 
+import os
+
 import anyio
 from mcp.server.fastmcp import Context
 
 from devtools_mcp.formatters import format_dataframe
 from devtools_mcp.server import get_app_ctx, mcp
+from devtools_mcp.tracker import activity as activity_mod
 from devtools_mcp.tracker import commits as commits_mod
 from devtools_mcp.tracker import criteria as criteria_mod
 from devtools_mcp.tracker import deps as deps_mod
@@ -604,6 +607,123 @@ async def tracker_sync(
         return f"Error: {exc}"
 
 
+def _collab_identity(agent: str | None) -> str:
+    """Resolve this caller's collab identity: explicit param, env label, or pid.
+
+    Hooks report the real Claude Code session_id; tool calls fall back to this
+    (documented limitation on a shared HTTP server — the team collab server
+    will own identity properly)."""
+    resolved = (agent or "").strip() or os.environ.get("DEVTOOLS_MCP_AGENT", "").strip() or f"pid-{os.getpid()}"
+    assert resolved, "collab identity resolution produced empty id"
+    assert len(resolved) <= activity_mod.SESSION_ID_MAX, "identity too long"
+    return resolved
+
+
+def _conflict_lines(found: list[dict]) -> list[str]:
+    """Render conflict dicts (activity.conflicts_for) as markdown lines."""
+    assert isinstance(found, list), "conflicts must be a list"
+    lines = []
+    for c in found[:20]:  # bounded
+        who = c.get("agent") or c.get("session_id")
+        task = f" on task `{c['task_key']}`" if c.get("task_key") else ""
+        if c["kind"] == "claim":
+            lines.append(f"- CLAIMED by **{who}**{task} until {c['expires_at']}: `{c['file']}`")
+        else:
+            lines.append(f"- touched by **{who}**{task} at {c['ts']}: `{c['file']}`")
+    return lines
+
+
+@mcp.tool()
+async def tracker_files(
+    ctx: Context,
+    action: str,
+    repo: str | None = None,
+    files: list[str] | None = None,
+    file: str | None = None,
+    task_key: str | None = None,
+    op: str = "edit",
+    ttl_minutes: int = 15,
+    agent: str | None = None,
+) -> str:
+    """Local agent collaboration: report file touches, take advisory claims,
+    and see who else is working where. Machine-local (a multi-user team collab
+    server is coming soon; this is its single-machine precursor).
+
+    Actions:
+        touch     — repo + files (≤50): record activity; returns any conflicts
+        claim     — repo + file: advisory lease (ttl_minutes, renewable; touching
+                    the file heartbeats it). Fails if another session holds it.
+        release   — release own claims: repo + file for one, repo for all there,
+                    neither for everything
+        status    — sessions, active claims and recent touches (repo optional)
+        conflicts — repo + file: who else claimed/recently touched it
+    Set agent (or env DEVTOOLS_MCP_AGENT) to a stable label so humans can tell
+    agents apart; task_key links activity to a tracker task.
+    """
+    db = _tracker(ctx)
+    who = _collab_identity(agent)
+    cwd = (repo or "").strip() or os.getcwd()
+    try:
+        if action == "touch":
+            if not files:
+                return "touch needs files (list of paths)"
+            written = activity_mod.record_touches(
+                db, who, cwd, files, agent_label=who, task_key=task_key, tool_name="tracker_files", op=op
+            )
+            found: list[dict] = []
+            for path in files[:10]:  # conflict check bounded to first 10
+                root, rel = activity_mod.normalize(cwd, path)
+                found += activity_mod.conflicts_for(db.conn, who, root, rel)
+            head = f"Recorded {written} touch(es) as **{who}**" + (f" on `{task_key}`" if task_key else "")
+            if not found:
+                return head
+            return head + "\n\n**Heads up — others are here:**\n" + "\n".join(_conflict_lines(found))
+        if action == "claim":
+            if not file:
+                return "claim needs file (and repo when the path is relative)"
+            ttl_s = max(1, ttl_minutes) * 60
+            claim = activity_mod.acquire_claim(db, who, cwd, file, agent_label=who, task_key=task_key, ttl_s=ttl_s)
+            return f"Claimed `{claim.file_path}` in `{claim.repo_root}` as **{who}** " f"until {claim.expires_at}" + (
+                f" (task `{claim.task_key}`)" if claim.task_key else ""
+            )
+        if action == "release":
+            scope_root = activity_mod.normalize(cwd, file or ".")[0] if (repo or file) else None
+            scope_rel = activity_mod.normalize(cwd, file)[1] if file else None
+            released = activity_mod.release_claims(db, who, repo_root=scope_root, file_path=scope_rel)
+            return f"Released {released} claim(s) held by **{who}**"
+        if action == "status":
+            scope = activity_mod.normalize(cwd, ".")[0] if repo else None
+            sessions = activity_mod.sessions_overview(db.conn)
+            claims = activity_mod.active_claims(db.conn, scope)
+            recent = activity_mod.recent_activity(db.conn, scope, limit=20)
+            parts = [f"**Sessions ({len(sessions)}):**"]
+            for s in sessions[:20]:
+                label = s["agent_label"] or s["session_id"]
+                parts.append(
+                    f"- **{label}** last seen {s['last_seen']} | {s['touches']} touches | {s['claims']} claims"
+                )
+            parts.append(f"\n**Active claims ({len(claims)}):**")
+            parts += [
+                f"- `{c.file_path}` by **{c.agent_label or c.session_id}** until {c.expires_at}" for c in claims[:20]
+            ] or ["- none"]
+            parts.append(f"\n**Recent touches ({len(recent)}):**")
+            parts += [f"- `{t.file_path}` {t.op} by **{t.agent_label or t.session_id}** at {t.ts}" for t in recent] or [
+                "- none"
+            ]
+            return "\n".join(parts)
+        if action == "conflicts":
+            if not file:
+                return "conflicts needs file (and repo when the path is relative)"
+            root, rel = activity_mod.normalize(cwd, file)
+            found = activity_mod.conflicts_for(db.conn, who, root, rel)
+            if not found:
+                return f"No one else is on `{rel}` — clear to edit."
+            return f"**Conflicts on `{rel}`:**\n" + "\n".join(_conflict_lines(found))
+        return f"Unknown action {action!r}. One of: touch, claim, release, status, conflicts"
+    except TrackerError as exc:
+        return f"Error: {exc}"
+
+
 @mcp.tool()
 async def tracker_query(
     ctx: Context,
@@ -631,6 +751,8 @@ async def tracker_query(
         tags     — tag usage counts
         deps     — dependency edges
         issues   — external issue links
+        activity — file-touch log from local agent collaboration (tracker_files)
+        claims   — active advisory file claims (leases)
     Pass columns=["schema"] to list a view's columns. limit is capped at 200.
     """
     db = _tracker(ctx)
@@ -652,9 +774,14 @@ async def tracker_query(
             "tags": lambda: frames.tags_frame(db.conn, project),
             "deps": lambda: frames.deps_frame(db.conn, project),
             "issues": lambda: frames.issues_frame(db.conn, project),
+            "activity": lambda: frames.activity_frame(db.conn),
+            "claims": lambda: frames.claims_frame(db.conn),
         }
         if view not in builders:
-            return f"Unknown view {view!r}. One of: tasks, tree, rollup, criteria, " "commits, tags, deps, issues"
+            return (
+                f"Unknown view {view!r}. One of: tasks, tree, rollup, criteria, "
+                "commits, tags, deps, issues, activity, claims"
+            )
         df = builders[view]()
     except TrackerError as exc:
         return f"Error: {exc}"

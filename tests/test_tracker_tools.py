@@ -48,6 +48,7 @@ class TestRegistration:
             "tracker_issue",
             "tracker_query",
             "tracker_sync",
+            "tracker_files",
         }
         assert expected <= names
 
@@ -225,3 +226,80 @@ class TestDepsTool:
         plan = await _call_tool("tracker_deps", {"action": "resolve", "key": "DP-3"})
         assert "(goal `DP-3`)" in plan
         assert "Ready now (1)" in plan and "DP-2" in plan
+
+
+class TestFilesTool:
+    @pytest.fixture
+    def repo(self, tmp_path: Path) -> Path:
+        root = tmp_path / "repo"
+        (root / ".git").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "src" / "x.py").write_text("pass")
+        return root
+
+    async def test_touch_and_status(self, repo):
+        text = await _call_tool(
+            "tracker_files",
+            {"action": "touch", "repo": str(repo), "files": ["src/x.py"], "agent": "alice"},
+        )
+        assert "Recorded 1 touch(es) as **alice**" in text
+        status = await _call_tool("tracker_files", {"action": "status", "repo": str(repo)})
+        assert "alice" in status and "src/x.py" in status
+
+    async def test_claim_conflict_release(self, repo):
+        claimed = await _call_tool(
+            "tracker_files",
+            {"action": "claim", "repo": str(repo), "file": "src/x.py", "agent": "alice"},
+        )
+        assert "Claimed `src/x.py`" in claimed
+        blocked = await _call_tool(
+            "tracker_files",
+            {"action": "claim", "repo": str(repo), "file": "src/x.py", "agent": "bob"},
+        )
+        assert blocked.startswith("Error:") and "alice" in blocked
+        conflicts = await _call_tool(
+            "tracker_files",
+            {"action": "conflicts", "repo": str(repo), "file": "src/x.py", "agent": "bob"},
+        )
+        assert "CLAIMED by **alice**" in conflicts
+        released = await _call_tool("tracker_files", {"action": "release", "agent": "alice"})
+        assert "Released 1 claim(s)" in released
+        retry = await _call_tool(
+            "tracker_files",
+            {"action": "claim", "repo": str(repo), "file": "src/x.py", "agent": "bob"},
+        )
+        assert "Claimed `src/x.py`" in retry
+
+    async def test_touch_reports_other_sessions(self, repo):
+        await _call_tool(
+            "tracker_files",
+            {"action": "touch", "repo": str(repo), "files": ["src/x.py"], "agent": "alice"},
+        )
+        text = await _call_tool(
+            "tracker_files",
+            {"action": "touch", "repo": str(repo), "files": ["src/x.py"], "agent": "bob"},
+        )
+        assert "others are here" in text and "alice" in text
+
+    async def test_bad_task_key_is_error_string(self, repo):
+        text = await _call_tool(
+            "tracker_files",
+            {"action": "touch", "repo": str(repo), "files": ["src/x.py"], "task_key": "nope", "agent": "a"},
+        )
+        assert text.startswith("Error:")
+
+    async def test_query_views(self, repo):
+        await _call_tool(
+            "tracker_files",
+            {"action": "touch", "repo": str(repo), "files": ["src/x.py"], "agent": "alice"},
+        )
+        await _call_tool(
+            "tracker_files",
+            {"action": "claim", "repo": str(repo), "file": "src/x.py", "agent": "alice"},
+        )
+        act = await _call_tool("tracker_query", {"view": "activity"})
+        assert "src/x.py" in act and "alice" in act
+        clm = await _call_tool("tracker_query", {"view": "claims"})
+        assert "src/x.py" in clm
+        schema = await _call_tool("tracker_query", {"view": "activity", "columns": ["schema"]})
+        assert "`session`" in schema and "`file`" in schema

@@ -154,6 +154,72 @@ def commits_frame(conn: sqlite3.Connection, project: str | None = None) -> pl.Da
     return _frame(conn.execute(sql, params).fetchall(), schema)
 
 
+def activity_frame(
+    conn: sqlite3.Connection,
+    repo: str | None = None,
+    session: str | None = None,
+) -> pl.DataFrame:
+    """File-touch activity log, newest first (local agent collaboration)."""
+    schema = {
+        "session": pl.String,
+        "agent": pl.String,
+        "task": pl.String,
+        "repo": pl.String,
+        "file": pl.String,
+        "op": pl.String,
+        "tool": pl.String,
+        "ts": pl.String,
+    }
+    sql = "SELECT session_id, agent_label, task_key, repo_root, file_path, op, tool_name, ts " "FROM file_activity"
+    clauses: list[str] = []
+    params: list[object] = []
+    if repo is not None:
+        clauses.append("repo_root = ?")
+        params.append(repo)
+    if session is not None:
+        clauses.append("session_id = ?")
+        params.append(session)
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
+    sql += " ORDER BY ts DESC LIMIT ?"
+    params.append(FRAME_MAX_ROWS)
+    return _frame(conn.execute(sql, params).fetchall(), schema)
+
+
+def claims_frame(
+    conn: sqlite3.Connection,
+    repo: str | None = None,
+    active_only: bool = True,
+) -> pl.DataFrame:
+    """File claims (advisory leases), soonest-expiring first."""
+    schema = {
+        "session": pl.String,
+        "agent": pl.String,
+        "task": pl.String,
+        "repo": pl.String,
+        "file": pl.String,
+        "claimed_at": pl.String,
+        "expires_at": pl.String,
+        "released_at": pl.String,
+    }
+    sql = (
+        "SELECT session_id, agent_label, task_key, repo_root, file_path, "
+        "claimed_at, expires_at, released_at FROM file_claims"
+    )
+    clauses: list[str] = []
+    params: list[object] = []
+    if active_only:
+        clauses.append("released_at IS NULL")
+    if repo is not None:
+        clauses.append("repo_root = ?")
+        params.append(repo)
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
+    sql += " ORDER BY expires_at LIMIT ?"
+    params.append(FRAME_MAX_ROWS)
+    return _frame(conn.execute(sql, params).fetchall(), schema)
+
+
 def tags_frame(conn: sqlite3.Connection, project: str | None = None) -> pl.DataFrame:
     """Tag usage counts."""
     schema = {"tag": pl.String, "tasks": pl.Int64}
