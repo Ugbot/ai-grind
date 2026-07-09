@@ -132,9 +132,11 @@ class TestFormatCheck:
         text = registry.format_check()
         assert f"**{suite}:**" in text
         assert "**Not installed:**" in text
-        installable = [s for s in list_backends() if get_backend(s).install is not None]
+        missing = [s for s in list_backends() if s != suite]
+        installable = [s for s in missing if get_backend(s).install is not None]
         if installable:
             assert "devtools_install" in text
+            assert installable[0] in text.split("devtools_install", 1)[1]
 
     def test_check_shows_failed_backends(self, monkeypatch):
         import devtools_mcp.registry as reg

@@ -5,12 +5,16 @@ needed (same approach as the ETW/JVM/CDB/VTune suites)."""
 from __future__ import annotations
 
 import json
+import py_compile
+import struct
 import time
+from pathlib import Path
 
 import polars as pl
 import pytest
 
 from devtools_mcp.models import create_run_base
+from devtools_mcp.registry import get_backend
 from devtools_mcp.renderdoc.analysis import (
     rdoc_actions_df,
     rdoc_capture_df,
@@ -32,6 +36,7 @@ from devtools_mcp.renderdoc.parsers import (
     parse_bridge_json,
     parse_renderdoccmd_version,
 )
+from devtools_mcp.renderdoc.runner import _opt, _png_dimensions, run_renderdoc
 
 BRIDGE_OK = {
     "schema_version": 1,
@@ -278,3 +283,167 @@ class TestSmallParsers:
 
     def test_find_new_rdcs_missing_dir(self, tmp_path):
         assert find_new_rdcs(tmp_path / "nope", 0) == []
+
+
+# --- Runner + bridge script ---
+
+BRIDGE_PATH = Path(__file__).parent.parent / "src" / "devtools_mcp" / "renderdoc" / "scripts" / "bridge.py"
+
+
+def _bridge_namespace() -> dict:
+    """Exec bridge.py with the trailing main() call stripped (it sys.exit()s)."""
+    source = BRIDGE_PATH.read_text(encoding="utf-8")
+    assert source.rstrip().endswith("main()"), "bridge.py must self-run for qrenderdoc"
+    ns: dict = {}
+    exec(compile(source.rstrip()[: -len("main()")], str(BRIDGE_PATH), "exec"), ns)  # noqa: S102
+    return ns
+
+
+class TestBridgeScript:
+    def test_compiles_as_py36(self):
+        # py_compile under the current interpreter catches syntax errors; the
+        # conservative-syntax rule (no walrus/match/X|Y) is enforced by review.
+        py_compile.compile(str(BRIDGE_PATH), doraise=True)
+
+    def test_flag_names(self):
+        ns = _bridge_namespace()
+        assert ns["flag_names"]("ActionFlags.Drawcall | ActionFlags.Indexed") == "Drawcall|Indexed"
+        assert ns["flag_names"]("ActionFlags.NoFlags") == ""
+
+    def test_flatten_actions_with_stub(self):
+        ns = _bridge_namespace()
+
+        class Action:
+            def __init__(self, eid, name, children=()):
+                self.eventId = eid
+                self.actionId = eid
+                self.flags = "ActionFlags.Drawcall"
+                self.numIndices = 3
+                self.numInstances = 1
+                self.dispatchDimension = [0, 0, 0]
+                self.children = list(children)
+                self._name = name
+
+            def GetName(self, sdfile):
+                return self._name
+
+        roots = [Action(1, "Scene", children=[Action(2, "draw_a"), Action(3, "draw_b")])]
+        actions, truncated = ns["flatten_actions"](roots, None, max_actions=100)
+        assert [a["eid"] for a in actions] == [1, 2, 3]
+        assert actions[1]["parent_eid"] == 1
+        assert actions[1]["depth"] == 1
+        assert not truncated
+
+    def test_flatten_actions_truncates(self):
+        ns = _bridge_namespace()
+
+        class Leaf:
+            def __init__(self, eid):
+                self.eventId = eid
+                self.actionId = eid
+                self.flags = ""
+                self.numIndices = 0
+                self.numInstances = 0
+                self.dispatchDimension = [0, 0, 0]
+                self.children = []
+
+            def GetName(self, sdfile):
+                return f"a{self.eventId}"
+
+        actions, truncated = ns["flatten_actions"]([Leaf(i) for i in range(10)], None, max_actions=4)
+        assert len(actions) == 4
+        assert truncated
+
+    def test_action_stats(self):
+        ns = _bridge_namespace()
+        stats = ns["action_stats"](
+            [
+                {"flags": "Drawcall|Indexed"},
+                {"flags": "Dispatch"},
+                {"flags": "Copy"},
+                {"flags": "PushMarker"},
+                {"flags": "Present"},
+            ]
+        )
+        assert stats == {"draws": 1, "dispatches": 1, "copies": 1, "markers": 1}
+
+    def test_read_request_rejects_bad_op(self, tmp_path, monkeypatch):
+        ns = _bridge_namespace()
+        req = tmp_path / "request.json"
+        req.write_text(json.dumps({"schema_version": 1, "op": "explode"}))
+        monkeypatch.setenv("DEVTOOLS_RDOC_REQUEST", str(req))
+        with pytest.raises(RuntimeError, match="unknown op"):
+            ns["read_request"]()
+
+    def test_write_output_stamps_schema(self, tmp_path, monkeypatch):
+        ns = _bridge_namespace()
+        out = tmp_path / "output.json"
+        monkeypatch.setenv("DEVTOOLS_RDOC_OUTPUT", str(out))
+        ns["write_output"]({"ok": True})
+        assert json.loads(out.read_text())["schema_version"] == 1
+
+
+class TestRunner:
+    async def test_unknown_tool(self):
+        err, result, _ = await run_renderdoc(tool="explode", binary="x")
+        assert result is None
+        assert "Unknown renderdoc tool" in err
+
+    async def test_missing_target(self):
+        err, result, _ = await run_renderdoc(tool="analyze", binary="Z:/no/such/file.rdc")
+        assert result is None
+        assert "not found" in err
+
+    async def test_replay_verb_rejects_exe(self, tmp_path):
+        exe = tmp_path / "app.exe"
+        exe.write_bytes(b"MZ")
+        err, result, _ = await run_renderdoc(tool="analyze", binary=str(exe))
+        assert result is None
+        assert ".rdc" in err and "capture" in err
+
+    async def test_capture_rejects_rdc(self, tmp_path):
+        rdc = tmp_path / "frame.rdc"
+        rdc.write_bytes(b"\x00")
+        err, result, _ = await run_renderdoc(tool="capture", binary=str(rdc))
+        assert result is None
+        assert "analyze" in err
+
+    async def test_capture_bad_mode(self, tmp_path):
+        exe = tmp_path / "app.exe"
+        exe.write_bytes(b"MZ")
+        err, result, _ = await run_renderdoc(tool="capture", binary=str(exe), extra_args=["--mode", "psychic"])
+        assert result is None
+        assert "--mode" in err
+
+    def test_opt_parsing(self):
+        assert _opt(["--frame", "120", "--warmup", "5"], "--frame") == "120"
+        assert _opt(["--frame"], "--frame") is None
+        assert _opt(None, "--frame") is None
+
+    def test_png_dimensions(self, tmp_path):
+        png = tmp_path / "t.png"
+        header = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\rIHDR" + struct.pack(">II", 320, 180) + b"\x00" * 5
+        png.write_bytes(header)
+        assert _png_dimensions(str(png)) == (320, 180)
+        assert _png_dimensions(str(tmp_path / "missing.png")) == (0, 0)
+
+
+class TestRegistration:
+    def test_backend_registered_with_capabilities(self):
+        import devtools_mcp.renderdoc.backend  # noqa: F401  (registers the suite)
+
+        spec = get_backend("renderdoc")
+        assert set(spec.tools) == {"capture", "analyze", "counters", "resources", "thumb"}
+        assert spec.stacks is not None
+        assert spec.install is not None
+        assert "_default" in spec.df_builders
+        caps = spec.capabilities()
+        assert {"flamegraph", "install"} <= caps
+
+    def test_install_spec_covers_windows_and_linux(self):
+        import devtools_mcp.renderdoc.backend as backend_mod
+
+        spec = backend_mod.RENDERDOC_INSTALL
+        assert "windows" in spec.platforms
+        assert "linux" in spec.platforms
+        assert spec.platforms["windows"][0].argv[0] == "winget"

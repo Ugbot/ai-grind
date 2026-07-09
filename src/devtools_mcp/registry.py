@@ -162,6 +162,7 @@ _BACKEND_MODULES: tuple[str, ...] = (
     "devtools_mcp.perf.backend",
     "devtools_mcp.pnpm.backend",
     "devtools_mcp.py.backend",
+    "devtools_mcp.renderdoc.backend",
     "devtools_mcp.valgrind.backend",
     "devtools_mcp.vtune.backend",
     "devtools_mcp.yarn.backend",
