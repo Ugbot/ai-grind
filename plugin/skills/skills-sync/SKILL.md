@@ -6,11 +6,26 @@ description: >
   plugin bundle, loadable/, .agents/, project/global .claude dirs) via the
   skills_sync MCP tool or the scripts directly. Use when adding or editing a
   skill, when a skill isn't showing up in a session, when asked to "sync the
-  skills", after editing sources.toml, or to check what the library contains.
-  For CRDT live skills (self-updating SKILL.md docs) see live-skills instead.
+  skills", after editing sources.toml, to check what the library contains, or
+  to find skills scattered across the machine that the library hasn't adopted
+  yet (discover/adopt). For CRDT live skills see live-skills instead.
 ---
 
 # Skills library sync (devtools-mcp `skills_sync`)
+
+## Skill folder anatomy (the ground rules)
+
+- **Folder-form skill** — `<name>/SKILL.md` with YAML frontmatter declaring
+  `name:` (**must equal the folder name**) and a trigger-rich `description:`.
+  Anything else in the folder (references/, scripts, data) is a bundled asset
+  and travels with the skill.
+- **Single-file skill** — `<name>.md` with the same frontmatter; harvest wraps
+  it into `<name>/SKILL.md`.
+- **Command** — `.claude/commands/<name>.md`, flat file, name = filename stem.
+- **Agent** — `.claude/agents/<name>.md`, flat file with frontmatter.
+- Clients load **flat** `skills/<name>/SKILL.md` only — they never recurse into
+  category subtrees, which is why every mirror is flattened and skill names
+  must be globally unique.
 
 The library has two sources and several derived mirrors:
 
@@ -26,10 +41,20 @@ The library has two sources and several derived mirrors:
 
 ```
 skills_sync(action="status")                    # counts + mirror freshness
+skills_sync(action="discover")                  # scan the machine for unharvested assets
+skills_sync(action="adopt", src="C:/code/x/.claude/skills/y", category="profiling")
 skills_sync(action="harvest")                   # refresh catalog/ from sources.toml
 skills_sync(action="sync", target="all")        # local + plugin + agents
 skills_sync(action="sync", target="global")     # ~/.claude (explicit only)
 ```
+
+`discover` scans every project `.claude/{skills,commands,agents}` dir — scan
+roots are derived from where sources.toml already harvests (plus `~/.claude`
+and `$DEVTOOLS_MCP_SKILL_SCAN_ROOTS`) — and reports only assets whose name
+isn't in the library, flagging malformed ones (missing SKILL.md, missing
+frontmatter, folder/name mismatch). `adopt` validates one candidate, appends
+its `[[item]]` to sources.toml (still the single source of truth — nothing is
+harvested that isn't listed there), and re-runs harvest.
 
 `target="all"` covers only the wholly-owned derived mirrors; `project`/`global`
 write into shared `.claude` dirs so they must be named explicitly. If the server

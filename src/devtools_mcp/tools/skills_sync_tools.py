@@ -15,6 +15,7 @@ import sys
 
 from mcp.server.fastmcp import Context
 
+from devtools_mcp import skills_discovery as discovery
 from devtools_mcp.server import mcp
 
 SYNC_TARGETS = ("local", "plugin", "agents", "project", "global")
@@ -108,22 +109,39 @@ async def run_script(root: pathlib.Path, script: str, args: list[str]) -> tuple[
 
 
 @mcp.tool()
-async def skills_sync(ctx: Context, action: str = "status", target: str = "") -> str:
-    """Manage the static skills library: harvest upstream assets and sync the
-    flat mirrors that Claude Code (and other clients) load.
+async def skills_sync(
+    ctx: Context,
+    action: str = "status",
+    target: str = "",
+    src: str = "",
+    category: str = "",
+    note: str = "",
+) -> str:
+    """Manage the static skills library: harvest upstream assets, discover
+    unharvested ones across the machine, and sync the flat mirrors that
+    Claude Code (and other clients) load.
 
     Actions:
-        status  — library location, harvested/authored counts, mirror freshness
-        harvest — re-copy upstream assets from sources.toml into catalog/
-                  (refreshes MANIFEST.json; run after editing sources.toml)
-        sync    — flatten catalog/ + authored/ into a mirror. target one of:
-                  local (skills/loadable), plugin (committed plugin bundle),
-                  agents (.agents), project (<repo>/.claude), global (~/.claude),
-                  or 'all' (= the derived mirrors: local+plugin+agents).
+        status   — library location, harvested/authored counts, mirror freshness
+        discover — scan every project .claude/{skills,commands,agents} dir
+                   (roots derived from sources.toml + ~/.claude +
+                   $DEVTOOLS_MCP_SKILL_SCAN_ROOTS) for assets not yet in the
+                   library; reports candidates and malformed entries
+        adopt    — src (path to a discovered asset) + category (+ note):
+                   validate, append an [[item]] to sources.toml, re-harvest
+        harvest  — re-copy upstream assets from sources.toml into catalog/
+                   (refreshes MANIFEST.json; run after editing sources.toml)
+        sync     — flatten catalog/ + authored/ into a mirror. target one of:
+                   local (skills/loadable), plugin (committed plugin bundle),
+                   agents (.agents), project (<repo>/.claude), global (~/.claude),
+                   or 'all' (= the derived mirrors: local+plugin+agents).
 
-    After adding/editing an authored skill: action='sync', target='all', then
-    commit the plugin/ changes. New skills appear in sessions after a plugin
-    reload. Live CRDT skills are a separate system — see skill_live.
+    Skill anatomy: folder-form skills are <name>/SKILL.md (frontmatter name ==
+    folder name, bundled assets copied whole); single-file <name>.md skills are
+    wrapped at harvest; commands/agents are flat .md files. After adding or
+    editing: action='sync', target='all', then commit the plugin/ changes.
+    New skills appear in sessions after a plugin reload. Live CRDT skills are
+    a separate system — see skill_live.
     """
     root = find_skills_root()
     if root is None:
@@ -134,6 +152,24 @@ async def skills_sync(ctx: Context, action: str = "status", target: str = "") ->
 
     if action == "status":
         return library_status(root)
+
+    if action == "discover":
+        candidates = discovery.discover(root)
+        return discovery.format_candidates(candidates, root)
+
+    if action == "adopt":
+        if not src:
+            return "adopt needs src (path from action='discover') and category"
+        error = discovery.adopt(root, src, category, note)
+        if error:
+            return error
+        code, tail = await run_script(root, "harvest.py", [])
+        status = "ok" if code == 0 else f"FAILED (exit {code})"
+        return (
+            f"Adopted `{src}` into sources.toml (category={category}).\n\n"
+            f"**harvest.py** — {status}\n```\n{tail}\n```\n\n"
+            "_Next: action='sync', target='all', then commit sources.toml + catalog/ + plugin/._"
+        )
 
     if action == "harvest":
         code, tail = await run_script(root, "harvest.py", [])
@@ -159,4 +195,4 @@ async def skills_sync(ctx: Context, action: str = "status", target: str = "") ->
             parts.append("_plugin/ is committed output — review `git diff plugin/` and commit._")
         return "\n\n".join(parts)
 
-    return f"Unknown action {action!r}: one of status, harvest, sync"
+    return f"Unknown action {action!r}: one of status, discover, adopt, harvest, sync"
