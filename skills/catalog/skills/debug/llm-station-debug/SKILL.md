@@ -39,3 +39,5 @@ Use LLM Station's integrated devtools for debugging and performance analysis.
 ```
 
 **When to use:** After code compiles but has runtime issues. Use memcheck for memory errors, perf for performance hotspots.
+
+*Note: the first call for a workspace auto-starts the daemon if not already running (a few seconds); subsequent calls are fast.*

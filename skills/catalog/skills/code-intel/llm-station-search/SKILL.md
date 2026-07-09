@@ -29,3 +29,5 @@ Use LLM Station's daemon for code search. The daemon has already indexed this wo
 ```
 
 **When to use:** Whenever you need to find code, understand what exists, or locate symbols. This is faster than reading files manually because the index is pre-built.
+
+*Note: the first call for a workspace auto-starts the daemon if not already running (a few seconds); subsequent calls are fast.*

@@ -50,3 +50,5 @@ This returns matches ranked by relevance, showing whether it's existing code, a 
 - **service_pattern** — Business logic with dependency injection
 
 **When to use:** Before writing any new class or pattern. If you need an observer, factory, repository, etc., check here first. The pattern will be instantiated with your specific class names, namespaces, and parameters.
+
+*Note: the first call for a workspace auto-starts the daemon if not already running (a few seconds); subsequent calls are fast.*

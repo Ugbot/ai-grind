@@ -32,3 +32,5 @@ Find functions matching patterns: return type, parameter types, what they call, 
 Shows dependency-ordered tasks needed to implement a function. Uses GOAP planning on the call graph.
 
 **When to use:** Before making changes, understand the impact. Use call_graph to see what else will be affected. Use predicate_search to find similar patterns in the codebase to follow.
+
+*Note: the first call for a workspace auto-starts the daemon if not already running (a few seconds); subsequent calls are fast.*

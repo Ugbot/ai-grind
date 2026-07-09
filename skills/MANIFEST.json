@@ -1,6 +1,6 @@
 {
   "counts": {
-    "skill": 27,
+    "skill": 24,
     "command": 15,
     "agent": 3,
     "archive": 1
@@ -28,7 +28,7 @@
       "category": "debug",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-debug",
       "dest": "catalog\\skills\\debug\\llm-station-debug\\SKILL.md",
-      "sha256": "f8dd8a3dc26ce57e74db8ed62b61f43e9c2cc21dd385417c77ea6ca0b2699f58"
+      "sha256": "a876aab2597b88089376c056f24c4914df54e8a6eb142cd3fb2ca2548add80c2"
     },
     {
       "name": "bench-rdtsc-profile",
@@ -47,36 +47,12 @@
       "sha256": "cf23777458a2fee8c4e5cdfa6bc50eee97090737d0eeb18d0d6521d671d9677f"
     },
     {
-      "name": "profile-change",
-      "type": "skill",
-      "category": "profiling",
-      "origin": "C:\\code\\llm-station\\src\\ralph\\skills\\profile-change\\SKILL.md",
-      "dest": "catalog\\skills\\profiling\\profile-change\\SKILL.md",
-      "sha256": "2e697b09a85338e142d3a884f8d8e27b7486adb9f9f5a68c02ed7a721e5004c7"
-    },
-    {
-      "name": "worktree-bench",
-      "type": "skill",
-      "category": "profiling",
-      "origin": "C:\\code\\llm-station\\src\\ralph\\skills\\worktree-bench\\SKILL.md",
-      "dest": "catalog\\skills\\profiling\\worktree-bench\\SKILL.md",
-      "sha256": "d76d8bc2ce08b080e4ee0fdc955cc0743924e9ae584a98dee0b3475fe19423c0"
-    },
-    {
-      "name": "perf-bisect",
-      "type": "skill",
-      "category": "profiling",
-      "origin": "C:\\code\\llm-station\\src\\ralph\\skills\\perf-bisect\\SKILL.md",
-      "dest": "catalog\\skills\\profiling\\perf-bisect\\SKILL.md",
-      "sha256": "d141347551fa7a874cac23c0539d8686cb72c89a1731ac751f3940a3561715ae"
-    },
-    {
       "name": "llm-station-analyze",
       "type": "skill",
       "category": "code-intel",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-analyze",
       "dest": "catalog\\skills\\code-intel\\llm-station-analyze\\SKILL.md",
-      "sha256": "e31ed7d49176ab57bb122746eb46b505726812b130a0a2cc8fa891f8cdc56996"
+      "sha256": "73d802adb4a8137ff426279b5dab2f1236d90933c86c7cb5890cb74cdc8b2be1"
     },
     {
       "name": "llm-station-search",
@@ -84,7 +60,7 @@
       "category": "code-intel",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-search",
       "dest": "catalog\\skills\\code-intel\\llm-station-search\\SKILL.md",
-      "sha256": "de0d8291fb26fea573c63b504738cef70b4884a890fd91a79210141177222703"
+      "sha256": "19ab78ad8b2119dc4647a6a3dc17df2d98ae723e855e20f30fb99fadf199ab3b"
     },
     {
       "name": "llm-station-patterns",
@@ -92,7 +68,7 @@
       "category": "code-intel",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-patterns",
       "dest": "catalog\\skills\\code-intel\\llm-station-patterns\\SKILL.md",
-      "sha256": "2d4495ad8f061cf291a92b8579b547f1394f8a536afd11b7e3c8533b0e130dab"
+      "sha256": "0b98052a24a0a2e10ce6976941d59480bdbaabf1da8636d62c2de25e64a6e2e8"
     },
     {
       "name": "chukonu-dev",
