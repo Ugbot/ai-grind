@@ -50,12 +50,16 @@ Claude loads). Driven by two scripts and one map:
 - `sync.py --target local|plugin|agents|project|global` — merges `catalog/` +
   `authored/` → flat mirror (`plugin/` committed; `.agents/` gitignored,
   skills-only; `.codex/`+`.cursor/` are hand-written configs, not targets)
+- Or via MCP: `skills_sync(action=status|harvest|sync, target=…)` in
+  `tools/skills_sync_tools.py` wraps both scripts (`target="all"` = the derived
+  mirrors; `DEVTOOLS_MCP_SKILLS_ROOT` overrides the library location) — see the
+  `skills-sync` skill
 
-Contents: 51 skills = 24 harvested (debug / profiling / code-intel /
-project-drivers / narrative) + 27 authored (`powershell/` 5.1 & 7 side by side,
-`profiling/` incl. `renderdoc-frame-analysis`, `devtools/`, `tracker/`,
-`collab/`); 23 commands (build / llm-station); 3 agents (docs / testing /
-integration).
+Contents: 52 skills = 24 harvested (debug / profiling / code-intel /
+project-drivers / narrative) + 28 authored (`powershell/` 5.1 & 7 side by side,
+`profiling/` incl. `renderdoc-frame-analysis`, `devtools/` incl. `skills-sync`,
+`tracker/`, `collab/`); 23 commands (build / llm-station); 3 agents (docs /
+testing / integration).
 Harvested items are copied from upstream projects, never moved. Full breakdown and
 dedup notes in `skills/README.md`.
 

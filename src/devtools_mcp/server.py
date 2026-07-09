@@ -99,6 +99,8 @@ mcp = FastMCP(
         "for the drawcall tree, GPU timings, and a GPU-time flame graph). "
         "devtools_install(suite) shows per-OS install commands for a missing backend "
         "(execute=True runs them when DEVTOOLS_MCP_ALLOW_INSTALL=1). "
+        "skills_sync manages the static skills library (harvest upstream assets, sync the "
+        "plugin/loadable mirrors); skill_live is the separate CRDT live-skill system. "
         "Core rule: NEVER flood the model with raw output — every run is stored as a "
         "queryable Polars DataFrame and tools return only bounded summaries + a run_id. "
         "Workflow: devtools_check() to see installed tools; devtools_run(suite, tool, binary) to "

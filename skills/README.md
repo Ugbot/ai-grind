@@ -44,7 +44,7 @@ there are left alone.
 | Type | Count | Categories |
 |---|---|---|
 | Skills (harvested) | 24 | `debug/` `profiling/` `code-intel/` `project-drivers/` `narrative/` |
-| Skills (authored) | 27 | `powershell/` (9), `profiling/` (7), `debugging/` (1), `devtools/` (4), `tracker/` (4), `collab/` (2) |
+| Skills (authored) | 28 | `powershell/` (9), `profiling/` (7), `debugging/` (1), `devtools/` (5), `tracker/` (4), `collab/` (2) |
 | Commands | 23 | `build/` (3) `llm-station/` (20) |
 | Agents | 3 | `docs/` `testing/` `integration/` |
 
@@ -78,8 +78,9 @@ Hand-written, original to this library:
   `jvm-threads-heap`, `python-profiling`, `js-node-profiling`,
   `renderdoc-frame-analysis` (GPU frame capture + replay).
 - **debugging/** (1) — `cdb-windows-debug`.
-- **devtools/** (4) — `devtools-mcp-usage`, `devtools-visualizer`, `build-tools`
-  (maven/gradle/npm/pnpm/yarn/cargo), `vtune-profiling`.
+- **devtools/** (5) — `devtools-mcp-usage`, `devtools-visualizer`, `build-tools`
+  (maven/gradle/npm/pnpm/yarn/cargo), `vtune-profiling`, `skills-sync` (this
+  library's harvest/sync workflow + the `skills_sync` MCP tool).
 - **tracker/** (4) — `tracker-usage`, `tracker-breakdown`, `tracker-acceptance`,
   `tracker-github-sync`.
 - **collab/** (2) — `agent-collab`, `live-skills`.
