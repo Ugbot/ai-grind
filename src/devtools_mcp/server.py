@@ -11,26 +11,13 @@ from contextlib import asynccontextmanager
 
 from mcp.server.fastmcp import Context, FastMCP
 
-# Import backends to trigger auto-registration
-import devtools_mcp.cargo.backend  # noqa: F401
-import devtools_mcp.cdb.backend  # noqa: F401
-import devtools_mcp.dtrace.backend  # noqa: F401
-import devtools_mcp.etw.backend  # noqa: F401
-import devtools_mcp.gradle.backend  # noqa: F401
-import devtools_mcp.jvm.backend  # noqa: F401
-import devtools_mcp.lldb.backend  # noqa: F401
-import devtools_mcp.maven.backend  # noqa: F401
-import devtools_mcp.node.backend  # noqa: F401
-import devtools_mcp.npm.backend  # noqa: F401
-import devtools_mcp.perf.backend  # noqa: F401
-import devtools_mcp.pnpm.backend  # noqa: F401
-import devtools_mcp.py.backend  # noqa: F401
-import devtools_mcp.valgrind.backend  # noqa: F401
-import devtools_mcp.vtune.backend  # noqa: F401
-import devtools_mcp.yarn.backend  # noqa: F401
 from devtools_mcp.models import RunBase
-from devtools_mcp.registry import ToolRegistry
+from devtools_mcp.registry import ToolRegistry, load_backends
 from devtools_mcp.workspace import AppContext, Workspace
+
+# Manifest-driven backend registration: a broken backend degrades to
+# "failed to load" in devtools_check instead of killing the server.
+load_backends()
 
 
 def _maybe_start_dashboard(ctx: AppContext) -> None:
