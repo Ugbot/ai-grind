@@ -9,7 +9,17 @@ from devtools_mcp.py.analysis import py_funcstats_df, py_hotspots_df, py_stack_s
 from devtools_mcp.py.formatters import format_py_summary
 from devtools_mcp.py.models import PyResult
 from devtools_mcp.py.runner import check_py, run_py
-from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
+from devtools_mcp.registry import BackendSpec, InstalledTool, InstallSpec, InstallStep, register_backend
+
+PY_INSTALL = InstallSpec(
+    platforms={
+        "windows": [InstallStep(kind="pip", argv=["pip", "install", "py-spy"], description="py-spy sampler via pip")],
+        "linux": [InstallStep(kind="pip", argv=["pip", "install", "py-spy"], description="py-spy sampler via pip")],
+        "darwin": [InstallStep(kind="pip", argv=["pip", "install", "py-spy"], description="py-spy sampler via pip")],
+    },
+    note="cProfile is stdlib and always available; py-spy enables the cpu/threads verbs.",
+    url="https://github.com/benfred/py-spy",
+)
 
 
 async def detect() -> list[InstalledTool]:
@@ -59,6 +69,7 @@ def _register() -> None:
             df_builders=_DF_BUILDERS,
             format_summary=format_summary,
             stacks=py_stack_samples,
+            install=PY_INSTALL,
         )
     )
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from devtools_mcp.models import RunBase, create_run_base
-from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
+from devtools_mcp.registry import BackendSpec, InstalledTool, InstallSpec, InstallStep, register_backend
 from devtools_mcp.valgrind import analysis
 from devtools_mcp.valgrind.formatters import (
     format_cachegrind_summary,
@@ -29,6 +29,21 @@ from devtools_mcp.valgrind.parsers import (
     parse_threadcheck_xml,
 )
 from devtools_mcp.valgrind.runner import check_valgrind, run_valgrind
+
+VALGRIND_INSTALL = InstallSpec(
+    platforms={
+        "linux": [
+            InstallStep(
+                kind="apt",
+                argv=["apt-get", "install", "-y", "valgrind"],
+                description="Valgrind via apt (Debian/Ubuntu)",
+                elevation=True,
+            ),
+        ],
+    },
+    note="Linux-only; on Windows use a WSL/Docker container.",
+    url="https://valgrind.org/downloads/",
+)
 
 
 async def detect() -> list[InstalledTool]:
@@ -139,6 +154,7 @@ def _register() -> None:
             run=run,
             df_builders=_DF_BUILDERS,
             format_summary=format_summary,
+            install=VALGRIND_INSTALL,
         )
     )
 

@@ -9,7 +9,24 @@ from devtools_mcp.etw.formatters import format_etw_summary
 from devtools_mcp.etw.models import EtwResult
 from devtools_mcp.etw.runner import check_etw, run_etw
 from devtools_mcp.models import RunBase
-from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
+from devtools_mcp.registry import BackendSpec, InstalledTool, InstallSpec, InstallStep, register_backend
+
+ETW_INSTALL = InstallSpec(
+    platforms={
+        "windows": [
+            InstallStep(
+                kind="download",
+                argv=[
+                    "https://github.com/microsoft/perfview/releases/latest/download/PerfView.exe",
+                    "C:/code/PerfView.exe",
+                ],
+                description="PerfView single-exe download (to the path find_perfview probes)",
+            ),
+        ],
+    },
+    note="ETW collection needs an elevated (Administrator) shell at run time.",
+    url="https://github.com/microsoft/perfview",
+)
 
 
 async def detect() -> list[InstalledTool]:
@@ -51,6 +68,7 @@ def _register() -> None:
             df_builders=_DF_BUILDERS,
             format_summary=format_summary,
             stacks=etw_stack_samples,
+            install=ETW_INSTALL,
         )
     )
 

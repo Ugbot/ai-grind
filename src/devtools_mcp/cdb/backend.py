@@ -9,7 +9,21 @@ from devtools_mcp.cdb.formatters import format_cdb_summary
 from devtools_mcp.cdb.models import CdbSnapshot
 from devtools_mcp.cdb.runner import check_cdb, run_cdb
 from devtools_mcp.models import RunBase
-from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
+from devtools_mcp.registry import BackendSpec, InstalledTool, InstallSpec, InstallStep, register_backend
+
+CDB_INSTALL = InstallSpec(
+    platforms={
+        "windows": [
+            InstallStep(
+                kind="winget",
+                argv=["winget", "install", "--id", "Microsoft.WinDbg", "-e", "--accept-source-agreements"],
+                description="WinDbg (includes cdb.exe) via winget",
+            ),
+        ],
+    },
+    note="cdb.exe lands under the WinDbg app dir; set $DEVTOOLS_CDB if not on PATH.",
+    url="https://learn.microsoft.com/windows-hardware/drivers/debugger/",
+)
 
 
 async def detect() -> list[InstalledTool]:
@@ -60,6 +74,7 @@ def _register() -> None:
             df_builders=_DF_BUILDERS,
             format_summary=format_summary,
             stacks=cdb_stack_samples,
+            install=CDB_INSTALL,
         )
     )
 

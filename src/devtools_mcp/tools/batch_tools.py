@@ -65,7 +65,13 @@ async def devtools_run(
 
     if not app.registry.is_available(suite, tool):
         available = [f"{t.suite}:{t.name}" for t in app.registry.list_available()]
-        return f"Tool {suite}:{tool} is not available.\n\nInstalled tools: {', '.join(available) or 'none'}"
+        hint = ""
+        try:
+            if get_backend(suite).install is not None:
+                hint = f'\n\nInstall commands: devtools_install(suite="{suite}")'
+        except KeyError:
+            pass
+        return f"Tool {suite}:{tool} is not available.\n\nInstalled tools: {', '.join(available) or 'none'}{hint}"
 
     try:
         backend = get_backend(suite)
