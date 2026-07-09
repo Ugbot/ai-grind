@@ -6,7 +6,9 @@ A unified developer-tooling workspace. Two concerns live here:
    Polars-backed interface over Valgrind, LLDB, DTrace, perf, Windows ETW
    (PerfView), Intel VTune (hotspots/threading/memory/uarch/snapshot), the JVM
    (JFR/jstack/jmap/async-profiler), the Windows debugger
-   (CDB), Python (py-spy/cProfile), Node/JavaScript (V8 cpu/heap), and the
+   (CDB), Python (py-spy/cProfile), Node/JavaScript (V8 cpu/heap), RenderDoc
+   (GPU frame capture + headless replay: drawcall tree, GPU counter timings,
+   resources, thumbnails, GPU-time flame graphs), and the
    Maven/Gradle/npm/pnpm/yarn/Cargo build & package systems (uniform verbs:
    build/test/deps/sync/audit/outdated/tasks)
    — plus cross-platform flame graphs (SVG + text) and a browser
@@ -24,9 +26,10 @@ A unified developer-tooling workspace. Two concerns live here:
 
 | Path | What |
 |---|---|
-| `src/devtools_mcp/` | MCP server: backends (`valgrind/ lldb/ dtrace/ perf/ etw/ vtune/ jvm/ cdb/ py/ node/ maven/ gradle/ npm/ pnpm/ yarn/ cargo/`), shared `build/` + `flamegraph/` engines, `hotspots.py`, `viz/` browser terminal, `tools/`, `formatters/`, `models.py`, `registry.py`, `workspace.py`, `index.py`, `filters.py`, `server.py` |
+| `src/devtools_mcp/` | MCP server: backends (`valgrind/ lldb/ dtrace/ perf/ etw/ vtune/ jvm/ cdb/ py/ node/ renderdoc/ maven/ gradle/ npm/ pnpm/ yarn/ cargo/`), shared `build/` + `flamegraph/` engines, `hotspots.py`, `viz/` browser terminal, `tools/`, `formatters/`, `models.py`, `registry.py` (capability model + `_BACKEND_MODULES` manifest loader + `InstallSpec`), `install.py` (+ `tools/install_tools.py`: `devtools_install` — per-OS install commands, dry-run default, execute gated by `DEVTOOLS_MCP_ALLOW_INSTALL=1`), `workspace.py`, `index.py`, `filters.py`, `server.py` |
+| `src/devtools_mcp/renderdoc/` | GPU frame suite: verbs `capture` (targetcontrol auto-trigger or launch-wait/F12) / `analyze` / `counters` / `resources` / `thumb`. Replay runs `scripts/bridge.py` inside `qrenderdoc --python` (embedded Py 3.6 — env-var params, JSON out, sys.exit suppresses the UI; ruff per-file-ignores). Needs GPU + interactive session for replay verbs |
 | `src/devtools_mcp/tracker/` | Progress tracker domain layer: `schema.py` (versioned migrations), `db.py` (WAL SQLite at `~/.devtools-mcp/tracker.db`, env `DEVTOOLS_MCP_TRACKER_DB`), `tasks.py`/`criteria.py`/`tags.py`/`commits.py`/`deps.py` (dependency edges + execution-plan resolver)/`issues.py`, `frames.py` (Polars views), `crdt.py`+`sync.py` (local-first replication: HLC, op-capture triggers, LWW merge, HTTP peer sync via the dashboard's `/api/crdt/`), `activity.py` (local agent collaboration: v5 `file_activity`+`file_claims` tables — debounced touch log, advisory TTL claims, conflicts; site-local, not CRDT-synced), `providers/` (GitHub REST via `GITHUB_TOKEN`, GitLab stub). Tools in `tools/tracker_tools.py` (11 `tracker_*` tools); tracker card + `/collab` views in `viz/`; skills in `skills/authored/skills/tracker/` + `collab/` |
-| `tests/` | Test suite (437 cases) + `tests/fixtures/` (compiled targets gitignored) |
+| `tests/` | Test suite (592 cases) + `tests/fixtures/` (compiled targets gitignored) |
 | `.mcp.json` / `.cursor/mcp.json` | Client configs pointing at the **shared local service** (`http://127.0.0.1:8000/mcp`, streamable HTTP). One instance serves all projects; also registered at Claude Code user scope. Stdio spawn remains available: `uv run devtools-mcp` |
 | `scripts/devtools-service.ps1` | Run that shared instance: start/stop/status/install(-at-login). Network transports auto-start the dashboard (`:8765`, `--no-dashboard` to opt out) |
 | `.claude-plugin/` | Claude Code **plugin + marketplace** manifests. `plugin.json` (repo root = plugin root, so `${CLAUDE_PLUGIN_ROOT}` = the Python project) points component paths at `plugin/`. `marketplace.json` lists the one `devtools-mcp` plugin with `source: "."`. Install: `/plugin marketplace add Ugbot/ai-grind` then `/plugin install devtools-mcp@ai-grind` |
@@ -48,10 +51,11 @@ Claude loads). Driven by two scripts and one map:
   `authored/` → flat mirror (`plugin/` committed; `.agents/` gitignored,
   skills-only; `.codex/`+`.cursor/` are hand-written configs, not targets)
 
-Contents: 47 skills = 24 harvested (debug / profiling / code-intel /
-project-drivers / narrative) + 23 authored (`powershell/` 5.1 & 7 side by side,
-`devtools/`, `tracker/` — the progress-tracker workflow skills);
-23 commands (build / llm-station); 3 agents (docs / testing / integration).
+Contents: 51 skills = 24 harvested (debug / profiling / code-intel /
+project-drivers / narrative) + 27 authored (`powershell/` 5.1 & 7 side by side,
+`profiling/` incl. `renderdoc-frame-analysis`, `devtools/`, `tracker/`,
+`collab/`); 23 commands (build / llm-station); 3 agents (docs / testing /
+integration).
 Harvested items are copied from upstream projects, never moved. Full breakdown and
 dedup notes in `skills/README.md`.
 
