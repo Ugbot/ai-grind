@@ -18,7 +18,11 @@ precisely.
 
 ## The loop
 
-1. **`devtools_check()`** — see which suites/tools are installed on this machine.
+1. **`devtools_check()`** — see which suites/tools are installed on this machine
+   (per-suite capability tags, plus install hints for missing suites).
+   Missing a tool? **`devtools_install(suite)`** returns the exact per-OS install
+   commands (winget/apt/pip/download) to run in your shell; `execute=True` runs
+   them from the server when `DEVTOOLS_MCP_ALLOW_INSTALL=1`.
 2. **`devtools_run(suite, tool, binary, args=…, extra_args=…)`** — run a tool.
    Returns a bounded summary + `run_id`. Always set **`label`** (short title) and
    **`notes`** (what you profiled and why) — they appear on dashboard run cards at
@@ -46,6 +50,7 @@ precisely.
 | JVM heap histogram | `jvm:heap` |
 | **Windows** crash dump / live debug | `cdb:analyze` / `cdb:stacks` |
 | Step-through debug (macOS/Linux) | `debug_start` + `debug` (LLDB) |
+| **GPU frame** capture + drawcall/timing analysis | `renderdoc:capture` then `renderdoc:analyze` / `counters` (see renderdoc-frame-analysis skill) |
 
 ## Targets
 
@@ -55,6 +60,8 @@ precisely.
 - **CDB** debugs a live exe (`binary`) or a crash dump (`--dump path.dmp` in
   `extra_args`).
 - **ETW** can re-decode an existing trace with `--decode-only --etl path.etl`.
+- **renderdoc** `capture` takes `binary` = the graphics .exe; the replay verbs
+  (`analyze`/`counters`/`resources`/`thumb`) take `binary` = the produced `.rdc`.
 
 ## Why query instead of read
 
@@ -78,4 +85,4 @@ tracker tasks. Populate them when you create work:
 Use descriptions for **what / why / done-when** in plain language — not just the title repeated.
 
 See also: [[flamegraph-reading]], [[etw-profiling]], [[jvm-profiling]],
-[[jvm-threads-heap]], [[cdb-windows-debug]].
+[[jvm-threads-heap]], [[cdb-windows-debug]], [[renderdoc-frame-analysis]].
