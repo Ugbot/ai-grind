@@ -57,7 +57,7 @@ dedup notes in `skills/README.md`.
 
 ## Conventions
 
-- Python 3.11+; scripts follow Tiger Style (bounded loops, ≥2 asserts/function,
+- Python 3.12+; scripts follow Tiger Style (bounded loops, ≥2 asserts/function,
   explicit, fail-loud on invariant violations).
 - Lint gate (all must pass): `uv run ruff check src tests`, `uv run black --check
   src tests`, `uv run mypy src/devtools_mcp`. Config in `pyproject.toml`; mypy has

@@ -176,7 +176,7 @@ loadable mirror by `skills/sync.py` — see `skills/README.md`.
 
 ## Install
 
-Requires Python 3.11+.
+Requires Python 3.12+.
 
 ```bash
 # Clone and install

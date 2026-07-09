@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "bengambleVV", email = "ben.gamble@ververica.com" }
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "click>=8.3.1",
     "httpx>=0.28.1",
@@ -38,10 +38,10 @@ asyncio_mode = "auto"
 
 [tool.black]
 line-length = 120
-target-version = ["py311"]
+target-version = ["py312"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 check_untyped_defs = true
 warn_redundant_casts = true
 no_implicit_optional = true
@@ -69,7 +69,7 @@ module = [
 ignore_errors = true
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 120
 
 [tool.ruff.lint]
