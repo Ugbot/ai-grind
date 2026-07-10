@@ -16,7 +16,7 @@ import anyio
 from mcp.server.fastmcp import Context
 
 from devtools_mcp.server import get_app_ctx, mcp
-from devtools_mcp.station import engine, project_link
+from devtools_mcp.station import credentials, engine, project_link
 from devtools_mcp.station.client import StationClient
 from devtools_mcp.station.config import (
     CONFIG_DIRNAME,
@@ -81,8 +81,18 @@ def _format_report(report: dict) -> str:
     return line
 
 
+def _auth_status_line() -> str:
+    stored = credentials.load_credentials()
+    if stored is None:
+        return "auth: ⛔ not authenticated — see station_link action='auth'"
+    return (
+        f"auth: ✅ {stored.get('member') or 'signed in'} @ {stored.get('url', '?')} "
+        f"(stored {str(stored.get('saved_at', ''))[:19]})"
+    )
+
+
 def _link_status(db: TrackerDB, cfg: StationConfig | None) -> str:
-    lines = ["**Station status**", ""]
+    lines = ["**Station status**", "", _auth_status_line(), ""]
     if cfg is not None:
         lines.append(f"config: `{cfg.source_path}` (hash `{cfg.config_hash()[:12]}`)")
         lines.append(f"url: {cfg.station.url or '(unset)'} | org: {cfg.station.org or '(from key)'}")
@@ -123,20 +133,43 @@ async def station_link(
     """Manage the link between local tracker projects and the llm-station platform.
 
     Actions:
+        auth    — how to authenticate + current auth state. If any station
+                  tool fails with "Not authenticated", run this and RELAY THE
+                  INSTRUCTIONS TO THE USER: they open the local dashboard's
+                  /station/auth page in a browser and sign in against the
+                  platform (GitHub/Google); the key is stored locally.
         init    — write a commented .devtools-mcp/station.toml template into the
                   repo (repo_root or cwd). Edit it, then run action='link'.
         link    — validate the config against the live platform (auth, org,
                   project, repo) and persist the link. Sync refuses to run
                   without this.
-        status  — config source, linked projects, per-rule sync state/errors.
+        status  — auth state, config source, linked projects, per-rule sync
+                  state/errors.
         resume  — un-pause a rule that auto-paused after repeated failures
                   (domain required, e.g. domain='tasks').
         unlink  — remove the link row (config file is left alone).
+        logout  — delete the locally stored credential.
 
-    The API key is env-only: export LLM_STATION_API_KEY=lls_...
+    Key resolution order: env LLM_STATION_API_KEY, then the browser-auth
+    credential store (~/.devtools-mcp/station-auth.json).
     """
     db = _tracker(ctx)
     try:
+        if action == "auth":
+            cfg_maybe = load_station_config(Path(repo_root).resolve() if repo_root else None)
+            platform_url = cfg_maybe.station.url if cfg_maybe is not None else ""
+            stored = credentials.load_credentials()
+            if stored is not None:
+                return (
+                    f"{_auth_status_line()}\n"
+                    "To re-authenticate (e.g. different platform or org): open "
+                    f"{credentials.DEFAULT_DASHBOARD}{credentials.DASHBOARD_AUTH_PATH} in a browser, "
+                    "or station_link action='logout' first."
+                )
+            return credentials.auth_instructions(platform_url)
+        if action == "logout":
+            removed = credentials.clear_credentials()
+            return "Credential deleted." if removed else "No stored credential to delete."
         if action == "init":
             root = Path(repo_root).resolve() if repo_root else Path.cwd()
             dest = root / CONFIG_DIRNAME / CONFIG_FILENAME
@@ -171,7 +204,7 @@ async def station_link(
             cfg = _load_config(repo_root)
             removed = project_link.unlink_project(db, cfg.project.local)
             return f"Unlinked {cfg.project.local}" if removed else f"{cfg.project.local} was not linked"
-        return f"Unknown action {action!r}. One of: init, link, status, resume, unlink."
+        return f"Unknown action {action!r}. One of: auth, init, link, status, resume, unlink, logout."
     except TrackerError as exc:
         return f"station_link failed: {exc}"
 
@@ -193,6 +226,10 @@ async def station_sync(
     local-wins conflicts, sessions and claims push (claims become advisory
     checkouts), skills and perf runs upload. Offline is a normal state —
     the run fails fast and the next run re-diffs; nothing queues.
+
+    If this fails with "Not authenticated": relay the message to the user —
+    they open the dashboard's /station/auth page in a browser and sign in
+    (station_link action='auth' reprints the instructions).
     """
     db = _tracker(ctx)
     try:
@@ -247,6 +284,10 @@ async def station_session(
         accept   — handoff_id: accept a pending handoff
         decline  — handoff_id: decline a pending handoff
         context  — the platform's devtools_context onboarding packet
+
+    If this fails with "Not authenticated": relay the message to the user —
+    they sign in via the dashboard's /station/auth page (see station_link
+    action='auth').
     """
     db = _tracker(ctx)
     try:

@@ -95,15 +95,27 @@ class StationConfig(BaseModel):
         return enabled
 
     def api_key(self) -> str:
-        """The lls_ key from the environment. Raises TrackerError if unset."""
+        """The lls_ key: env var first, browser-auth credential store second.
+
+        Raises TrackerError whose message contains the exact instructions an
+        LLM should relay to the user (dashboard /station/auth flow).
+        """
         env_name = self.station.api_key_env or DEFAULT_API_KEY_ENV
         key = os.environ.get(env_name, "").strip()
-        if not key:
-            raise TrackerError(
-                f"Platform API key not set: export {env_name}=lls_... "
-                "(keys live in the environment, never in station.toml)"
-            )
-        return key
+        if key:
+            return key
+        from devtools_mcp.station import credentials
+
+        stored = credentials.load_credentials()
+        if stored is not None:
+            stored_url = str(stored.get("url", "")).rstrip("/")
+            if self.station.url and stored_url and stored_url != self.station.url.rstrip("/"):
+                raise TrackerError(
+                    f"Stored credential is for {stored_url}, but this project targets "
+                    f"{self.station.url}. " + credentials.auth_instructions(self.station.url)
+                )
+            return str(stored["api_key"])
+        raise TrackerError(credentials.auth_instructions(self.station.url))
 
 
 def _scan_for_key_leak(node: object, depth: int = 0) -> None:

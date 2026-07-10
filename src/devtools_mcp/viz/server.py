@@ -202,6 +202,8 @@ class _Handler(BaseHTTPRequestHandler):
                 from devtools_mcp.viz import tracker_data
 
                 self._send(_with_tracker(tracker_data.collab_page))
+            elif parts[0] == "station" and parts[1:] == ["auth"]:
+                self._station_auth_page(query)
             elif parts[0] == "api":
                 self._route_api_get(parts[1:], query)
             else:
@@ -245,6 +247,23 @@ class _Handler(BaseHTTPRequestHandler):
                 fields = urllib.parse.parse_qs(body)
                 result = (fields.get("result") or ["pass"])[0]
                 self._post_criteria_result(key, crit_id, result)
+            elif parts == ["api", "station", "token"]:
+                from devtools_mcp.station import credentials
+                from devtools_mcp.tracker.db import TrackerError
+
+                fields = urllib.parse.parse_qs(body)
+                url = (fields.get("url") or [""])[0]
+                key = (fields.get("key") or [""])[0].strip()
+                try:
+                    credentials.save_credentials(url, key, org_id=(fields.get("org") or [""])[0])
+                    self._send(
+                        render.page(
+                            "station connected",
+                            "<h2>✅ Key saved</h2><p>Close this tab and tell your agent to retry.</p>",
+                        )
+                    )
+                except TrackerError as exc:
+                    self._send(render.page("station auth failed", f"<p>⛔ {render._h(str(exc))}</p>"), 400)
             elif len(parts) == 3 and parts[0] == "run" and parts[2] == "delete":
                 run_id = unquote(parts[1])
                 ws = app.get_workspace()
@@ -476,8 +495,103 @@ class _Handler(BaseHTTPRequestHandler):
                 }
 
             self._send_json(_with_tracker(overview))
+        elif rest == ["station", "status"]:
+            from devtools_mcp.station import credentials
+
+            stored = credentials.load_credentials()
+            if stored is None:
+                self._send_json({"authenticated": False})
+            else:
+                safe = {k: v for k, v in stored.items() if k != "api_key"}
+                self._send_json({"authenticated": True, **safe})
+        elif rest == ["station", "callback"]:
+            self._station_callback(query)
         else:
             self._send_json({"error": "not found"}, 404)
+
+    # -- station browser auth ------------------------------------------------
+
+    def _station_platform_default(self) -> str:
+        """Best guess at the platform URL for the auth page form."""
+        import os
+
+        from devtools_mcp.station import credentials
+
+        stored = credentials.load_credentials()
+        if stored is not None and stored.get("url"):
+            return str(stored["url"])
+        env = os.environ.get("LLM_STATION_REMOTE_URL", "").strip()
+        if env:
+            return env
+        with contextlib.suppress(Exception):
+            from devtools_mcp.station.config import load_station_config
+
+            cfg = load_station_config()
+            if cfg is not None and cfg.station.url:
+                return cfg.station.url
+        return "http://localhost:8000"
+
+    def _station_auth_page(self, query: dict) -> None:
+        """The page an LLM sends users to: sign in against the platform."""
+        from urllib.parse import quote
+
+        from devtools_mcp.station import credentials
+
+        platform = ((query.get("url") or [""])[0] or self._station_platform_default()).rstrip("/")
+        callback = f"http://{self.headers.get('Host', '127.0.0.1:8765')}/api/station/callback"
+        stored = credentials.load_credentials()
+        status_html = (
+            f"<p>✅ Authenticated against <b>{render._h(str(stored.get('url', '')))}</b> "
+            f"(org <code>{render._h(str(stored.get('org_id', ''))[:12])}…</code>, "
+            f"saved {render._h(str(stored.get('saved_at', ''))[:19])})</p>"
+            if stored is not None
+            else "<p>⛔ Not authenticated yet.</p>"
+        )
+        cb = quote(callback, safe="")
+        body = f"""
+        <h2>Connect to the station platform</h2>
+        {status_html}
+        <form method="get" action="/station/auth">
+          <label>Platform URL <input name="url" value="{render._h(platform)}" size="40"></label>
+          <button type="submit">Use this platform</button>
+        </form>
+        <p>
+          <a href="{render._h(platform)}/auth/github?local_callback={cb}"><b>Sign in with GitHub</b></a> ·
+          <a href="{render._h(platform)}/auth/google?local_callback={cb}"><b>Sign in with Google</b></a>
+        </p>
+        <p>The platform redirects back here and the key is stored at
+        <code>~/.devtools-mcp/station-auth.json</code>. Nothing to copy.</p>
+        <details><summary>Or paste an existing lls_ key</summary>
+        <form method="post" action="/api/station/token">
+          <input type="hidden" name="url" value="{render._h(platform)}">
+          <label>API key <input name="key" size="50" placeholder="lls_..."></label>
+          <button type="submit">Save key</button>
+        </form></details>
+        """
+        self._send(render.page("station auth", body))
+
+    def _station_callback(self, query: dict) -> None:
+        """OAuth landing: the platform redirected the freshly minted key here."""
+        from devtools_mcp.station import credentials
+        from devtools_mcp.tracker.db import TrackerError
+
+        key = (query.get("key") or [""])[0]
+        org = (query.get("org") or [""])[0]
+        url = (query.get("url") or [self._station_platform_default()])[0]
+        member = (query.get("member") or [""])[0]
+        try:
+            credentials.save_credentials(url, key, org, member)
+        except TrackerError as exc:
+            self._send(render.page("station auth failed", f"<p>⛔ {render._h(str(exc))}</p>"), 400)
+            return
+        self._send(
+            render.page(
+                "station connected",
+                "<h2>✅ Connected</h2><p>The station API key is stored locally. "
+                "You can close this tab and tell your agent to retry — station_sync, "
+                "station_link and station_session will pick the key up automatically.</p>",
+            )
+        )
 
     def _route_run(self, app: object, parts: list[str], query: dict) -> None:
         kind = parts[0]
