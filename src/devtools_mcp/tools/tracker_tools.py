@@ -587,10 +587,20 @@ async def tracker_sync(
         if action == "status":
             info = crdt.status(db)
             peers = "\n".join(f"- `{p['url']}` last synced {p['last_synced']}" for p in info["peers"]) or "- none yet"
+            station_rows = db.conn.execute(
+                "SELECT project_key, remote_project_key, linked_at FROM station_projects LIMIT 10"
+            ).fetchall()
+            station = (
+                "\n**Station:** "
+                + "; ".join(f"`{r['project_key']}` -> {r['remote_project_key']}" for r in station_rows)
+                + " (rule-driven platform sync — see station_sync)"
+                if station_rows
+                else ""
+            )
             return (
                 f"**Tracker replica** site `{info['site_id'][:12]}…`\n"
                 f"ops in log: {info['ops']} | watermark: `{info['latest_hlc'] or '—'}`\n"
-                f"**Peers:**\n{peers}"
+                f"**Peers:**\n{peers}{station}"
             )
         if action == "sync":
             if not url:
@@ -617,6 +627,20 @@ def _collab_identity(agent: str | None) -> str:
     assert resolved, "collab identity resolution produced empty id"
     assert len(resolved) <= activity_mod.SESSION_ID_MAX, "identity too long"
     return resolved
+
+
+def _remote_checkout_lines(db: TrackerDB, rel_path: str) -> list[str]:
+    """Other members' platform checkouts on this path (station collab mirror)."""
+    from devtools_mcp.station.domains.claims import remote_conflicts_for
+
+    assert rel_path, "rel_path must be non-empty"
+    rows = remote_conflicts_for(db.conn, rel_path)
+    return [
+        f"- CHECKED OUT on the platform by member `{r['member_id'][:12]}…`"
+        + (f" (task {r['task_key']})" if r.get("task_key") else "")
+        + (f" until {r['expires_at']}" if r.get("expires_at") else "")
+        for r in rows[:10]  # bounded
+    ]
 
 
 def _conflict_lines(found: list[dict]) -> list[str]:
@@ -716,9 +740,11 @@ async def tracker_files(
                 return "conflicts needs file (and repo when the path is relative)"
             root, rel = activity_mod.normalize(cwd, file)
             found = activity_mod.conflicts_for(db.conn, who, root, rel)
-            if not found:
+            remote_lines = _remote_checkout_lines(db, rel)
+            if not found and not remote_lines:
                 return f"No one else is on `{rel}` — clear to edit."
-            return f"**Conflicts on `{rel}`:**\n" + "\n".join(_conflict_lines(found))
+            body = _conflict_lines(found) + remote_lines
+            return f"**Conflicts on `{rel}`:**\n" + "\n".join(body)
         return f"Unknown action {action!r}. One of: touch, claim, release, status, conflicts"
     except TrackerError as exc:
         return f"Error: {exc}"

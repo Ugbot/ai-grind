@@ -334,12 +334,116 @@ MIGRATION_V5: tuple[str, ...] = (
     "CREATE INDEX idx_claims_session ON file_claims(session_id, released_at)",
 )
 
+# v6: station sync — local-first bridge to an llm-station-remote platform.
+# Site-local like v5 (no capture triggers, not in SYNC_TABLES): links and
+# watermarks describe *this* replica's relationship to the platform.
+# See src/devtools_mcp/station/.
+MIGRATION_V6: tuple[str, ...] = (
+    # One row per linked local project: the validated org/project/repo
+    # resolution cached from station_link (sync runs even when the repo
+    # holding station.toml isn't cwd).
+    """
+    CREATE TABLE station_projects (
+        project_key        TEXT PRIMARY KEY,
+        base_url           TEXT NOT NULL,
+        org_id             TEXT NOT NULL,
+        remote_project_id  TEXT NOT NULL,
+        remote_project_key TEXT NOT NULL,
+        repo_id            TEXT,
+        member_id          TEXT NOT NULL,
+        config_hash        TEXT NOT NULL,
+        linked_at          TEXT NOT NULL
+    )
+    """,
+    # Row-level identity map: local uid/key/name <-> platform UUID. Human
+    # keys are never identity — this table is the only join. remote_id is
+    # 'pending:<uuid>' between intent-commit and create-POST resolution.
+    """
+    CREATE TABLE station_links (
+        domain      TEXT NOT NULL CHECK (domain IN
+                    ('task', 'criterion', 'dep', 'commit',
+                     'session', 'handoff', 'claim', 'skill', 'perf_run')),
+        local_id    TEXT NOT NULL,
+        remote_id   TEXT NOT NULL,
+        org_id      TEXT NOT NULL,
+        remote_key  TEXT,
+        synced_hash TEXT,
+        state       TEXT NOT NULL DEFAULT 'ok'
+                    CHECK (state IN ('ok', 'pending', 'error', 'deleted')),
+        last_error  TEXT,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL,
+        PRIMARY KEY (domain, local_id)
+    )
+    """,
+    "CREATE UNIQUE INDEX idx_station_links_remote ON station_links(domain, org_id, remote_id)",
+    # Per (project, domain) rule bookkeeping: push watermark into crdt_ops,
+    # failure counters, auto-pause.
+    """
+    CREATE TABLE station_sync_state (
+        rule_id              TEXT PRIMARY KEY,
+        last_push_hlc        TEXT,
+        last_pull_at         TEXT,
+        last_run_at          TEXT,
+        consecutive_failures INTEGER NOT NULL DEFAULT 0,
+        paused               INTEGER NOT NULL DEFAULT 0,
+        last_error           TEXT
+    )
+    """,
+    # Observability: one row per sync run, pruned to STATION_SYNC_LOG_KEEP.
+    """
+    CREATE TABLE station_sync_log (
+        id          INTEGER PRIMARY KEY,
+        rule_id     TEXT NOT NULL,
+        started_at  TEXT NOT NULL,
+        finished_at TEXT,
+        pushed      INTEGER NOT NULL DEFAULT 0,
+        pulled      INTEGER NOT NULL DEFAULT 0,
+        conflicts   INTEGER NOT NULL DEFAULT 0,
+        skipped     INTEGER NOT NULL DEFAULT 0,
+        errors      INTEGER NOT NULL DEFAULT 0,
+        error       TEXT
+    )
+    """,
+    # Read-only mirrors of *other members'* platform state, replaced
+    # wholesale on each pull. Never written into file_claims (a remote row
+    # must not hard-block a local advisory claim).
+    """
+    CREATE TABLE station_remote_checkouts (
+        remote_id  TEXT PRIMARY KEY,
+        org_id     TEXT NOT NULL,
+        repo_id    TEXT NOT NULL,
+        member_id  TEXT NOT NULL,
+        path       TEXT NOT NULL,
+        path_type  TEXT NOT NULL,
+        mode       TEXT NOT NULL,
+        task_key   TEXT,
+        expires_at TEXT,
+        pulled_at  TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE station_remote_handoffs (
+        remote_id      TEXT PRIMARY KEY,
+        org_id         TEXT NOT NULL,
+        from_member_id TEXT NOT NULL,
+        task_key       TEXT,
+        status         TEXT NOT NULL,
+        context        TEXT,
+        next_steps     TEXT,
+        created_at     TEXT,
+        pulled_at      TEXT NOT NULL
+    )
+    """,
+)
+
 MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
     (1, MIGRATION_V1),
     (2, MIGRATION_V2),
     (3, MIGRATION_V3),
     (4, MIGRATION_V4),
     (5, MIGRATION_V5),
+    (6, MIGRATION_V6),
 )
 
 assert 0 < len(MIGRATIONS) <= MIGRATIONS_MAX, "migration count out of bounds"
