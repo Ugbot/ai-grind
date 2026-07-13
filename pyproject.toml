@@ -78,6 +78,8 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 [tool.ruff.lint.per-file-ignores]
 # bridge.py runs inside qrenderdoc's embedded Python 3.6 — no modern syntax.
 "src/devtools_mcp/renderdoc/scripts/bridge.py" = ["UP", "SIM"]
+# Vendored GOAP core (agentix/GOAP, MIT) — kept faithful to upstream style.
+"src/devtools_mcp/goap/**" = ["UP", "SIM", "B"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["devtools_mcp"]

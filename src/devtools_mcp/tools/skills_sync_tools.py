@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 import pathlib
 import sys
 
@@ -28,24 +27,7 @@ _OUTPUT_TAIL_LINES = 30
 _MAX_AUTHORED_SCAN = 200
 
 
-def find_skills_root() -> pathlib.Path | None:
-    """Locate the skills library: $DEVTOOLS_MCP_SKILLS_ROOT -> repo checkout.
-
-    The library lives in the ai-grind checkout (skills/ beside src/), not in the
-    installed package, so an installed server needs the env override.
-    """
-    env = os.environ.get("DEVTOOLS_MCP_SKILLS_ROOT")
-    if env:
-        root = pathlib.Path(env)
-        return root if (root / "sync.py").is_file() else None
-    import devtools_mcp
-
-    package_dir = pathlib.Path(devtools_mcp.__file__).resolve().parent
-    for up in range(1, 4):  # bounded walk: src layout puts the repo 2 levels up
-        candidate = package_dir.parents[up - 1] / "skills"
-        if (candidate / "sync.py").is_file() and (candidate / "harvest.py").is_file():
-            return candidate
-    return None
+find_skills_root = discovery.find_skills_root
 
 
 def library_status(root: pathlib.Path) -> str:
@@ -81,6 +63,22 @@ def library_status(root: pathlib.Path) -> str:
     parts.append("")
     parts.append("Sync with action='sync', target='plugin'|'local'|'agents'|'project'|'global'|'all'.")
     return "\n".join(parts)
+
+
+def rebuild_router_quiet() -> str:
+    """Best-effort router refresh after the library changes. Never raises."""
+    try:
+        from devtools_mcp.skilldocs import router
+        from devtools_mcp.skilldocs.store import SkillDocStore
+
+        store = SkillDocStore()
+        try:
+            router.rebuild(store)
+            return f"\n\n_Rebuilt {router.ROUTER_NAME} index._"
+        finally:
+            store.close()
+    except Exception as exc:  # noqa: BLE001 — advisory, must not fail the sync
+        return f"\n\n_Router rebuild skipped: {exc}._"
 
 
 async def run_script(root: pathlib.Path, script: str, args: list[str]) -> tuple[int, str]:
@@ -174,7 +172,8 @@ async def skills_sync(
     if action == "harvest":
         code, tail = await run_script(root, "harvest.py", [])
         status = "ok" if code == 0 else f"FAILED (exit {code})"
-        return f"**harvest.py** — {status}\n```\n{tail}\n```"
+        note = rebuild_router_quiet() if code == 0 else ""
+        return f"**harvest.py** — {status}\n```\n{tail}\n```{note}"
 
     if action == "sync":
         if not target:

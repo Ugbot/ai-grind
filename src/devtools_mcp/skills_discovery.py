@@ -41,6 +41,27 @@ class Candidate:
     issue: str = ""  # non-empty = malformed, listed but not adoptable
 
 
+def find_skills_root() -> pathlib.Path | None:
+    """Locate the skills library: $DEVTOOLS_MCP_SKILLS_ROOT -> repo checkout.
+
+    The library lives in the ai-grind checkout (skills/ beside src/), not in the
+    installed package, so an installed server needs the env override. MCP-free so
+    router.py and the skills_sync tool can both call it.
+    """
+    env = os.environ.get("DEVTOOLS_MCP_SKILLS_ROOT")
+    if env:
+        root = pathlib.Path(env)
+        return root if (root / "sync.py").is_file() else None
+    import devtools_mcp
+
+    package_dir = pathlib.Path(devtools_mcp.__file__).resolve().parent
+    for up in range(1, 4):  # bounded walk: src layout puts the repo 2 levels up
+        candidate = package_dir.parents[up - 1] / "skills"
+        if (candidate / "sync.py").is_file() and (candidate / "harvest.py").is_file():
+            return candidate
+    return None
+
+
 def read_frontmatter_name(md_path: pathlib.Path) -> str | None:
     """Tolerant frontmatter `name:` reader; None if absent/invalid."""
     try:

@@ -27,6 +27,7 @@ CONTENT_MAX: int = 256_000  # one skill document, characters
 UPDATES_COMPACT_AT: int = 200  # log rows per skill before snapshot compaction
 SKILLS_MAX: int = 500
 FRONTMATTER_SCAN_LINES: int = 60  # bound mirrors skills/sync.py
+CONTROL_DOC: str = "skill-control"  # reserved: control state, never a loadable skill
 
 
 class SkillDocError(Exception):
@@ -253,11 +254,16 @@ class SkillDocStore:
             raise SkillDocError(f"old string matches {count} times — add context to make it unique")
         if len(current) - len(old) + len(new) > CONTENT_MAX:
             raise SkillDocError(f"patch would exceed {CONTENT_MAX} chars")
-        start = current.index(old)
+        # pycrdt Text is indexed by UTF-8 byte offset, not Python code points, so
+        # translate — otherwise any non-ASCII before the match corrupts the doc.
+        char_start = current.index(old)
+        byte_start = len(current[:char_start].encode("utf-8"))
+        byte_len = len(old.encode("utf-8"))
         before = doc.get_state()
-        del text[start : start + len(old)]
+        del text[byte_start : byte_start + byte_len]
         if new:
-            text.insert(start, new)
+            text.insert(byte_start, new)
+        assert str(text) == current[:char_start] + new + current[char_start + len(old) :], "patch produced wrong text"
         self._persist(name, doc.get_update(before))
         return self.materialize(name)
 
@@ -305,23 +311,54 @@ class SkillDocStore:
 
     # -- materialization -------------------------------------------------------
 
+    def _apply_control(self, name: str, content: str) -> tuple[str, bool]:
+        """Render the active power variant and report whether the skill is
+        disabled. Passthrough (zero cost) when the doc has no variant markers."""
+        from devtools_mcp.skilldocs.control import SkillControl
+        from devtools_mcp.skilldocs.variants import has_variants, render
+
+        control = SkillControl(conn=self.conn)  # shares this store's connection
+        if control.is_disabled(name):
+            return content, True
+        if has_variants(content):
+            content = render(content, control.effective_mode(name))
+        return content, False
+
     def materialize(self, name: str) -> Path | None:
         """Write the current merged text to `<publish_root>/<name>/SKILL.md`.
 
-        Skipped (returns None) when the document isn't a valid skill yet —
-        e.g. a partially-synced doc whose frontmatter doesn't parse. The DB
-        copy is always authoritative; the file is a projection.
+        Skipped (returns None) when the document isn't a valid skill yet — e.g. a
+        partially-synced doc whose frontmatter doesn't parse — when it's the
+        reserved control doc, or when the skill is disabled (existing file is then
+        removed). Power variants are rendered to the active mode. The DB copy is
+        always authoritative; the file is a projection.
         """
         name = self._require(name)
+        target = publish_root() / name / "SKILL.md"
+        if name == CONTROL_DOC:
+            return None
         content = self.get_text(name)
         if frontmatter_name(content) != name:
             return None
-        dest = publish_root() / name
-        dest.mkdir(parents=True, exist_ok=True)
-        target = dest / "SKILL.md"
+        content, disabled = self._apply_control(name, content)
+        if disabled:
+            self._remove_file(target)
+            return None
+        if frontmatter_name(content) != name:  # variant rendering must not break frontmatter
+            return None
+        target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8", newline="\n")
         assert target.is_file(), f"materialize failed: {target}"
         return target
+
+    @staticmethod
+    def _remove_file(target: Path) -> None:
+        """Delete a materialized SKILL.md and its now-empty parent dir."""
+        if target.is_file():
+            target.unlink()
+            parent = target.parent
+            if parent.is_dir() and not any(parent.iterdir()):
+                parent.rmdir()
 
     def materialize_all(self) -> int:
         """Re-project every live skill to disk. Returns count written."""

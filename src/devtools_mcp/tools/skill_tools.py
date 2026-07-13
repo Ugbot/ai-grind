@@ -8,6 +8,7 @@ from mcp.server.fastmcp import Context
 from devtools_mcp.server import mcp
 from devtools_mcp.skilldocs import SkillDocError, SkillDocStore
 from devtools_mcp.skilldocs import store as store_mod
+from devtools_mcp.skilldocs.control import SkillControl, SkillControlError
 
 GET_PREVIEW_MAX: int = 6_000  # chars of skill content echoed back to the model
 
@@ -51,6 +52,12 @@ async def skill_live(
                   bidirectional exchange; both sides converge
         publish — re-materialize every live skill to the skills dir
         delete  — name: remove locally (log + file); peers keep their copy
+        route   — (re)build the `skill-router` live skill: an auto-generated index
+                  of every skill, patched under the live-editable routing rules
+        mode    — content=low|high: set the active power mode (optional name for a
+                  per-skill override); no content reports the current state. Flips
+                  which variant of dynamic skills is materialized.
+        enable/disable — name: include/exclude a skill from materialization
     Files land in ~/.claude/skills/<name>/SKILL.md (DEVTOOLS_MCP_LIVE_SKILLS_DIR
     overrides), so changes are live at the next skill load.
     """
@@ -102,8 +109,54 @@ async def skill_live(
                 return "delete needs name"
             removed = store.delete(name)
             return f"Deleted live skill **{name}** locally" if removed else f"No live skill {name!r}"
-        return f"Unknown action {action!r}. One of: create, get, list, append, patch, sync, publish, delete"
-    except SkillDocError as exc:
+        if action == "route":
+            from devtools_mcp.skilldocs import router
+
+            path = router.rebuild(store)
+            count = len(router.collect_skills(store))
+            where = f" -> `{path}`" if path else ""
+            return f"Rebuilt **{router.ROUTER_NAME}** indexing {count} skill(s){where}"
+        if action == "mode":
+            return _mode_action(store, name, content)
+        if action in ("enable", "disable"):
+            if not name:
+                return f"{action} needs name"
+            control = SkillControl(conn=store.conn)
+            control.set_disabled(name, action == "disable")
+            path = store.materialize(name) if store.exists(name) else None
+            state = "disabled" if action == "disable" else "enabled"
+            return f"Skill **{name}** {state}" + (f" -> `{path}`" if path else "")
+        return (
+            f"Unknown action {action!r}. One of: create, get, list, append, patch, "
+            "sync, publish, delete, route, mode, enable, disable"
+        )
+    except (SkillDocError, SkillControlError) as exc:
         return f"Error: {exc}"
     finally:
         store.close()
+
+
+def _mode_action(store: SkillDocStore, name: str | None, content: str | None) -> str:
+    """get/set the power mode. content=low|high sets it (global, or per-skill when
+    name is given); empty content reports current state."""
+    control = SkillControl(conn=store.conn)
+    if not content:
+        overrides = control.overrides()
+        disabled = sorted(control.disabled())
+        lines = [f"**Active power mode:** {control.global_mode()}"]
+        if overrides:
+            lines.append("Overrides: " + ", ".join(f"{k}={v}" for k, v in sorted(overrides.items())))
+        if disabled:
+            lines.append("Disabled: " + ", ".join(disabled))
+        return "\n".join(lines)
+    if name:
+        control.set_override(name, content)
+        scope = f"override for **{name}**"
+    else:
+        control.set_mode(content)
+        scope = "global mode"
+    written = store.materialize_all()
+    from devtools_mcp.skilldocs import router
+
+    router.rebuild(store)
+    return f"Set {scope} = **{content}**; re-materialized {written} skill(s)."

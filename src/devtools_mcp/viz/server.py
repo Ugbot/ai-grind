@@ -202,6 +202,8 @@ class _Handler(BaseHTTPRequestHandler):
                 from devtools_mcp.viz import tracker_data
 
                 self._send(_with_tracker(tracker_data.collab_page))
+            elif parts[0] == "skills":
+                self._skills_page()
             elif parts[0] == "station" and parts[1:] == ["auth"]:
                 self._station_auth_page(query)
             elif parts[0] == "api":
@@ -236,6 +238,14 @@ class _Handler(BaseHTTPRequestHandler):
                     self._send_json({"error": f"bad Content-Length {length}"}, 400)
                     return
                 self._post_skilldoc(parts[2], json.loads(body))
+            elif parts == ["api", "skilldoc", "route", "rebuild"]:
+                self._post_router_rebuild()
+            elif parts == ["api", "skilldoc", "mode"]:
+                self._post_skill_mode(json.loads(body) if body else {})
+            elif len(parts) == 3 and parts[:2] == ["api", "skilldoc"] and parts[2] in ("enable", "disable"):
+                self._post_skill_toggle(parts[2], json.loads(body) if body else {})
+            elif parts == ["api", "plan"]:
+                self._post_plan(json.loads(body) if body else {})
             elif len(parts) == 4 and parts[0] == "tracker" and parts[1] == "task" and parts[3] == "status":
                 key = unquote(parts[2]).upper()
                 fields = urllib.parse.parse_qs(body)
@@ -303,6 +313,110 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json(_with_skilldocs(handle))
         except SkillDocError as exc:
             self._send_json({"error": str(exc)}, 400)
+
+    def _post_router_rebuild(self) -> None:
+        """Regenerate the skill-router index (control-panel button / server call)."""
+        from devtools_mcp.skilldocs import router
+
+        def handle(store):
+            path = router.rebuild(store)
+            return {"ok": True, "count": len(router.collect_skills(store)), "path": str(path) if path else None}
+
+        self._send_json(_with_skilldocs(handle))
+
+    def _post_skill_mode(self, payload: dict) -> None:
+        """Set the global power mode, or a per-skill override (name given), then
+        re-materialize dynamic skills and refresh the router."""
+        from devtools_mcp.skilldocs import router
+        from devtools_mcp.skilldocs.control import SkillControl, SkillControlError
+
+        mode = str(payload.get("mode") or "").strip()
+        name = str(payload.get("name") or "").strip()
+
+        def handle(store):
+            control = SkillControl(conn=store.conn)
+            if name:
+                control.set_override(name, mode)
+            else:
+                control.set_mode(mode)
+            written = store.materialize_all()
+            router.rebuild(store)
+            return {"ok": True, "mode": mode, "scope": name or "global", "materialized": written}
+
+        try:
+            self._send_json(_with_skilldocs(handle))
+        except SkillControlError as exc:
+            self._send_json({"error": str(exc)}, 400)
+
+    def _post_skill_toggle(self, action: str, payload: dict) -> None:
+        """Enable/disable a live skill (removes/writes its materialized file)."""
+        from devtools_mcp.skilldocs.control import SkillControl, SkillControlError
+
+        name = str(payload.get("name") or "").strip()
+        if not name:
+            self._send_json({"error": "name is required"}, 400)
+            return
+
+        def handle(store):
+            control = SkillControl(conn=store.conn)
+            control.set_disabled(name, action == "disable")
+            path = store.materialize(name) if store.exists(name) else None
+            return {"ok": True, "disabled": action == "disable", "path": str(path) if path else None}
+
+        try:
+            self._send_json(_with_skilldocs(handle))
+        except SkillControlError as exc:
+            self._send_json({"error": str(exc)}, 400)
+
+    def _post_plan(self, payload: dict) -> None:
+        """Planner seam over HTTP: {goal, world, mode, layered} -> plan. Lets an
+        external orchestrator drive this server's planner (internal or external)."""
+        from devtools_mcp.planning import PlannerError, resolve
+
+        goal = payload.get("goal") or {}
+        if not isinstance(goal, dict) or not goal:
+            self._send_json({"ok": False, "message": "goal must be a non-empty object"}, 400)
+            return
+        world = payload.get("world") if isinstance(payload.get("world"), dict) else {}
+        mode = str(payload.get("mode") or "high")
+        layered = bool(payload.get("layered"))
+        try:
+            planner = resolve()
+            if planner is None:
+                self._send_json({"ok": False, "backend": "none", "message": "planning disabled"})
+                return
+            self._send_json(planner.plan(goal, world, mode, layered).as_dict())
+        except PlannerError as exc:
+            self._send_json({"ok": False, "message": str(exc)}, 400)
+
+    def _skills_page(self) -> None:
+        """Render the local skills control panel (router index + toggles)."""
+        from devtools_mcp.skilldocs import router
+        from devtools_mcp.skilldocs.control import SkillControl
+
+        def handle(store):
+            entries = router.collect_skills(store)
+            control = SkillControl(conn=store.conn)
+            overrides = control.overrides()
+            disabled = control.disabled()
+            live = {meta["name"] for meta in store.list_skills()}
+            rows = [
+                {
+                    "name": e.name,
+                    "description": e.description,
+                    "category": e.category,
+                    "modes": e.modes,
+                    "has_goap": e.has_goap,
+                    "live": e.name in live,
+                    "disabled": e.name in disabled,
+                    "override": overrides.get(e.name, ""),
+                }
+                for e in entries
+            ]
+            return rows, control.global_mode()
+
+        rows, mode = _with_skilldocs(handle)
+        self._send(render.skills_panel(rows, mode))
 
     def _post_collab_touch(self, payload: dict) -> None:
         """Ingest a file-touch report from an agent hook (lenient by design —
