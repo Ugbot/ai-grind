@@ -52,3 +52,21 @@ Source: https://github.com/anthropics/skills
 docx/pdf/pptx/xlsx — are source-available/proprietary and were NOT taken.)
 
 Each item's `origin` path is also recorded per-skill in `MANIFEST.json`.
+
+## Design influences (not vendored)
+
+Ideas we adopted and **re-authored in our own stack** — no source files copied,
+so these are credited as design influences rather than vendored code.
+
+### Understand-Anything → native code property graph
+- **Upstream:** [Egonex-AI/Understand-Anything](https://github.com/Egonex-AI/Understand-Anything)
+  — Yuxiang Lin / Infinite Universe, Inc. — MIT.
+- **What we took:** the node/edge **taxonomy** for a unified code knowledge graph
+  (function/class/file/module/… nodes; calls/imports/contains/inherits/… edges) and
+  the click-to-focus graph-view interaction idea.
+- **How it's ours:** re-authored natively in C++ over our MarbleDB engine
+  (`llm-station`: `MarblePropertyGraphStore`, `PropertyGraphBuilder`,
+  `graph_build`/`graph_query`/`graph_export`), plus our own extensions
+  (`profiled_by`, `implements_task`, planner metadata) and a server-rendered SVG
+  view in the devtools-mcp dashboard (`codegraph/`). We did **not** vendor their
+  TypeScript/Zod schema, React-Flow dashboard, or scan scripts.
