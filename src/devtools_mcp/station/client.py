@@ -309,6 +309,14 @@ class StationClient:
         assert isinstance(result, dict), "skill upsert must return an object"
         return result
 
+    def code_graph_upload(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Upload a native knowledge-graph.json blob so an org shares one code
+        graph. Upserts by (org, project). Requires the org's pro plan."""
+        assert body.get("project"), "code graph upload needs a project"
+        result = self._request("POST", self._org("/code-graphs"), json_body=body)
+        assert isinstance(result, dict), "code graph upload must return an object"
+        return result
+
     def plan(
         self,
         goal: dict[str, Any],
