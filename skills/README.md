@@ -1,9 +1,11 @@
 # Unified skills library
 
 One canonical, browsable home for every Claude Code **skill**, **slash command**,
-and **agent** harvested from across the machine's projects (`C:\code\*`) and the
-global `~/.claude` config. Everything here is **copied, never moved** — upstream
-projects are untouched.
+and **agent** harvested from across the machine's projects (`C:\code\*`), the
+global `~/.claude` config, and a set of **borrowed open-source collections** we
+vendor as we go (see [Vendored external skills](#vendored-external-skills-borrowed-with-thanks)).
+Everything here is **copied, never moved** — upstream projects are untouched, and
+every borrowed skill keeps its origin, author, and license recorded.
 
 ## Why two trees
 
@@ -43,20 +45,47 @@ there are left alone.
 
 | Type | Count | Categories |
 |---|---|---|
-| Skills (harvested) | 24 | `debug/` `profiling/` `code-intel/` `project-drivers/` `narrative/` |
-| Skills (authored) | 28 | `powershell/` (9), `profiling/` (7), `debugging/` (1), `devtools/` (5), `tracker/` (4), `collab/` (2) |
-| Commands | 23 | `build/` (3) `llm-station/` (20) |
+| Skills (harvested, local) | 9 | `debug/` `profiling/` `code-intel/` `project-drivers/` |
+| Skills (harvested, vendored external) | 46 | `planning/` `build/` `review/` `ship/` `web/` `meta/` — see below |
+| Skills (authored) | 29 | `powershell/` (9), `profiling/` (7), `debugging/` (1), `devtools/` (6), `tracker/` (4), `collab/` (2) |
+| Commands | 15 | `build/` (3) `llm-station/` (12) |
 | Agents | 3 | `docs/` `testing/` `integration/` |
 
-Plus `catalog/skills/narrative/_archive/` — Story Engine's retired MCP-era skills,
-kept for reference and **never synced**.
+**Total loadable: 84 skills** (55 harvested + 29 authored).
 
-### Skills
+**Sidelined** (harvested into `catalog/` for reference but **never synced** to the
+loadable mirrors, and hidden from the router index): categories with an
+`experimental` segment or a `_`-prefixed one — currently the Story Engine `se-*`
+skills under `experimental/narrative/` and the retired MCP-era skills under
+`narrative/_archive/`. The skip is enforced by `sync.sidelined()`.
+
+### Skills (local harvest)
 - **debug/** — `debug-windows-msvc`, `debug-linux-lldb`, `llm-station-debug`
 - **profiling/** — `bench-rdtsc-profile`, `perfview-etw-trace`
 - **code-intel/** — `llm-station-analyze`, `llm-station-search`, `llm-station-patterns`
 - **project-drivers/** — `chukonu-dev`
-- **narrative/** — 14 `se-*` Story Engine skills + `start-engine`
+- **experimental/narrative/** (sidelined) — 14 `se-*` Story Engine skills +
+  `start-engine`, kept for reference but not synced or indexed.
+
+## Vendored external skills (borrowed with thanks)
+
+We vendor selected open-source skills from the wider community **as we go** —
+copied verbatim into `catalog/`, credited here, and cross-referenced in
+[`THIRD_PARTY_SKILLS.md`](THIRD_PARTY_SKILLS.md) (per-skill list + keep/skip
+rationale). Upstream clones live in `C:/code/vendor-skills/`. Full credit and
+thanks to the authors:
+
+| Collection | Author | License | Took | Categories |
+|---|---|---|---|---|
+| [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | Addy Osmani | MIT | 20 | planning, build, review, ship, web |
+| [obra/superpowers](https://github.com/obra/superpowers) | Jesse Vincent (obra) | MIT | 12 | planning, review, ship, meta |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | 11 | planning, review, ship |
+| [anthropics/skills](https://github.com/anthropics/skills) | Anthropic | Apache-2.0 | 3 | meta, web |
+
+Each vendored skill's exact upstream `origin` path is also recorded in
+`MANIFEST.json`. We deliberately left behind redundant items (a second TDD,
+competing skill-routers) and repo-owner-specific / creative / Office-document /
+proprietary-licensed skills.
 
 ### Commands
 - **build/** — `build-windows`, `build-macos`, `build-linux`

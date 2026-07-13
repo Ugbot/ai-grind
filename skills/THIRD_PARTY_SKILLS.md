@@ -16,11 +16,15 @@ upstream source and license. Keep this current when harvesting new skills.
 ## Harvested skills
 
 46 skills harvested (2026-07-13) from four upstream collections into `catalog/`
-via `sources.toml`. Clones live under `C:/code/vendor-skills/`. Redundant items
-(a second TDD, competing skill-routers), and repo-owner-specific / creative /
-Office-document / proprietary-licensed skills were deliberately left behind.
+via `sources.toml`. Clones live under `C:/code/vendor-skills/`. We **vendor as we
+go**: each skill is copied verbatim, kept under its own category, and credited
+below with a link to the source. Redundant items (a second TDD, competing
+skill-routers), and repo-owner-specific / creative / Office-document /
+proprietary-licensed skills were deliberately left behind. With thanks to the
+authors — please see the upstream repos for the canonical versions.
 
-### addyosmani/agent-skills — MIT
+### addyosmani/agent-skills — Addy Osmani — MIT
+Source: https://github.com/addyosmani/agent-skills
 `interview-me`, `idea-refine`, `spec-driven-development`, `planning-and-task-breakdown`,
 `context-engineering`, `source-driven-development`, `incremental-implementation`,
 `api-and-interface-design`, `frontend-ui-engineering`, `code-review-and-quality`,
@@ -29,18 +33,21 @@ Office-document / proprietary-licensed skills were deliberately left behind.
 `git-workflow-and-versioning`, `ci-cd-and-automation`, `deprecation-and-migration`,
 `shipping-and-launch`.
 
-### obra/superpowers — MIT
+### obra/superpowers — Jesse Vincent (obra) — MIT
+Source: https://github.com/obra/superpowers
 `brainstorming`, `writing-plans`, `executing-plans`, `subagent-driven-development`,
 `dispatching-parallel-agents`, `systematic-debugging`, `verification-before-completion`,
 `requesting-code-review`, `receiving-code-review`, `using-git-worktrees`,
 `finishing-a-development-branch`, `writing-skills`.
 
-### mattpocock/skills — MIT
+### mattpocock/skills — Matt Pocock — MIT
+Source: https://github.com/mattpocock/skills
 `grill-with-docs`, `grilling`, `domain-modeling`, `codebase-design`, `to-spec`,
 `to-tickets`, `wayfinder`, `research`, `resolving-merge-conflicts`, `handoff`,
 `improve-codebase-architecture`.
 
-### anthropics/skills — Apache-2.0
+### anthropics/skills — Anthropic — Apache-2.0
+Source: https://github.com/anthropics/skills
 `mcp-builder`, `skill-creator`, `webapp-testing`. (The Office-document skills —
 docx/pdf/pptx/xlsx — are source-available/proprietary and were NOT taken.)
 
