@@ -57,13 +57,17 @@ Claude loads). Driven by two scripts and one map:
   mirrors; `DEVTOOLS_MCP_SKILLS_ROOT` overrides the library location) — see the
   `skills-sync` skill
 
-Contents: 52 skills = 24 harvested (debug / profiling / code-intel /
-project-drivers / narrative) + 28 authored (`powershell/` 5.1 & 7 side by side,
-`profiling/` incl. `renderdoc-frame-analysis`, `devtools/` incl. `skills-sync`,
-`tracker/`, `collab/`); 23 commands (build / llm-station); 3 agents (docs /
-testing / integration).
-Harvested items are copied from upstream projects, never moved. Full breakdown and
-dedup notes in `skills/README.md`.
+Contents: 84 loadable skills = 55 harvested + 29 authored. Harvested = 9 local
+(debug / profiling / code-intel / project-drivers) + a **46-skill external
+superset** (MIT/Apache) under `planning/ build/ review/ ship/ web/ meta/` from
+addyosmani/agent-skills, obra/superpowers, mattpocock/skills, anthropics/skills
+(clones in `C:/code/vendor-skills/`; attribution in `skills/THIRD_PARTY_SKILLS.md`).
+Authored: `powershell/` (5.1 & 7), `profiling/`, `devtools/` (incl. `skills-sync`),
+`tracker/`, `collab/`, `meta/skill-router.rules.md`. Plus 15 commands, 3 agents.
+**Sidelined** (harvested to `catalog/` for reference but NOT synced to mirrors or
+indexed by the router — `sync.sidelined()`): `experimental/*` (the Story Engine
+`se-*` skills) and `_archive`. Harvested items are copied from upstream, never
+moved. Full breakdown in `skills/README.md`.
 
 ## Conventions
 

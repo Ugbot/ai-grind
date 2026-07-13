@@ -1,6 +1,6 @@
 {
   "counts": {
-    "skill": 24,
+    "skill": 70,
     "command": 15,
     "agent": 3,
     "archive": 1
@@ -81,121 +81,121 @@
     {
       "name": "se-analyse-story",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-analyse-story.md",
-      "dest": "catalog\\skills\\narrative\\se-analyse-story\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-analyse-story\\SKILL.md",
       "sha256": "8aaec33ccb28ad52e546b40533b4b1023dc087e96ac73ce8beab8ed4401e6453"
     },
     {
       "name": "se-character-trace",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-character-trace.md",
-      "dest": "catalog\\skills\\narrative\\se-character-trace\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-character-trace\\SKILL.md",
       "sha256": "e237eabae48fac50bc38e81bf95ecc09bd07ca8bea732b746baf8daf34a7a8df"
     },
     {
       "name": "se-check-plot",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-check-plot.md",
-      "dest": "catalog\\skills\\narrative\\se-check-plot\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-check-plot\\SKILL.md",
       "sha256": "255e003eb99b69aee3f4186ba51139b1a4faadd72f98dd7738dd0d5c6aa7b270"
     },
     {
       "name": "se-cli-reference",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-cli-reference.md",
-      "dest": "catalog\\skills\\narrative\\se-cli-reference\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-cli-reference\\SKILL.md",
       "sha256": "b2bea147e8ab2bb359cba8ff436dff7045c7b982182a153e2ca8080c4aebe85b"
     },
     {
       "name": "se-edit-scene",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-edit-scene.md",
-      "dest": "catalog\\skills\\narrative\\se-edit-scene\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-edit-scene\\SKILL.md",
       "sha256": "ba4497004b24ba07bb715e112d06f9e06e5a591a41529dff55c4d2fbcd5ae865"
     },
     {
       "name": "se-enhance-prose",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-enhance-prose.md",
-      "dest": "catalog\\skills\\narrative\\se-enhance-prose\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-enhance-prose\\SKILL.md",
       "sha256": "177c9807f5664948f91bc63a0474778e56433eae5f284166d00a9c7f847590da"
     },
     {
       "name": "se-explore-story",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-explore-story.md",
-      "dest": "catalog\\skills\\narrative\\se-explore-story\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-explore-story\\SKILL.md",
       "sha256": "5e8ee9ee190b874aff7df1af35126c02167ea7cfcd3796818a1552ebfb478526"
     },
     {
       "name": "se-list-stories",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-list-stories.md",
-      "dest": "catalog\\skills\\narrative\\se-list-stories\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-list-stories\\SKILL.md",
       "sha256": "472e2607cfa9152032cc3b28a48a180afe3b188188ed7ce15109913dff924b0b"
     },
     {
       "name": "se-play-story",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-play-story.md",
-      "dest": "catalog\\skills\\narrative\\se-play-story\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-play-story\\SKILL.md",
       "sha256": "7b9d370b8d9dc372a2558342d0a2b79442c6769ff39df65e21f6882a8ff723e9"
     },
     {
       "name": "se-progress-report",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-progress-report.md",
-      "dest": "catalog\\skills\\narrative\\se-progress-report\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-progress-report\\SKILL.md",
       "sha256": "2efb9375670ed4ed10da49531af3f3377561832a0abd6d8b5ab9fc0161f938d2"
     },
     {
       "name": "se-query-timeline",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-query-timeline.md",
-      "dest": "catalog\\skills\\narrative\\se-query-timeline\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-query-timeline\\SKILL.md",
       "sha256": "0125e8d88953dae7cd61674dbabd2b73ed05e3bcd4f4ea2db6943c8cba007c2a"
     },
     {
       "name": "se-scene-context",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-scene-context.md",
-      "dest": "catalog\\skills\\narrative\\se-scene-context\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-scene-context\\SKILL.md",
       "sha256": "c8622a8938c6ca07ccf2f4990a43f56e576148f576fe5fb683362dd9fd97030a"
     },
     {
       "name": "se-search",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-search.md",
-      "dest": "catalog\\skills\\narrative\\se-search\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-search\\SKILL.md",
       "sha256": "b6c46dae13baa54ff7adc37fa6298707018009852f4ad282f2a81e2fd7cf3575"
     },
     {
       "name": "se-write-story",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\se-write-story.md",
-      "dest": "catalog\\skills\\narrative\\se-write-story\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\se-write-story\\SKILL.md",
       "sha256": "6bbe783af4defe21c54b957c3992032d48d837ec21bf4563cd57c8fb0f34d96a"
     },
     {
       "name": "start-engine",
       "type": "skill",
-      "category": "narrative",
+      "category": "experimental/narrative",
       "origin": "C:\\code\\Story-engine-3\\.claude\\skills\\start-engine.md",
-      "dest": "catalog\\skills\\narrative\\start-engine\\SKILL.md",
+      "dest": "catalog\\skills\\experimental\\narrative\\start-engine\\SKILL.md",
       "sha256": "a8d3979cce777ace415eea21b80e83d8f210735fab839c9184627a3e2da70b6f"
     },
     {
@@ -349,6 +349,374 @@
       "origin": "C:\\code\\Enterprise-data-platform\\enterprise-data-platform-management\\.claude\\agents\\frontend-backend-connectivity-checker.md",
       "dest": "catalog\\agents\\integration\\frontend-backend-connectivity-checker.md",
       "sha256": "f7ee409a24ed87f8cd1abd3b5175ec24794eaedb48c546ff3d198712f7ce24c7"
+    },
+    {
+      "name": "interview-me",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\interview-me",
+      "dest": "catalog\\skills\\planning\\interview-me\\SKILL.md",
+      "sha256": "1d94741d10d2c826cd0c191aea3981ee94c8abb27ef2a166f6a372117d06448f"
+    },
+    {
+      "name": "idea-refine",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\idea-refine",
+      "dest": "catalog\\skills\\planning\\idea-refine\\SKILL.md",
+      "sha256": "79e773058963adc7646b0115b4f8a4afc974c5ff95843e4ef1cafff3cb51899e"
+    },
+    {
+      "name": "spec-driven-development",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\spec-driven-development",
+      "dest": "catalog\\skills\\planning\\spec-driven-development\\SKILL.md",
+      "sha256": "af5b873414a8b45b96b0d30d5297400f55eb3a56425161a088e470c14260a1e5"
+    },
+    {
+      "name": "planning-and-task-breakdown",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\planning-and-task-breakdown",
+      "dest": "catalog\\skills\\planning\\planning-and-task-breakdown\\SKILL.md",
+      "sha256": "d87ff6bb23aa791f78a504d784e903bb13602975923f884af5d13d5b66b1651a"
+    },
+    {
+      "name": "context-engineering",
+      "type": "skill",
+      "category": "build",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\context-engineering",
+      "dest": "catalog\\skills\\build\\context-engineering\\SKILL.md",
+      "sha256": "ff9d4e5706bdd2eb7de1bfed569f1f42d28e478979ce6fcc32e617e7861b491d"
+    },
+    {
+      "name": "source-driven-development",
+      "type": "skill",
+      "category": "build",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\source-driven-development",
+      "dest": "catalog\\skills\\build\\source-driven-development\\SKILL.md",
+      "sha256": "b979e7531ea601ed14a090f32a5b135db517c48ab9821c5e8b09efd80f4ff4d8"
+    },
+    {
+      "name": "incremental-implementation",
+      "type": "skill",
+      "category": "build",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\incremental-implementation",
+      "dest": "catalog\\skills\\build\\incremental-implementation\\SKILL.md",
+      "sha256": "960f2ed08ccdd51527c347d29d2d00c80edb9992e95d67030d8a289ba04eed4e"
+    },
+    {
+      "name": "api-and-interface-design",
+      "type": "skill",
+      "category": "build",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\api-and-interface-design",
+      "dest": "catalog\\skills\\build\\api-and-interface-design\\SKILL.md",
+      "sha256": "293db2903b41316a5109a1e0ce3e1740eeafae31735bc1f9143dafbfd1187363"
+    },
+    {
+      "name": "frontend-ui-engineering",
+      "type": "skill",
+      "category": "build",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\frontend-ui-engineering",
+      "dest": "catalog\\skills\\build\\frontend-ui-engineering\\SKILL.md",
+      "sha256": "9c284b1f06d617b289c0d250004af5cbaedd5135071e1b17c0211a0aa03a73a4"
+    },
+    {
+      "name": "code-review-and-quality",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\code-review-and-quality",
+      "dest": "catalog\\skills\\review\\code-review-and-quality\\SKILL.md",
+      "sha256": "bec431b759ff389e47b8d2c9d74e1981ff93cf5f3c36b4a3b6a71a75c250be2c"
+    },
+    {
+      "name": "code-simplification",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\code-simplification",
+      "dest": "catalog\\skills\\review\\code-simplification\\SKILL.md",
+      "sha256": "f0c5ed754057eb0c1e027e2587f59de816651feb5e837242296c43ea21cf621d"
+    },
+    {
+      "name": "security-and-hardening",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\security-and-hardening",
+      "dest": "catalog\\skills\\review\\security-and-hardening\\SKILL.md",
+      "sha256": "266c60e073bc81651ad070a1427a93af4d062dc44470580eae31806b38561833"
+    },
+    {
+      "name": "performance-optimization",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\performance-optimization",
+      "dest": "catalog\\skills\\review\\performance-optimization\\SKILL.md",
+      "sha256": "c56f6059fed0b77c50c946e38275f04c8b297657f3742d5782ee564514ecc4dc"
+    },
+    {
+      "name": "browser-testing-with-devtools",
+      "type": "skill",
+      "category": "web",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\browser-testing-with-devtools",
+      "dest": "catalog\\skills\\web\\browser-testing-with-devtools\\SKILL.md",
+      "sha256": "4e3aacd6a380cd25bc6c2d67fdd1c926a9b22535b8a62109ecd33cefd909e3d9"
+    },
+    {
+      "name": "documentation-and-adrs",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\documentation-and-adrs",
+      "dest": "catalog\\skills\\ship\\documentation-and-adrs\\SKILL.md",
+      "sha256": "7fed35f9c5b95d8e3623ad24d78d209c3267ab62d7157fc03954c76a7e58adf4"
+    },
+    {
+      "name": "observability-and-instrumentation",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\observability-and-instrumentation",
+      "dest": "catalog\\skills\\ship\\observability-and-instrumentation\\SKILL.md",
+      "sha256": "40c59a0c3ba28f5697600add521e38f81f880f986317628cdc0df9bdb8acf126"
+    },
+    {
+      "name": "git-workflow-and-versioning",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\git-workflow-and-versioning",
+      "dest": "catalog\\skills\\ship\\git-workflow-and-versioning\\SKILL.md",
+      "sha256": "51677cf03845dd29d08ea4d3125665057b720aea3dccc572f25d8b172409ece6"
+    },
+    {
+      "name": "ci-cd-and-automation",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\ci-cd-and-automation",
+      "dest": "catalog\\skills\\ship\\ci-cd-and-automation\\SKILL.md",
+      "sha256": "a6ed8ed56456b01ff8314c44eefc69897d9905ae4e06bb2b7036286efb79b5f0"
+    },
+    {
+      "name": "deprecation-and-migration",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\deprecation-and-migration",
+      "dest": "catalog\\skills\\ship\\deprecation-and-migration\\SKILL.md",
+      "sha256": "92d9846321fab624eded7ac55d19a7738cfd2321c2be2e35eb153dcacf7359de"
+    },
+    {
+      "name": "shipping-and-launch",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\shipping-and-launch",
+      "dest": "catalog\\skills\\ship\\shipping-and-launch\\SKILL.md",
+      "sha256": "efc70a45ad6435d93f2b3cef16c125ff6d75a2383e49f30056fcba04b27d6e4a"
+    },
+    {
+      "name": "brainstorming",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\brainstorming",
+      "dest": "catalog\\skills\\planning\\brainstorming\\SKILL.md",
+      "sha256": "e14914605f640e0841758e45d0ab2a53243b59b921f929e47921c99668f2e61d"
+    },
+    {
+      "name": "writing-plans",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\writing-plans",
+      "dest": "catalog\\skills\\planning\\writing-plans\\SKILL.md",
+      "sha256": "272e1af349f5062c28dc282b3e21b220d58d683a7314a10c455b7432ec91d845"
+    },
+    {
+      "name": "executing-plans",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\executing-plans",
+      "dest": "catalog\\skills\\planning\\executing-plans\\SKILL.md",
+      "sha256": "bbd8d28bb655a52817cc129ce49f9e46fa7c6303f72ed5de95bfe914ef8e0ce8"
+    },
+    {
+      "name": "subagent-driven-development",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\subagent-driven-development",
+      "dest": "catalog\\skills\\planning\\subagent-driven-development\\SKILL.md",
+      "sha256": "41ab239a6ad1c487cd839fdac972a8c9cf0f5e90efa59a63f963767864f0df4c"
+    },
+    {
+      "name": "dispatching-parallel-agents",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\dispatching-parallel-agents",
+      "dest": "catalog\\skills\\planning\\dispatching-parallel-agents\\SKILL.md",
+      "sha256": "f0df13f584049059cc5619f90061405b89dcc6e28ab3f2a8517d27d99c7a46a6"
+    },
+    {
+      "name": "systematic-debugging",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\systematic-debugging",
+      "dest": "catalog\\skills\\review\\systematic-debugging\\SKILL.md",
+      "sha256": "3b20719eca4f0461cb51a195221320d775dcf03b6859271066a03a5132a6ce7a"
+    },
+    {
+      "name": "verification-before-completion",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\verification-before-completion",
+      "dest": "catalog\\skills\\review\\verification-before-completion\\SKILL.md",
+      "sha256": "ea52d15aabaf72bc6b558efe2c126f161b53961090ddcd712000273bfe8c7b6c"
+    },
+    {
+      "name": "requesting-code-review",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\requesting-code-review",
+      "dest": "catalog\\skills\\review\\requesting-code-review\\SKILL.md",
+      "sha256": "1017ccdd5bc61fab67c654cf118cbdb520464b313073a0a6b9a6b9aa647a3ad6"
+    },
+    {
+      "name": "receiving-code-review",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\receiving-code-review",
+      "dest": "catalog\\skills\\review\\receiving-code-review\\SKILL.md",
+      "sha256": "647036bbdab7bf2317e14e079595e984c9030f64295e2b4c0fb57dbeb48f25dd"
+    },
+    {
+      "name": "using-git-worktrees",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\using-git-worktrees",
+      "dest": "catalog\\skills\\ship\\using-git-worktrees\\SKILL.md",
+      "sha256": "e2c3ec142e52868a51af246c620cd76ab648dcf27d6900d47e6ffd07159a9794"
+    },
+    {
+      "name": "finishing-a-development-branch",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\finishing-a-development-branch",
+      "dest": "catalog\\skills\\ship\\finishing-a-development-branch\\SKILL.md",
+      "sha256": "e6d4a812de900d33c6eacfb40747f99427f25c304a7b7099120f9373b115a47f"
+    },
+    {
+      "name": "writing-skills",
+      "type": "skill",
+      "category": "meta",
+      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\writing-skills",
+      "dest": "catalog\\skills\\meta\\writing-skills\\SKILL.md",
+      "sha256": "6b8d08fe863318be8480ae8428e169640309fa9208df84bb0510012764454146"
+    },
+    {
+      "name": "grill-with-docs",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\grill-with-docs",
+      "dest": "catalog\\skills\\planning\\grill-with-docs\\SKILL.md",
+      "sha256": "610d091047bcfb9db0f75c057d15538481a721111579fc5ec7f83ad9131a2165"
+    },
+    {
+      "name": "grilling",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\productivity\\grilling",
+      "dest": "catalog\\skills\\planning\\grilling\\SKILL.md",
+      "sha256": "44331dda57f461db4fec3f2efb6ddabe7aaaa0a57ae0f88a883bc61aed8a0587"
+    },
+    {
+      "name": "domain-modeling",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\domain-modeling",
+      "dest": "catalog\\skills\\planning\\domain-modeling\\SKILL.md",
+      "sha256": "152e2c97239affb12a60c5f4a7e74ab546a49ae169688c81f4e2ccc42dafa579"
+    },
+    {
+      "name": "codebase-design",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\codebase-design",
+      "dest": "catalog\\skills\\planning\\codebase-design\\SKILL.md",
+      "sha256": "a8d50abac5a4018f60e1d911d4b6f4e36454ca14d6c390c0695a578c7de65dad"
+    },
+    {
+      "name": "to-spec",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\to-spec",
+      "dest": "catalog\\skills\\planning\\to-spec\\SKILL.md",
+      "sha256": "267638edd513b5918de626ad5605d261952abb7428cb308869c663ca924e93e7"
+    },
+    {
+      "name": "to-tickets",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\to-tickets",
+      "dest": "catalog\\skills\\planning\\to-tickets\\SKILL.md",
+      "sha256": "1846d215e24ec1219b199a708329ca915db93138d4f3675af29db4d32ee41391"
+    },
+    {
+      "name": "wayfinder",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\wayfinder",
+      "dest": "catalog\\skills\\planning\\wayfinder\\SKILL.md",
+      "sha256": "257e40665b28ae959ffdcb97d7a72b074360f4a3d201bd84786505308546e434"
+    },
+    {
+      "name": "research",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\research",
+      "dest": "catalog\\skills\\planning\\research\\SKILL.md",
+      "sha256": "af378829f015775a3bcd65ff466826722e99359017ae6bae227ca4c9bd14049c"
+    },
+    {
+      "name": "resolving-merge-conflicts",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\resolving-merge-conflicts",
+      "dest": "catalog\\skills\\ship\\resolving-merge-conflicts\\SKILL.md",
+      "sha256": "c7c9ba81362a786aac05d2223123bf1bd2f8a99c3243a72882ede9c68bedfb24"
+    },
+    {
+      "name": "handoff",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\productivity\\handoff",
+      "dest": "catalog\\skills\\planning\\handoff\\SKILL.md",
+      "sha256": "57c9f1f392d7352cdc85b1e39ca49eddc70ce1dc278bd9653fb4f23dfc2560fc"
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\improve-codebase-architecture",
+      "dest": "catalog\\skills\\review\\improve-codebase-architecture\\SKILL.md",
+      "sha256": "4b4cb798c3863d5b6f5c0b4604af1ecb5beb6df82553c972898a91ba38bcf289"
+    },
+    {
+      "name": "mcp-builder",
+      "type": "skill",
+      "category": "meta",
+      "origin": "C:\\code\\vendor-skills\\anthropic-skills\\skills\\mcp-builder",
+      "dest": "catalog\\skills\\meta\\mcp-builder\\SKILL.md",
+      "sha256": "0f4592dcb53cf2b5d6b7febee6b4152018b565551a1c29e3c612f57b218ab295"
+    },
+    {
+      "name": "skill-creator",
+      "type": "skill",
+      "category": "meta",
+      "origin": "C:\\code\\vendor-skills\\anthropic-skills\\skills\\skill-creator",
+      "dest": "catalog\\skills\\meta\\skill-creator\\SKILL.md",
+      "sha256": "dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf"
+    },
+    {
+      "name": "webapp-testing",
+      "type": "skill",
+      "category": "web",
+      "origin": "C:\\code\\vendor-skills\\anthropic-skills\\skills\\webapp-testing",
+      "dest": "catalog\\skills\\web\\webapp-testing\\SKILL.md",
+      "sha256": "51b7349e77ec63b7744a6f63647e7566a0b4d2e301121cc10e8c2113af6556a2"
     }
   ]
 }

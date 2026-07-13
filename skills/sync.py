@@ -39,6 +39,12 @@ MAX_AUTHORED = 100  # bound on hand-written skills
 MAX_MISSING = 10  # tolerate a few upstream-only assets absent from a partial checkout
 
 
+def sidelined(category: str) -> bool:
+    """True for categories harvested for reference but NOT synced into mirrors:
+    any `experimental` segment or one starting with `_` (e.g. `_archive`)."""
+    return any(seg == "experimental" or seg.startswith("_") for seg in category.split("/"))
+
+
 def target_base(name: str) -> tuple[Path, bool]:
     """Resolve the target root and whether it is wholly owned (safe to wipe)."""
     assert name in ("local", "plugin", "agents", "project", "global"), f"bad target: {name}"
@@ -158,7 +164,7 @@ def main() -> int:
     missing: list[str] = []
     for it in items:
         kind = it["type"]
-        if kind == "archive" or (skills_only and kind != "skill"):
+        if kind == "archive" or sidelined(it.get("category", "")) or (skills_only and kind != "skill"):
             counts["skipped"] += 1
             continue
         copied = sync_skill(it, base, seen_skills) if kind == "skill" else sync_flat(it, base)

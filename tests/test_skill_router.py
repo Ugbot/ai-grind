@@ -64,6 +64,11 @@ def _seed_library(tmp_path: pathlib.Path) -> pathlib.Path:
     (cat / "SKILL.md").write_text(
         "---\nname: demo-cat\ndescription: a catalog demo\n---\nbody\n", encoding="utf-8"
     )
+    exp = root / "catalog" / "skills" / "experimental" / "narrative" / "demo-exp"
+    exp.mkdir(parents=True)
+    (exp / "SKILL.md").write_text(
+        "---\nname: demo-exp\ndescription: a sidelined skill\n---\nbody\n", encoding="utf-8"
+    )
     meta = root / "authored" / "skills" / "meta"
     meta.mkdir(parents=True)
     (meta / "skill-router.rules.md").write_text("# Skill Router\n\nSEEDED RULES.\n", encoding="utf-8")
@@ -80,6 +85,7 @@ def test_rebuild_creates_then_preserves_rules(tmp_path, monkeypatch):
         body = pathlib.Path(path).read_text(encoding="utf-8")
         assert "SEEDED RULES." in body  # rules seeded from the repo template
         assert "demo-cat" in body  # catalog skill indexed
+        assert "demo-exp" not in body  # experimental/ category is sidelined from the index
         assert router.INDEX_START in body and router.INDEX_END in body
 
         # a live edit to the rules region must survive a rebuild

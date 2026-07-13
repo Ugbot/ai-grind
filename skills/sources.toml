@@ -77,77 +77,77 @@ note = "Build/test/fuzz chukonu via tools/ckdev.py"
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-analyse-story.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-character-trace.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-check-plot.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-cli-reference.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-edit-scene.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-enhance-prose.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-explore-story.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-list-stories.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-play-story.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-progress-report.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-query-timeline.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-scene-context.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-search.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/se-write-story.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 [[item]]
 src = "C:/code/Story-engine-3/.claude/skills/start-engine.md"
 type = "skill"
-category = "narrative"
+category = "experimental/narrative"
 
 # narrative archive -- copied verbatim, excluded from sync (already archived)
 [[item]]
@@ -258,3 +258,281 @@ category = "testing"
 src = "C:/code/Enterprise-data-platform/enterprise-data-platform-management/.claude/agents/frontend-backend-connectivity-checker.md"
 type = "agent"
 category = "integration"
+
+# ---- harvested external superset (see THIRD_PARTY_SKILLS.md) ----
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/interview-me"
+type = "skill"
+category = "planning"
+note = "interview-me — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/idea-refine"
+type = "skill"
+category = "planning"
+note = "idea-refine — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/spec-driven-development"
+type = "skill"
+category = "planning"
+note = "spec-driven-development — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/planning-and-task-breakdown"
+type = "skill"
+category = "planning"
+note = "planning-and-task-breakdown — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/context-engineering"
+type = "skill"
+category = "build"
+note = "context-engineering — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/source-driven-development"
+type = "skill"
+category = "build"
+note = "source-driven-development — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/incremental-implementation"
+type = "skill"
+category = "build"
+note = "incremental-implementation — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/api-and-interface-design"
+type = "skill"
+category = "build"
+note = "api-and-interface-design — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/frontend-ui-engineering"
+type = "skill"
+category = "build"
+note = "frontend-ui-engineering — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/code-review-and-quality"
+type = "skill"
+category = "review"
+note = "code-review-and-quality — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/code-simplification"
+type = "skill"
+category = "review"
+note = "code-simplification — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/security-and-hardening"
+type = "skill"
+category = "review"
+note = "security-and-hardening — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/performance-optimization"
+type = "skill"
+category = "review"
+note = "performance-optimization — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/browser-testing-with-devtools"
+type = "skill"
+category = "web"
+note = "browser-testing-with-devtools — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/documentation-and-adrs"
+type = "skill"
+category = "ship"
+note = "documentation-and-adrs — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/observability-and-instrumentation"
+type = "skill"
+category = "ship"
+note = "observability-and-instrumentation — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/git-workflow-and-versioning"
+type = "skill"
+category = "ship"
+note = "git-workflow-and-versioning — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/ci-cd-and-automation"
+type = "skill"
+category = "ship"
+note = "ci-cd-and-automation — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/deprecation-and-migration"
+type = "skill"
+category = "ship"
+note = "deprecation-and-migration — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/agent-skills/skills/shipping-and-launch"
+type = "skill"
+category = "ship"
+note = "shipping-and-launch — addyosmani/agent-skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/brainstorming"
+type = "skill"
+category = "planning"
+note = "brainstorming — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/writing-plans"
+type = "skill"
+category = "planning"
+note = "writing-plans — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/executing-plans"
+type = "skill"
+category = "planning"
+note = "executing-plans — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/subagent-driven-development"
+type = "skill"
+category = "planning"
+note = "subagent-driven-development — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/dispatching-parallel-agents"
+type = "skill"
+category = "planning"
+note = "dispatching-parallel-agents — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/systematic-debugging"
+type = "skill"
+category = "review"
+note = "systematic-debugging — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/verification-before-completion"
+type = "skill"
+category = "review"
+note = "verification-before-completion — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/requesting-code-review"
+type = "skill"
+category = "review"
+note = "requesting-code-review — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/receiving-code-review"
+type = "skill"
+category = "review"
+note = "receiving-code-review — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/using-git-worktrees"
+type = "skill"
+category = "ship"
+note = "using-git-worktrees — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/finishing-a-development-branch"
+type = "skill"
+category = "ship"
+note = "finishing-a-development-branch — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/superpowers/skills/writing-skills"
+type = "skill"
+category = "meta"
+note = "writing-skills — obra/superpowers (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/grill-with-docs"
+type = "skill"
+category = "planning"
+note = "grill-with-docs — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/productivity/grilling"
+type = "skill"
+category = "planning"
+note = "grilling — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/domain-modeling"
+type = "skill"
+category = "planning"
+note = "domain-modeling — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/codebase-design"
+type = "skill"
+category = "planning"
+note = "codebase-design — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/to-spec"
+type = "skill"
+category = "planning"
+note = "to-spec — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/to-tickets"
+type = "skill"
+category = "planning"
+note = "to-tickets — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/wayfinder"
+type = "skill"
+category = "planning"
+note = "wayfinder — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/research"
+type = "skill"
+category = "planning"
+note = "research — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/resolving-merge-conflicts"
+type = "skill"
+category = "ship"
+note = "resolving-merge-conflicts — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/productivity/handoff"
+type = "skill"
+category = "planning"
+note = "handoff — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/improve-codebase-architecture"
+type = "skill"
+category = "review"
+note = "improve-codebase-architecture — mattpocock/skills (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/anthropic-skills/skills/mcp-builder"
+type = "skill"
+category = "meta"
+note = "mcp-builder — anthropics/skills (Apache-2.0)"
+
+[[item]]
+src = "C:/code/vendor-skills/anthropic-skills/skills/skill-creator"
+type = "skill"
+category = "meta"
+note = "skill-creator — anthropics/skills (Apache-2.0)"
+
+[[item]]
+src = "C:/code/vendor-skills/anthropic-skills/skills/webapp-testing"
+type = "skill"
+category = "web"
+note = "webapp-testing — anthropics/skills (Apache-2.0)"

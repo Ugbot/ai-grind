@@ -123,6 +123,11 @@ def _collect_tree(tree: Path) -> list[Entry]:
         return out
     for md in sorted(tree.rglob("SKILL.md"))[:store_mod.SKILLS_MAX]:  # bounded
         rel = md.relative_to(tree)
+        # Skip sidelined categories (experimental / _archive) — harvested for
+        # reference but not synced to mirrors, so not loadable; keep them out of
+        # the index which advertises only loadable skills.
+        if any(seg == "experimental" or seg.startswith("_") for seg in rel.parts[:-2]):
+            continue
         category = rel.parts[0] if len(rel.parts) > 1 else "uncategorized"
         try:
             content = md.read_text(encoding="utf-8", errors="replace")
