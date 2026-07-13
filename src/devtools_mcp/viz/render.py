@@ -157,6 +157,7 @@ def page(
         ("search", "/search", "Search"),
         ("tracker", "/tracker", "Tracker"),
         ("collab", "/collab", "Collab"),
+        ("graph", "/graph", "Graph"),
         ("tools", "/tools", "Tools"),
     ]
     nav = "".join(f"<a href='{href}' class='{'on' if key == active else ''}'>{label}</a>" for key, href, label in tabs)
@@ -776,3 +777,18 @@ def skills_panel(rows: list[dict], mode: str) -> str:
         "<button onclick=\"rebuild()\">Rebuild router</button></p>"
     )
     return page("skills", header + "".join(sections) + script, active="runs")
+
+
+def graph_page(svg: str, focus: str, node_count: int, edge_count: int, note: str = "") -> str:
+    """Wrap a code-graph SVG in the dashboard shell. Server-rendered, no CDN —
+    every node is a focus link (click to re-root), like the flamegraph."""
+    head = (
+        "<h2>Code graph</h2>"
+        f"<p class='note'>Focus: <code>{_h(focus)}</code> — {node_count} node(s), "
+        f"{edge_count} edge(s) shown. Click any node to re-root. "
+        "Built natively by LLM Station (<code>graph_build</code> → <code>graph_export</code>).</p>"
+    )
+    if note:
+        head += f"<p class='note'>{_h(note)}</p>"
+    body = head + f"<div class='section' style='overflow-x:auto'>{svg}</div>"
+    return page("code graph", body, active="graph")

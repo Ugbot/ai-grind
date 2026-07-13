@@ -204,6 +204,8 @@ class _Handler(BaseHTTPRequestHandler):
                 self._send(_with_tracker(tracker_data.collab_page))
             elif parts[0] == "skills":
                 self._skills_page()
+            elif parts[0] == "graph":
+                self._graph_page(query)
             elif parts[0] == "station" and parts[1:] == ["auth"]:
                 self._station_auth_page(query)
             elif parts[0] == "api":
@@ -417,6 +419,42 @@ class _Handler(BaseHTTPRequestHandler):
 
         rows, mode = _with_skilldocs(handle)
         self._send(render.skills_panel(rows, mode))
+
+    def _graph_page(self, query: dict) -> None:
+        """Render the native code property graph (knowledge-graph.json) as SVG.
+
+        Source resolved from ?src=<path> or DEVTOOLS_MCP_CODEGRAPH_JSON. The graph
+        is produced natively by LLM Station; this only visualizes the export."""
+        import os
+
+        from devtools_mcp.codegraph import load_graph, render_graph_svg
+
+        src = (query.get("src") or [os.environ.get("DEVTOOLS_MCP_CODEGRAPH_JSON", "")])[0]
+        focus = (query.get("focus") or [None])[0]
+        if not src or not os.path.isfile(src):
+            self._send(render.page(
+                "code graph",
+                "<h2>Code graph</h2><p class='note'>No graph loaded. Build one natively with "
+                "<code>llm-station run graph_build</code> then <code>graph_export</code>, save the JSON, "
+                "and open <code>/graph?src=&lt;path-to-knowledge-graph.json&gt;</code> "
+                "(or set <code>DEVTOOLS_MCP_CODEGRAPH_JSON</code>).</p>",
+                active="runs",
+            ))
+            return
+        try:
+            with open(src, encoding="utf-8") as fh:
+                graph = load_graph(fh.read())
+        except (OSError, ValueError) as exc:
+            self._send(render.page("code graph", f"<p class='note'>Failed to load: {render._h(exc)}</p>"), 400)
+            return
+        if not graph.nodes:
+            self._send(render.graph_page("<p class='note'>Empty graph.</p>", "", 0, 0))
+            return
+        if focus is None or focus not in graph.nodes:
+            focus = graph.top_node()
+        placement, edges = graph.ego(focus)
+        svg = render_graph_svg(graph, focus=focus)
+        self._send(render.graph_page(svg, focus, len(placement), len(edges)))
 
     def _post_collab_touch(self, payload: dict) -> None:
         """Ingest a file-touch report from an agent hook (lenient by design —
