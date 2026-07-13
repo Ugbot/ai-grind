@@ -5,6 +5,7 @@ severable — any failure degrades to a reportable PlanResult, never a crash."""
 from __future__ import annotations
 
 import json
+import os
 import urllib.error
 import urllib.request
 
@@ -29,11 +30,18 @@ class RemotePlanner:
     def _platform(self, goal: dict, world: dict, mode: str, layered: bool) -> PlanResult:
         try:
             from devtools_mcp.station.client import StationClient
+            from devtools_mcp.station.credentials import load_credentials
         except ImportError:  # pragma: no cover
             return PlanResult(False, "platform", message="station client unavailable")
+        creds = load_credentials()
+        if not creds:
+            return PlanResult(
+                False, "platform", message="not linked to a platform org (run station_link or use =local)"
+            )
+        api_key = os.environ.get("LLM_STATION_API_KEY", "") or str(creds.get("api_key", ""))
         try:
-            client = StationClient()
-            data = client.plan(goal=goal, world=world, mode=mode, layered=layered)
+            with StationClient(str(creds["url"]), api_key, str(creds["org_id"])) as client:
+                data = client.plan(goal=goal, world=world, mode=mode, layered=layered)
         except Exception as exc:  # noqa: BLE001 — degrade to a report, never crash the tool
             return PlanResult(
                 False, "platform", message=f"platform planner unavailable ({exc}); set DEVTOOLS_MCP_PLANNER=local"

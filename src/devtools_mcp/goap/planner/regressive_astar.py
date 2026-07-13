@@ -51,7 +51,12 @@ class RegressiveGOAPAStarNode:
             else:
                 new_current_state[effect_key] = effect_value
 
-        new_goal_state = action.preconditions.copy()
+        # Carry forward parent goals this action does not itself satisfy, then add
+        # the action's own preconditions. Upstream reset the goal to just the
+        # preconditions, which silently dropped conjunctive goals whose keys are
+        # produced by separate actions (e.g. d needs b_done AND c_done).
+        new_goal_state = {k: v for k, v in self.goal_state.items() if k not in action.effects}
+        new_goal_state.update(action.preconditions)
 
         for prec_key in new_goal_state:
             if prec_key not in new_current_state:
