@@ -202,6 +202,10 @@ class _Handler(BaseHTTPRequestHandler):
                 from devtools_mcp.viz import tracker_data
 
                 self._send(_with_tracker(tracker_data.collab_page))
+            elif parts[0] == "skills":
+                self._skills_page()
+            elif parts[0] == "graph":
+                self._graph_page(query)
             elif parts[0] == "station" and parts[1:] == ["auth"]:
                 self._station_auth_page(query)
             elif parts[0] == "api":
@@ -236,6 +240,14 @@ class _Handler(BaseHTTPRequestHandler):
                     self._send_json({"error": f"bad Content-Length {length}"}, 400)
                     return
                 self._post_skilldoc(parts[2], json.loads(body))
+            elif parts == ["api", "skilldoc", "route", "rebuild"]:
+                self._post_router_rebuild()
+            elif parts == ["api", "skilldoc", "mode"]:
+                self._post_skill_mode(json.loads(body) if body else {})
+            elif len(parts) == 3 and parts[:2] == ["api", "skilldoc"] and parts[2] in ("enable", "disable"):
+                self._post_skill_toggle(parts[2], json.loads(body) if body else {})
+            elif parts == ["api", "plan"]:
+                self._post_plan(json.loads(body) if body else {})
             elif len(parts) == 4 and parts[0] == "tracker" and parts[1] == "task" and parts[3] == "status":
                 key = unquote(parts[2]).upper()
                 fields = urllib.parse.parse_qs(body)
@@ -303,6 +315,146 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json(_with_skilldocs(handle))
         except SkillDocError as exc:
             self._send_json({"error": str(exc)}, 400)
+
+    def _post_router_rebuild(self) -> None:
+        """Regenerate the skill-router index (control-panel button / server call)."""
+        from devtools_mcp.skilldocs import router
+
+        def handle(store):
+            path = router.rebuild(store)
+            return {"ok": True, "count": len(router.collect_skills(store)), "path": str(path) if path else None}
+
+        self._send_json(_with_skilldocs(handle))
+
+    def _post_skill_mode(self, payload: dict) -> None:
+        """Set the global power mode, or a per-skill override (name given), then
+        re-materialize dynamic skills and refresh the router."""
+        from devtools_mcp.skilldocs import router
+        from devtools_mcp.skilldocs.control import SkillControl, SkillControlError
+
+        mode = str(payload.get("mode") or "").strip()
+        name = str(payload.get("name") or "").strip()
+
+        def handle(store):
+            control = SkillControl(conn=store.conn)
+            if name:
+                control.set_override(name, mode)
+            else:
+                control.set_mode(mode)
+            written = store.materialize_all()
+            router.rebuild(store)
+            return {"ok": True, "mode": mode, "scope": name or "global", "materialized": written}
+
+        try:
+            self._send_json(_with_skilldocs(handle))
+        except SkillControlError as exc:
+            self._send_json({"error": str(exc)}, 400)
+
+    def _post_skill_toggle(self, action: str, payload: dict) -> None:
+        """Enable/disable a live skill (removes/writes its materialized file)."""
+        from devtools_mcp.skilldocs.control import SkillControl, SkillControlError
+
+        name = str(payload.get("name") or "").strip()
+        if not name:
+            self._send_json({"error": "name is required"}, 400)
+            return
+
+        def handle(store):
+            control = SkillControl(conn=store.conn)
+            control.set_disabled(name, action == "disable")
+            path = store.materialize(name) if store.exists(name) else None
+            return {"ok": True, "disabled": action == "disable", "path": str(path) if path else None}
+
+        try:
+            self._send_json(_with_skilldocs(handle))
+        except SkillControlError as exc:
+            self._send_json({"error": str(exc)}, 400)
+
+    def _post_plan(self, payload: dict) -> None:
+        """Planner seam over HTTP: {goal, world, mode, layered} -> plan. Lets an
+        external orchestrator drive this server's planner (internal or external)."""
+        from devtools_mcp.planning import PlannerError, resolve
+
+        goal = payload.get("goal") or {}
+        if not isinstance(goal, dict) or not goal:
+            self._send_json({"ok": False, "message": "goal must be a non-empty object"}, 400)
+            return
+        world = payload.get("world") if isinstance(payload.get("world"), dict) else {}
+        mode = str(payload.get("mode") or "high")
+        layered = bool(payload.get("layered"))
+        try:
+            planner = resolve()
+            if planner is None:
+                self._send_json({"ok": False, "backend": "none", "message": "planning disabled"})
+                return
+            self._send_json(planner.plan(goal, world, mode, layered).as_dict())
+        except PlannerError as exc:
+            self._send_json({"ok": False, "message": str(exc)}, 400)
+
+    def _skills_page(self) -> None:
+        """Render the local skills control panel (router index + toggles)."""
+        from devtools_mcp.skilldocs import router
+        from devtools_mcp.skilldocs.control import SkillControl
+
+        def handle(store):
+            entries = router.collect_skills(store)
+            control = SkillControl(conn=store.conn)
+            overrides = control.overrides()
+            disabled = control.disabled()
+            live = {meta["name"] for meta in store.list_skills()}
+            rows = [
+                {
+                    "name": e.name,
+                    "description": e.description,
+                    "category": e.category,
+                    "modes": e.modes,
+                    "has_goap": e.has_goap,
+                    "live": e.name in live,
+                    "disabled": e.name in disabled,
+                    "override": overrides.get(e.name, ""),
+                }
+                for e in entries
+            ]
+            return rows, control.global_mode()
+
+        rows, mode = _with_skilldocs(handle)
+        self._send(render.skills_panel(rows, mode))
+
+    def _graph_page(self, query: dict) -> None:
+        """Render the native code property graph (knowledge-graph.json) as SVG.
+
+        Source resolved from ?src=<path> or DEVTOOLS_MCP_CODEGRAPH_JSON. The graph
+        is produced natively by LLM Station; this only visualizes the export."""
+        import os
+
+        from devtools_mcp.codegraph import load_graph, render_graph_svg
+
+        src = (query.get("src") or [os.environ.get("DEVTOOLS_MCP_CODEGRAPH_JSON", "")])[0]
+        focus = (query.get("focus") or [None])[0]
+        if not src or not os.path.isfile(src):
+            self._send(render.page(
+                "code graph",
+                "<h2>Code graph</h2><p class='note'>No graph loaded. Build one natively with "
+                "<code>llm-station run graph_build</code> then <code>graph_export</code>, save the JSON, "
+                "and open <code>/graph?src=&lt;path-to-knowledge-graph.json&gt;</code> "
+                "(or set <code>DEVTOOLS_MCP_CODEGRAPH_JSON</code>).</p>",
+                active="runs",
+            ))
+            return
+        try:
+            with open(src, encoding="utf-8") as fh:
+                graph = load_graph(fh.read())
+        except (OSError, ValueError) as exc:
+            self._send(render.page("code graph", f"<p class='note'>Failed to load: {render._h(exc)}</p>"), 400)
+            return
+        if not graph.nodes:
+            self._send(render.graph_page("<p class='note'>Empty graph.</p>", "", 0, 0))
+            return
+        if focus is None or focus not in graph.nodes:
+            focus = graph.top_node()
+        placement, edges = graph.ego(focus)
+        svg = render_graph_svg(graph, focus=focus)
+        self._send(render.graph_page(svg, focus, len(placement), len(edges)))
 
     def _post_collab_touch(self, payload: dict) -> None:
         """Ingest a file-touch report from an agent hook (lenient by design —

@@ -157,6 +157,7 @@ def page(
         ("search", "/search", "Search"),
         ("tracker", "/tracker", "Tracker"),
         ("collab", "/collab", "Collab"),
+        ("graph", "/graph", "Graph"),
         ("tools", "/tools", "Tools"),
     ]
     nav = "".join(f"<a href='{href}' class='{'on' if key == active else ''}'>{label}</a>" for key, href, label in tabs)
@@ -712,3 +713,82 @@ def collab_page(
         f"<div class='section'><h3>Recent touches</h3>{touches_html}</div>"
     )
     return page("collab", body, active="collab", auto_refresh=True)
+
+
+def skills_panel(rows: list[dict], mode: str) -> str:
+    """Local control panel: router index + power-mode/enable toggles.
+
+    `rows` are skills (name, description, category, modes, has_goap, live,
+    disabled, override); `mode` is the active global power mode. Toggles POST to
+    the /api/skilldoc/* JSON endpoints via inline fetch, then reload. Free/local:
+    power + enable/disable act on live skills; static skills are read-only here.
+    """
+    assert isinstance(rows, list), "rows must be a list"
+    by_cat: dict[str, list[dict]] = {}
+    for row in rows[:1000]:  # bounded
+        by_cat.setdefault(str(row.get("category", "?")), []).append(row)
+    sections = []
+    for category in sorted(by_cat):
+        items = []
+        for row in by_cat[category]:
+            name = _h(row.get("name", ""))
+            tags = []
+            if row.get("modes"):
+                tags.append("power: " + "/".join(_h(m) for m in row["modes"]))
+            if row.get("has_goap"):
+                tags.append("goap")
+            if not row.get("live"):
+                tags.append("static")
+            tag_html = f" <span class='sub'>({'; '.join(tags)})</span>" if tags else ""
+            controls = ""
+            if row.get("live"):
+                disabled = bool(row.get("disabled"))
+                toggle = "enable" if disabled else "disable"
+                label = "Enable" if disabled else "Disable"
+                controls = (
+                    f"<button onclick=\"toggle('{toggle}','{name}')\">{label}</button> "
+                    f"<button onclick=\"setmode('{name}','low')\">low</button> "
+                    f"<button onclick=\"setmode('{name}','high')\">high</button>"
+                )
+            state = " <span class='sub'>[disabled]</span>" if row.get("disabled") else ""
+            override = row.get("override") or ""
+            ov = f" <span class='sub'>[override: {_h(override)}]</span>" if override else ""
+            items.append(
+                f"<li><b>{name}</b>{tag_html}{state}{ov}<br>"
+                f"<span class='note'>{_h(row.get('description', ''))}</span><br>{controls}</li>"
+            )
+        sections.append(f"<div class='section'><h3>{_h(category)}</h3><ul class='check'>{''.join(items)}</ul></div>")
+    script = (
+        "<script>"
+        "async function post(path,body){await fetch(path,{method:'POST',"
+        "headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});location.reload();}"
+        "function setglobal(m){post('/api/skilldoc/mode',{mode:m});}"
+        "function setmode(n,m){post('/api/skilldoc/mode',{name:n,mode:m});}"
+        "function toggle(a,n){post('/api/skilldoc/'+a,{name:n});}"
+        "function rebuild(){post('/api/skilldoc/route/rebuild',{});}"
+        "</script>"
+    )
+    header = (
+        f"<h2>Skills</h2><p class='note'>Active power mode: <b>{_h(mode)}</b>. "
+        "Toggle how dynamic skills render and rebuild the router index. "
+        f"{len(rows)} skill(s) indexed.</p>"
+        "<p><button onclick=\"setglobal('low')\">Set mode: low</button> "
+        "<button onclick=\"setglobal('high')\">Set mode: high</button> "
+        "<button onclick=\"rebuild()\">Rebuild router</button></p>"
+    )
+    return page("skills", header + "".join(sections) + script, active="runs")
+
+
+def graph_page(svg: str, focus: str, node_count: int, edge_count: int, note: str = "") -> str:
+    """Wrap a code-graph SVG in the dashboard shell. Server-rendered, no CDN —
+    every node is a focus link (click to re-root), like the flamegraph."""
+    head = (
+        "<h2>Code graph</h2>"
+        f"<p class='note'>Focus: <code>{_h(focus)}</code> — {node_count} node(s), "
+        f"{edge_count} edge(s) shown. Click any node to re-root. "
+        "Built natively by LLM Station (<code>graph_build</code> → <code>graph_export</code>).</p>"
+    )
+    if note:
+        head += f"<p class='note'>{_h(note)}</p>"
+    body = head + f"<div class='section' style='overflow-x:auto'>{svg}</div>"
+    return page("code graph", body, active="graph")

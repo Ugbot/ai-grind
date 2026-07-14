@@ -309,6 +309,29 @@ class StationClient:
         assert isinstance(result, dict), "skill upsert must return an object"
         return result
 
+    def code_graph_upload(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Upload a native knowledge-graph.json blob so an org shares one code
+        graph. Upserts by (org, project). Requires the org's pro plan."""
+        assert body.get("project"), "code graph upload needs a project"
+        result = self._request("POST", self._org("/code-graphs"), json_body=body)
+        assert isinstance(result, dict), "code graph upload must return an object"
+        return result
+
+    def plan(
+        self,
+        goal: dict[str, Any],
+        world: dict[str, Any] | None = None,
+        mode: str = "high",
+        layered: bool = False,
+    ) -> dict[str, Any]:
+        """Ask the platform's canonical GOAP planner to sequence skills toward a
+        goal. `layered=True` returns Kahn waves (requires the org's pro plan)."""
+        assert isinstance(goal, dict) and goal, "goal must be a non-empty object"
+        body = {"goal": goal, "world": world or {}, "mode": mode, "layered": layered}
+        result = self._request("POST", self._org("/plan"), json_body=body)
+        assert isinstance(result, dict), "plan must return an object"
+        return result
+
     # -- perf runs ------------------------------------------------------------------
 
     def perf_upload(self, body: dict[str, Any]) -> dict[str, Any]:

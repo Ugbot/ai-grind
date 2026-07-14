@@ -6,7 +6,7 @@ Each module exposes `sync(db, client, rule, project_row, state_row, dry_run)
 the sync log; domains own their algorithms.
 """
 
-from devtools_mcp.station.domains import claims, coord, perf, skills, tasks
+from devtools_mcp.station.domains import claims, codegraph, coord, perf, skills, tasks
 
 DOMAIN_SYNCERS = {
     "tasks": tasks.sync,
@@ -14,6 +14,7 @@ DOMAIN_SYNCERS = {
     "collab": claims.sync,
     "skills": skills.sync,
     "perf": perf.sync,
+    "codegraph": codegraph.sync,
 }
 
-assert set(DOMAIN_SYNCERS) == {"tasks", "sessions", "collab", "skills", "perf"}, "syncer registry drifted"
+assert set(DOMAIN_SYNCERS) == {"tasks", "sessions", "collab", "skills", "perf", "codegraph"}, "syncer registry drifted"

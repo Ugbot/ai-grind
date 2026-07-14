@@ -62,6 +62,22 @@ def _skill_body(root: Path, item: dict) -> str:
     return body[:SKILL_BODY_MAX_BYTES]
 
 
+def _add_goap(payload: dict, body: str) -> None:
+    """Attach GOAP action metadata to the upsert payload if the skill body carries
+    a ```goap block, so the platform planner can chain this skill."""
+    from devtools_mcp.skilldocs.router import parse_goap
+
+    goap = parse_goap(body)
+    if not goap:
+        return
+    if isinstance(goap.get("preconditions"), dict):
+        payload["preconditions"] = goap["preconditions"]
+    if isinstance(goap.get("effects"), dict):
+        payload["effects"] = goap["effects"]
+    if isinstance(goap.get("cost"), int | float):
+        payload["cost"] = float(goap["cost"])
+
+
 def sync(
     db: TrackerDB,
     client: StationClient,
@@ -99,14 +115,15 @@ def sync(
             report["notes"].append(f"push cap {SKILLS_PUSH_MAX_PER_RUN} hit — remainder next run")
             break
         if not dry_run:
-            remote = client.skill_upsert(
-                {
-                    "name": name,
-                    "type": str(item.get("type", "skill")),
-                    "category": str(item.get("category", "")),
-                    "body": _skill_body(root, item),
-                }
-            )
+            body = _skill_body(root, item)
+            payload = {
+                "name": name,
+                "type": str(item.get("type", "skill")),
+                "category": str(item.get("category", "")),
+                "body": body,
+            }
+            _add_goap(payload, body)
+            remote = client.skill_upsert(payload)
             links.insert_link(db, "skill", name, str(remote["id"]), org_id, None, sha)
         pushed += 1
         report["pushed"] += 1
