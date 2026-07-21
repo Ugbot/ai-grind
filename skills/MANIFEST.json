@@ -25,7 +25,7 @@
     {
       "name": "llm-station-debug",
       "type": "skill",
-      "category": "debug",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-debug",
       "dest": "catalog\\skills\\debug\\llm-station-debug\\SKILL.md",
       "sha256": "a876aab2597b88089376c056f24c4914df54e8a6eb142cd3fb2ca2548add80c2"
@@ -49,7 +49,7 @@
     {
       "name": "llm-station-analyze",
       "type": "skill",
-      "category": "code-intel",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-analyze",
       "dest": "catalog\\skills\\code-intel\\llm-station-analyze\\SKILL.md",
       "sha256": "73d802adb4a8137ff426279b5dab2f1236d90933c86c7cb5890cb74cdc8b2be1"
@@ -57,7 +57,7 @@
     {
       "name": "llm-station-search",
       "type": "skill",
-      "category": "code-intel",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-search",
       "dest": "catalog\\skills\\code-intel\\llm-station-search\\SKILL.md",
       "sha256": "19ab78ad8b2119dc4647a6a3dc17df2d98ae723e855e20f30fb99fadf199ab3b"
@@ -65,7 +65,7 @@
     {
       "name": "llm-station-patterns",
       "type": "skill",
-      "category": "code-intel",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-patterns",
       "dest": "catalog\\skills\\code-intel\\llm-station-patterns\\SKILL.md",
       "sha256": "0b98052a24a0a2e10ce6976941d59480bdbaabf1da8636d62c2de25e64a6e2e8"
@@ -233,7 +233,7 @@
     {
       "name": "build",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\build.md",
       "dest": "catalog\\commands\\llm-station\\build.md",
       "sha256": "bb97fa51c21c0dc8b17c93543a8addcc31862deaaaf093d64954a448ee61a145"
@@ -241,7 +241,7 @@
     {
       "name": "callers",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\callers.md",
       "dest": "catalog\\commands\\llm-station\\callers.md",
       "sha256": "8974d4ef489b553a14ff237c72f2d990bc3ae9cfc5f67149ee131b5f4ced32b8"
@@ -249,7 +249,7 @@
     {
       "name": "grep",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\grep.md",
       "dest": "catalog\\commands\\llm-station\\grep.md",
       "sha256": "50725d388ac70e872478683d2ca9dd74f152fd8baaa67f5e90b407b217b30a7d"
@@ -257,7 +257,7 @@
     {
       "name": "refs",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\refs.md",
       "dest": "catalog\\commands\\llm-station\\refs.md",
       "sha256": "e59ef40e467b9ec3df093683a90e04441659efd88189a8b3dfca69c83d865b54"
@@ -265,7 +265,7 @@
     {
       "name": "rename",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\rename.md",
       "dest": "catalog\\commands\\llm-station\\rename.md",
       "sha256": "bab162d5f9dcbbe5b1318c04ee9ab58b7b2a4b89e88d2b6205d7fc660e01b0f8"
@@ -273,7 +273,7 @@
     {
       "name": "search",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\search.md",
       "dest": "catalog\\commands\\llm-station\\search.md",
       "sha256": "a5a12d4468bc299d489acea8aeb9d366d7a1ca5cb7f0a4dcefaed42a80bf12c8"
@@ -281,7 +281,7 @@
     {
       "name": "start",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\start.md",
       "dest": "catalog\\commands\\llm-station\\start.md",
       "sha256": "89af5aab7647e1ed9ed6647a81bb86fb992fa6ca48287a86e1f69581ef8b3f5c"
@@ -289,7 +289,7 @@
     {
       "name": "status",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\status.md",
       "dest": "catalog\\commands\\llm-station\\status.md",
       "sha256": "5c27cb488c0c3ef0f89d91d6a6502857dc074b59ad47027657991adba2caeb22"
@@ -297,7 +297,7 @@
     {
       "name": "stop",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\stop.md",
       "dest": "catalog\\commands\\llm-station\\stop.md",
       "sha256": "9dbe67c47d2a0a364ed27250500d3653b567654e335cc173c2988055f4a0ee50"
@@ -305,7 +305,7 @@
     {
       "name": "task",
       "type": "command",
-      "category": "llm-station",
+      "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\commands\\task.md",
       "dest": "catalog\\commands\\llm-station\\task.md",
       "sha256": "96f6455483b396d9f9fa8d17dfcde0a35b1017d4bb57d9a4abf07404b52a9719"
