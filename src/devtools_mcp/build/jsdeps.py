@@ -205,6 +205,42 @@ def parse_npm_outdated(text: str) -> list[Dependency]:
     return out
 
 
+def parse_yarn_outdated(text: str) -> list[Dependency]:
+    """Parse `yarn outdated --json` NDJSON (classic); the `table` record has the rows.
+
+    Columns come from the `head` record (Package/Current/Wanted/Latest/...), so
+    column order changes don't break the mapping.
+    """
+    out: list[Dependency] = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(obj, dict) or obj.get("type") != "table":
+            continue
+        data = obj.get("data") or {}
+        head = [str(h).lower() for h in data.get("head") or []]
+        for row in data.get("body") or []:
+            cells = {head[i]: str(v) for i, v in enumerate(row) if i < len(head)}
+            current = cells.get("current", "")
+            latest = cells.get("latest", "")
+            out.append(
+                Dependency(
+                    artifact=cells.get("package", ""),
+                    version=current,
+                    requested=cells.get("wanted", ""),
+                    resolved=latest,
+                    depth=1,
+                    conflict=bool(latest and latest != current),
+                )
+            )
+    return out
+
+
 def parse_package_scripts(project: str) -> dict[str, str]:
     """Read package.json `scripts` (name -> command); {} if absent/unreadable."""
     assert isinstance(project, str), "project must be str"

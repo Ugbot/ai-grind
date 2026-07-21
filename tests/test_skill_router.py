@@ -108,3 +108,26 @@ def test_rebuild_indexes_live_skills(tmp_path, monkeypatch):
         assert router.ROUTER_NAME not in body  # router excludes itself
     finally:
         store.close()
+
+
+def test_disabled_skills_pruned_from_index(tmp_path, monkeypatch):
+    """Disabling a skill — static or live — removes it from the router index."""
+    from devtools_mcp.skilldocs.control import SkillControl
+
+    root = _seed_library(tmp_path)
+    monkeypatch.setattr(router, "find_skills_root", lambda: root)
+    store = SkillDocStore()
+    try:
+        store.create("live-demo", "---\nname: live-demo\ndescription: a live one\n---\nbody\n")
+        control = SkillControl(conn=store.conn)
+        control.set_disabled("demo-cat", True)  # static catalog skill
+        control.set_disabled("live-demo", True)  # live skill
+        names = {e.name for e in router.collect_skills(store)}
+        assert "demo-cat" not in names
+        assert "live-demo" not in names
+
+        control.set_disabled("demo-cat", False)
+        names = {e.name for e in router.collect_skills(store)}
+        assert "demo-cat" in names  # re-enable restores it
+    finally:
+        store.close()

@@ -37,8 +37,13 @@ def assemble(
     deps: list[Dependency] | None = None,
     vulns: list[Vulnerability] | None = None,
     scripts: dict[str, str] | None = None,
+    success: bool | None = None,
 ) -> BuildResult:
-    """Assemble a normalized BuildResult for a JS package-manager run."""
+    """Assemble a normalized BuildResult for a JS package-manager run.
+
+    `success` overrides the default rc==0 for informational tools (audit and
+    outdated exit non-zero when they find something — that is not a failure).
+    """
     assert isinstance(suite, str) and suite, "suite required"
     assert isinstance(tool, str) and tool, "tool required"
     base = create_run_base(suite=suite, tool=tool, binary=project, duration_seconds=duration, exit_code=rc)
@@ -46,7 +51,7 @@ def assemble(
     return BuildResult(
         **base.model_dump(),
         command=command,
-        success=rc == 0,
+        success=rc == 0 if success is None else success,
         dependencies=deps or [],
         vulnerabilities=vulns or [],
         available_tasks=available,

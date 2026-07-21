@@ -1,0 +1,7 @@
+// Injected by devtools-mcp for deps/sync/audit — never touches project build files.
+// `gradle dependencies` at a multi-module root only reports the root project's
+// (usually empty) configurations; this registers a report task in EVERY project
+// so one invocation prints the full tree for all modules.
+allprojects {
+    tasks.register("devtoolsAllDeps", org.gradle.api.tasks.diagnostics.DependencyReportTask)
+}

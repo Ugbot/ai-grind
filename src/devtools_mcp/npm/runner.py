@@ -75,7 +75,17 @@ async def run_npm(
     raw_path = write_raw("devtools-npm-", raw)
     deps = parse_npm_ls(ptext) if tool == "deps" else (parse_npm_outdated(ptext) if tool == "outdated" else [])
     vulns = parse_npm_audit(ptext) if tool == "audit" else []
+    success = (rc == 0 or bool(deps) or bool(vulns)) if tool in ("audit", "outdated") else None
     result = assemble(
-        "npm", tool, project, "npm " + " ".join(argv), time.monotonic() - start, rc, raw, deps=deps, vulns=vulns
+        "npm",
+        tool,
+        project,
+        "npm " + " ".join(argv),
+        time.monotonic() - start,
+        rc,
+        raw,
+        deps=deps,
+        vulns=vulns,
+        success=success,
     )
     return None, result, raw_path
