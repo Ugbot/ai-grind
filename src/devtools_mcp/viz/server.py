@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import urllib.parse
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -148,9 +149,69 @@ def _all_runs(app: object, filters: dict | None = None) -> list[dict]:
     return rows
 
 
+_STATION_NONCE_MAX = 64  # bound: pending sign-in nonces kept per dashboard
+
+
+def _issue_station_nonce(server: object) -> str:
+    """Mint and remember a one-time station-callback nonce (bounded set)."""
+    import secrets
+
+    nonces = getattr(server, "station_nonces", None)
+    if nonces is None:
+        nonces = set()
+        server.station_nonces = nonces  # type: ignore[attr-defined]
+    if len(nonces) >= _STATION_NONCE_MAX:
+        nonces.clear()  # sign-ins are rare; drop stale nonces wholesale
+    token = secrets.token_urlsafe(24)
+    nonces.add(token)
+    return token
+
+
+def _consume_station_nonce(server: object, nonce: str) -> bool:
+    """Validate and burn a station-callback nonce (one-time use)."""
+    nonces = getattr(server, "station_nonces", None)
+    if not nonce or not nonces or nonce not in nonces:
+        return False
+    nonces.discard(nonce)
+    return True
+
+
 class _Handler(BaseHTTPRequestHandler):
     def log_message(self, *args: object) -> None:
         pass
+
+    def _host_from(self, header: str) -> str:
+        """The host[:port] from a Host/Origin/Referer header value ('' if none)."""
+        value = (self.headers.get(header) or "").strip()
+        if not value:
+            return ""
+        return urlparse(value).netloc or value  # Origin/Referer are URLs; Host is bare
+
+    def _guard_state_change(self) -> bool:
+        """Reject cross-origin / rebinding / untokened writes.
+
+        The dashboard's own forms and localhost tools pass (matching Host, same or
+        absent Origin); a malicious web page cannot (its Origin — or, under DNS
+        rebinding, its Host — is not in the allowlist). When a token is configured,
+        a cross-origin caller may instead present it (X-Devtools-Token or ?token=).
+        """
+        allowed = getattr(self.server, "allowed_hosts", set())  # type: ignore[attr-defined]
+        token = getattr(self.server, "auth_token", "")  # type: ignore[attr-defined]
+        if self._host_from("Host") not in allowed:
+            self._send_json({"error": "host not allowed"}, 403)
+            return False
+        origin = self._host_from("Origin") or self._host_from("Referer")
+        if origin and origin in allowed:
+            return True  # same-origin dashboard UI / localhost
+        if origin:  # cross-origin: only a valid shared token gets through
+            header_token = self.headers.get("X-Devtools-Token")
+            query_token = parse_qs(urlparse(self.path).query).get("token", [""])[0]
+            supplied = (header_token or query_token).strip()
+            if token and supplied == token:
+                return True
+            self._send_json({"error": "cross-origin request refused"}, 403)
+            return False
+        return True  # no Origin (programmatic localhost/peer) with an allowed Host
 
     def _send(self, body: str, status: int = 200) -> None:
         data = body.encode("utf-8", "replace")
@@ -216,6 +277,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(render.page("error", f"<pre>{render._h(e)}</pre>"), 500)
 
     def do_POST(self) -> None:  # noqa: N802
+        if not self._guard_state_change():
+            return
         app = self.server.app_ctx  # type: ignore[attr-defined]
         parts = [p for p in urlparse(self.path).path.split("/") if p]
         length = int(self.headers.get("Content-Length") or 0)
@@ -690,7 +753,10 @@ class _Handler(BaseHTTPRequestHandler):
         from devtools_mcp.station import credentials
 
         platform = ((query.get("url") or [""])[0] or self._station_platform_default()).rstrip("/")
-        callback = f"http://{self.headers.get('Host', '127.0.0.1:8765')}/api/station/callback"
+        # One-time nonce carried through the platform on local_callback so the
+        # credential-saving GET can't be forged by a bare <img>/navigation CSRF.
+        nonce = _issue_station_nonce(self.server)  # type: ignore[arg-type]
+        callback = f"http://{self.headers.get('Host', '127.0.0.1:8765')}/api/station/callback?nonce={nonce}"
         stored = credentials.load_credentials()
         status_html = (
             f"<p>✅ Authenticated against <b>{render._h(str(stored.get('url', '')))}</b> "
@@ -727,6 +793,14 @@ class _Handler(BaseHTTPRequestHandler):
         from devtools_mcp.station import credentials
         from devtools_mcp.tracker.db import TrackerError
 
+        if not self._guard_state_change():
+            return
+        # The nonce must match one this dashboard issued on the auth page — a
+        # forged/replayed callback (img-src, stale link) is rejected.
+        if not _consume_station_nonce(self.server, (query.get("nonce") or [""])[0]):  # type: ignore[arg-type]
+            msg = "<p>⛔ Invalid or expired sign-in link. Reopen /station/auth.</p>"
+            self._send(render.page("station auth failed", msg), 403)
+            return
         key = (query.get("key") or [""])[0]
         org = (query.get("org") or [""])[0]
         url = (query.get("url") or [self._station_platform_default()])[0]
@@ -879,8 +953,15 @@ class VizServer:
         assert not self.running, "viz server already running"
         httpd = ThreadingHTTPServer((host, port), _Handler)
         httpd.app_ctx = self.app_ctx  # type: ignore[attr-defined]
+        bound_port = httpd.server_address[1]
+        # Host/Origin allowlist for state-changing requests: loopback names plus the
+        # actual bound host. Blocks DNS-rebinding and cross-site POSTs from a browser
+        # while still allowing a peer that connects to a deliberately-shared bind IP.
+        hosts = {"127.0.0.1", "localhost", "::1", "[::1]", host}
+        httpd.allowed_hosts = {h for base in hosts for h in (base, f"{base}:{bound_port}")}  # type: ignore[attr-defined]
+        httpd.auth_token = os.environ.get("DEVTOOLS_MCP_DASHBOARD_TOKEN", "").strip()  # type: ignore[attr-defined]
         self._httpd = httpd
-        self.url = f"http://{host}:{httpd.server_address[1]}"
+        self.url = f"http://{host}:{bound_port}"
         import threading
 
         self._thread = threading.Thread(target=httpd.serve_forever, daemon=True, name="devtools-viz")

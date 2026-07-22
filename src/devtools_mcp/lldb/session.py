@@ -43,6 +43,9 @@ class LldbSession:
         self.slave_fd: int | None = None
         self.target: str | None = None
         self.ready: bool = False
+        # Serialize commands: two concurrent debug_* calls on one session would
+        # interleave PTY writes and prompt reads and corrupt both responses.
+        self._lock = asyncio.Lock()
 
     async def start(self) -> str:
         """Start the LLDB process with a PTY. Returns initial output."""
@@ -85,16 +88,17 @@ class LldbSession:
         return output + version_output
 
     async def execute_command(self, command: str) -> str:
-        """Send a command to LLDB and return the output."""
-        if not self.ready or not self.process:
-            msg = "LLDB session is not ready"
-            raise RuntimeError(msg)
-        if self.process.returncode is not None:
-            msg = f"LLDB process has terminated (code {self.process.returncode})"
-            raise RuntimeError(msg)
+        """Send a command to LLDB and return the output (one command at a time)."""
+        async with self._lock:
+            if not self.ready or not self.process:
+                msg = "LLDB session is not ready"
+                raise RuntimeError(msg)
+            if self.process.returncode is not None:
+                msg = f"LLDB process has terminated (code {self.process.returncode})"
+                raise RuntimeError(msg)
 
-        os.write(self.master_fd, f"{command}\n".encode())
-        return await self._read_until_prompt()
+            os.write(self.master_fd, f"{command}\n".encode())
+            return await self._read_until_prompt()
 
     async def _read_until_prompt(self) -> str:
         """Read from LLDB until the (lldb) prompt appears or timeout."""

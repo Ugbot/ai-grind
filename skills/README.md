@@ -45,24 +45,27 @@ there are left alone.
 
 | Type | Count | Categories |
 |---|---|---|
-| Skills (harvested, local) | 9 | `debug/` `profiling/` `code-intel/` `project-drivers/` |
+| Skills (harvested, local) | 5 | `debug/` `profiling/` `project-drivers/` |
 | Skills (harvested, vendored external) | 46 | `planning/` `build/` `review/` `ship/` `web/` `meta/` — see below |
-| Skills (authored) | 29 | `powershell/` (9), `profiling/` (7), `debugging/` (1), `devtools/` (6), `tracker/` (4), `collab/` (2) |
-| Commands | 15 | `build/` (3) `llm-station/` (12) |
+| Skills (authored) | 28 | `powershell/` (9), `profiling/` (7), `debugging/` (1), `devtools/` (5), `tracker/` (4), `collab/` (2) |
+| Commands | 5 | `build/` (3) `dev-tools/` (2) |
 | Agents | 3 | `docs/` `testing/` `integration/` |
 
-**Total loadable: 84 skills** (55 harvested + 29 authored).
+**Total loadable: 79 skills** (51 harvested + 28 authored).
 
 **Sidelined** (harvested into `catalog/` for reference but **never synced** to the
 loadable mirrors, and hidden from the router index): categories with an
 `experimental` segment or a `_`-prefixed one — currently the Story Engine `se-*`
 skills under `experimental/narrative/` and the retired MCP-era skills under
-`narrative/_archive/`. The skip is enforced by `sync.sidelined()`.
+`narrative/_archive/`. The retired `llm-station-*` skills (`code-intel/` and
+`debug/llm-station-debug`) and the `llm-station/` commands (incl. the `ned-*`
+variants) are likewise no longer synced. The skip is enforced by
+`sync.sidelined()`.
 
 ### Skills (local harvest)
-- **debug/** — `debug-windows-msvc`, `debug-linux-lldb`, `llm-station-debug`
+- **debug/** — `debug-windows-msvc`, `debug-linux-lldb` (+ `llm-station-debug`, sidelined)
 - **profiling/** — `bench-rdtsc-profile`, `perfview-etw-trace`
-- **code-intel/** — `llm-station-analyze`, `llm-station-search`, `llm-station-patterns`
+- **code-intel/** (sidelined) — `llm-station-analyze`, `llm-station-search`, `llm-station-patterns` — kept in `catalog/` for reference, not synced
 - **project-drivers/** — `chukonu-dev`
 - **experimental/narrative/** (sidelined) — 14 `se-*` Story Engine skills +
   `start-engine`, kept for reference but not synced or indexed.
@@ -89,8 +92,9 @@ proprietary-licensed skills.
 
 ### Commands
 - **build/** — `build-windows`, `build-macos`, `build-linux`
-- **llm-station/** — `build callers grep refs rename search start status stop task`
-  plus 10 `ned-*` variants
+- **dev-tools/** — `clean-test-data`, `sync-to-ai-grind`
+- **llm-station/** (sidelined) — `build callers grep refs rename search start status stop task`
+  plus the `ned-*` variants; kept in `catalog/` for reference, not synced
 
 ### Agents
 - **docs/** — `living-docs-writer`

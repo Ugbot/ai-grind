@@ -4,12 +4,24 @@ from __future__ import annotations
 
 import asyncio
 import os
+import shlex
+import signal
 import tempfile
 import time
 
 from devtools_mcp.dtrace.models import DTraceResult
 from devtools_mcp.dtrace.parsers import parse_dtrace_output
 from devtools_mcp.models import create_run_base
+
+_SUDO_FAILURE = ("a password is required", "a terminal is required", "sudo: a password", "no tty present")
+
+
+def _kill_group(proc: asyncio.subprocess.Process) -> None:
+    """SIGKILL the whole group so a sudo'd root dtrace isn't orphaned."""
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except (ProcessLookupError, PermissionError, OSError):
+        proc.kill()
 
 
 async def run_dtrace(
@@ -33,7 +45,9 @@ async def run_dtrace(
     cmd: list[str] = []
 
     if sudo:
-        cmd.append("sudo")
+        # -n: never prompt. A headless MCP server has no tty, so an interactive
+        # sudo would hang until timeout; fail fast with a clear message instead.
+        cmd.extend(["sudo", "-n"])
 
     cmd.append("dtrace")
 
@@ -41,11 +55,15 @@ async def run_dtrace(
     if extra_args:
         cmd.extend(extra_args)
 
+    # `trace` has no built-in probe, so devtools_run callers pass the D program
+    # via args (or direct callers via script/one_liner) — otherwise it's unusable.
+    program = one_liner or (" ".join(args) if tool == "trace" and args else "")
+
     # Script file or one-liner
     if script:
         cmd.extend(["-s", script])
-    elif one_liner:
-        cmd.extend(["-n", one_liner])
+    elif program:
+        cmd.extend(["-n", program])
     elif tool == "syscall":
         # Convenience: trace syscalls
         probe = f"syscall:::entry /pid == {pid}/" if pid else "syscall:::entry"
@@ -56,15 +74,18 @@ async def run_dtrace(
         probe = f"profile-{hz} /pid == {pid}/" if pid else f"profile-{hz}"
         cmd.extend(["-n", f"{probe} {{ @[ustack()] = count(); }}"])
     else:
-        return "Provide script, one_liner, or use tool=syscall/cpu", None, ""
+        return (
+            'dtrace tool=trace needs a D program via args (e.g. args=["syscall:::entry '
+            '{ @[probefunc]=count(); }"]), or use tool=syscall / tool=cpu.',
+            None,
+            "",
+        )
 
-    # Attach to process or command
+    # Attach to process or command (quote each token — dtrace -c splits on spaces)
     if pid and "-p" not in cmd:
         cmd.extend(["-p", str(pid)])
-    elif binary and "-c" not in cmd:
-        cmd_str = binary
-        if args:
-            cmd_str += " " + " ".join(args)
+    elif binary and tool != "trace" and "-c" not in cmd:
+        cmd_str = " ".join(shlex.quote(part) for part in [binary, *(args or [])])
         cmd.extend(["-c", cmd_str])
 
     # Output file
@@ -78,6 +99,7 @@ async def run_dtrace(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            start_new_session=True,  # own process group so a timeout kills root dtrace too
         )
 
         try:
@@ -86,17 +108,10 @@ async def run_dtrace(
                 timeout=timeout,
             )
         except TimeoutError:
-            proc.terminate()
-            try:
-                stdout_bytes, stderr_bytes = await asyncio.wait_for(
-                    proc.communicate(),
-                    timeout=5,
-                )
-            except TimeoutError:
-                proc.kill()
-                await proc.wait()
-                stdout_bytes = b""
-                stderr_bytes = b"DTrace timed out"
+            _kill_group(proc)  # SIGKILL the group — SIGTERM to sudo can't reach the child
+            await proc.wait()
+            stdout_bytes = b""
+            stderr_bytes = b"DTrace timed out"
 
         duration = time.monotonic() - start
         stdout = stdout_bytes.decode("utf-8", errors="replace")
@@ -110,8 +125,16 @@ async def run_dtrace(
         with open(raw_path, "w") as f:
             f.write(combined)
 
-        # Check for permission errors
-        if "Permission denied" in stderr or "not permitted" in stderr.lower():
+        # Distinguish "sudo can't run non-interactively" from a real DTrace error.
+        low = stderr.lower()
+        if any(marker in low for marker in _SUDO_FAILURE):
+            return (
+                "dtrace needs root but sudo cannot prompt here. Configure passwordless "
+                "sudo for dtrace, or run the server where sudo is already authenticated.",
+                None,
+                raw_path,
+            )
+        if "Permission denied" in stderr or "not permitted" in low:
             return f"DTrace permission denied. On macOS, SIP may need to be configured.\n{stderr}", None, raw_path
 
         run_base = create_run_base(

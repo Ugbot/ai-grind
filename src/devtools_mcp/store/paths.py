@@ -16,7 +16,3 @@ def data_root() -> Path:
 
 def runs_dir() -> Path:
     return data_root() / "runs"
-
-
-def run_dir(run_id: str) -> Path:
-    return runs_dir() / run_id

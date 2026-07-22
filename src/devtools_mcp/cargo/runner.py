@@ -78,18 +78,25 @@ async def run_cargo(
     tests = []
     failures: list[str] = []
     if tool == "test":
-        tests, success = parse_cargo_test(text)
+        tests, parsed_ok = parse_cargo_test(text)
+        success = parsed_ok and rc == 0  # a compile failure is rc != 0, not a passing test run
     elif tool in ("build", "check"):
         success, failures = parse_cargo_build(text)
         success = success and rc == 0
-    elif tool == "outdated":
-        deps = parse_cargo_outdated(text)
+    elif tool in ("outdated", "audit"):
+        # Separately-installed subcommands: a missing one exits non-zero with "no such
+        # command" and must not read as a clean result.
+        subcmd = "cargo-outdated" if tool == "outdated" else "cargo-audit"
+        if tool == "outdated":
+            deps = parse_cargo_outdated(text)
         if "no such command" in text:
-            failures = ["cargo-outdated is not installed. Install it: cargo install cargo-outdated"]
+            failures = [f"{subcmd} is not installed. Install it: cargo install {subcmd}"]
             success = False
         else:
-            success = rc == 0 or bool(deps)
-    else:
+            # Both exit non-zero when they find something — findings are not failure.
+            found = bool(deps) if tool == "outdated" else bool(vulns)
+            success = rc == 0 or found
+    else:  # deps, sync
         success = tool in _INFORMATIONAL or rc == 0
 
     base = create_run_base(

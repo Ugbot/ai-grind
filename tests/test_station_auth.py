@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -92,6 +93,14 @@ def _get(url: str) -> tuple[int, str]:
         return exc.code, exc.read().decode()
 
 
+def _fresh_nonce(served: str) -> str:
+    """Obtain a one-time callback nonce the way the real flow does — via the auth page."""
+    _, page = _get(served + "/station/auth")
+    match = re.search(r"nonce%3D([A-Za-z0-9_-]+)", page)
+    assert match, "auth page did not embed a callback nonce"
+    return match.group(1)
+
+
 class TestVizAuthRoutes:
     def test_auth_page_renders_signin_links(self, served):
         status, body = _get(served + "/station/auth?url=http://platform:8000")
@@ -102,7 +111,13 @@ class TestVizAuthRoutes:
 
     def test_callback_stores_and_confirms(self, served):
         query = urllib.parse.urlencode(
-            {"key": "lls_fromflow", "org": "org-1", "url": "http://platform:8000", "member": "Ben"}
+            {
+                "key": "lls_fromflow",
+                "org": "org-1",
+                "url": "http://platform:8000",
+                "member": "Ben",
+                "nonce": _fresh_nonce(served),
+            }
         )
         status, body = _get(served + "/api/station/callback?" + query)
         assert status == 200
@@ -112,8 +127,16 @@ class TestVizAuthRoutes:
         assert stored["org_id"] == "org-1"
 
     def test_callback_rejects_garbage_key(self, served):
-        status, body = _get(served + "/api/station/callback?key=oops&url=http://platform:8000")
+        query = urllib.parse.urlencode({"key": "oops", "url": "http://platform:8000", "nonce": _fresh_nonce(served)})
+        status, body = _get(served + "/api/station/callback?" + query)
         assert status == 400
+        assert credentials.load_credentials() is None
+
+    def test_callback_without_nonce_is_rejected(self, served):
+        # A forged callback (no valid nonce — e.g. an <img src> CSRF) must not store creds.
+        query = urllib.parse.urlencode({"key": "lls_evil", "org": "attacker", "url": "http://evil"})
+        status, _ = _get(served + "/api/station/callback?" + query)
+        assert status == 403
         assert credentials.load_credentials() is None
 
     def test_status_endpoint_never_leaks_key(self, served):
@@ -134,3 +157,35 @@ class TestVizAuthRoutes:
             assert response.status == 200
         stored = credentials.load_credentials()
         assert stored is not None and stored["api_key"] == "lls_pasted"
+
+    def test_cross_origin_post_is_refused(self, served):
+        # A malicious page's cross-origin POST carries a foreign Origin → rejected.
+        data = urllib.parse.urlencode({"url": "http://evil", "key": "lls_evil"}).encode()
+        request = urllib.request.Request(
+            served + "/api/station/token",
+            data=data,
+            headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": "http://evil.example"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=5) as response:
+                code = response.status
+        except urllib.error.HTTPError as exc:
+            code = exc.code
+        assert code == 403
+        assert credentials.load_credentials() is None
+
+    def test_rebinding_host_is_refused(self, served):
+        # DNS-rebinding: attacker domain resolves to loopback, but the Host header
+        # it sends is not in the allowlist → rejected before any handler runs.
+        data = urllib.parse.urlencode({"url": "http://evil", "key": "lls_evil"}).encode()
+        request = urllib.request.Request(
+            served + "/api/station/token",
+            data=data,
+            headers={"Content-Type": "application/x-www-form-urlencoded", "Host": "attacker.example"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=5) as response:
+                code = response.status
+        except urllib.error.HTTPError as exc:
+            code = exc.code
+        assert code == 403

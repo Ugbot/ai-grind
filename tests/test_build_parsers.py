@@ -206,6 +206,25 @@ class TestJUnit:
     def test_bad_xml(self):
         assert parse_junit_text(b"not xml") == []
 
+    def test_newer_than_skips_stale_reports(self, tmp_path):
+        import os
+
+        from devtools_mcp.build.parsers import parse_junit_dir
+
+        reports = tmp_path / "build" / "test-results" / "test"
+        reports.mkdir(parents=True)
+        report = reports / "TEST-x.xml"
+        report.write_bytes(self.XML)
+        old = report.stat().st_mtime - 3600  # pretend it's an hour old (prior run)
+        os.utime(report, (old, old))
+        patterns = ["**/build/test-results/**/*.xml"]
+        # No cutoff: the report is parsed.
+        assert len(parse_junit_dir(str(tmp_path), patterns)) == 3
+        # Cutoff after the file's mtime: skipped as stale.
+        assert parse_junit_dir(str(tmp_path), patterns, newer_than=old + 60) == []
+        # Cutoff before it: kept.
+        assert len(parse_junit_dir(str(tmp_path), patterns, newer_than=old - 60)) == 3
+
 
 class TestGradleOutdated:
     REPORT = """\

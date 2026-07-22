@@ -3,6 +3,7 @@ and synced between machines. Action-multiplexed like the tracker tools."""
 
 from __future__ import annotations
 
+import anyio
 from mcp.server.fastmcp import Context
 
 from devtools_mcp.server import mcp
@@ -96,9 +97,24 @@ async def skill_live(
         if action == "sync":
             if not url:
                 return "sync needs url (a peer's dashboard, e.g. http://host:8765)"
+            from devtools_mcp.net_guard import SsrfError, check_sync_url
             from devtools_mcp.skilldocs.sync import sync_once
 
-            counters = sync_once(store, url)
+            try:
+                check_sync_url(url)
+            except SsrfError as exc:
+                return f"Refused to sync: {exc}"
+
+            def _do_sync() -> dict:
+                # Fresh store in the worker thread — sqlite is thread-affine; the
+                # loop's blocking urllib per-doc must not run on the event loop.
+                thread_store = _store()
+                try:
+                    return sync_once(thread_store, url)
+                finally:
+                    thread_store.close()
+
+            counters = await anyio.to_thread.run_sync(_do_sync)
             return (
                 f"Synced live skills with `{url}`: {counters['skills']} skill(s), "
                 f"pulled {counters['pulled']}, pushed {counters['pushed']}, "

@@ -94,19 +94,29 @@ def library_names(root: pathlib.Path) -> set[str]:
     return names
 
 
-def source_paths(root: pathlib.Path) -> set[str]:
-    """Normalized `src` paths already listed in sources.toml."""
+def _raw_srcs(root: pathlib.Path) -> list[str]:
+    """Original-case `src` strings from sources.toml (forward-slash normalized)."""
     sources = root / "sources.toml"
     if not sources.is_file():
-        return set()
+        return []
     import tomllib
 
     with sources.open("rb") as fh:
         data = tomllib.load(fh)
-    return {_norm(item["src"]) for item in data.get("item", []) if "src" in item}
+    return [str(item["src"]).replace("\\", "/") for item in data.get("item", []) if "src" in item]
+
+
+def source_paths(root: pathlib.Path) -> set[str]:
+    """`src` paths already listed in sources.toml, normalized for dedup comparison."""
+    return {_norm(src) for src in _raw_srcs(root)}
 
 
 def _norm(path: str | pathlib.Path) -> str:
+    """Case-insensitive comparison key — for DEDUP only, never for real Paths.
+
+    (Lowercasing a filesystem path corrupts it on case-sensitive systems and
+    folds macOS temp dirs like /T/ to /t/; derive real Paths from originals.)
+    """
     return str(pathlib.Path(path)).replace("\\", "/").rstrip("/").lower()
 
 
@@ -119,12 +129,13 @@ def scan_roots(root: pathlib.Path) -> list[pathlib.Path]:
     more. The home directory itself is never a project scan root.
     """
     home = pathlib.Path.home()
+    marker = "/.claude/"
     roots: set[pathlib.Path] = set()
-    for src in source_paths(root):
-        marker = "/.claude/"
-        if marker not in src:
+    for src in _raw_srcs(root):  # original case — the derived Path must stay real
+        lower = src.lower()
+        if marker not in lower:
             continue
-        project = pathlib.Path(src.split(marker, 1)[0])
+        project = pathlib.Path(src[: lower.index(marker)])
         parent = project.parent
         if parent != home and parent != parent.parent:  # skip home and drive roots
             roots.add(parent)

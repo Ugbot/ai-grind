@@ -104,6 +104,10 @@ def query_osv(
 
     hits: list[tuple[str, str, str]] = []  # (name, version, advisory id)
     details: dict[str, dict] = {}
+    # The batch phase is the one that must fully succeed — a failure here means we
+    # cannot know which packages are affected, so it is fatal. Detail fetches below
+    # only enrich already-known hits, so a flaky one degrades that row to id-only
+    # rather than discarding the whole audit.
     try:
         for start in range(0, len(packages), BATCH_LIMIT):
             chunk = packages[start : start + BATCH_LIMIT]
@@ -112,29 +116,39 @@ def query_osv(
             ).encode("utf-8")
             data = fetch(f"{_API}/querybatch", payload, timeout)
             results = data.get("results") or [] if isinstance(data, dict) else []
-            for (name, version), res in zip(chunk, results):
+            for (name, version), res in zip(chunk, results, strict=False):
                 for v in (res or {}).get("vulns") or []:
                     vid = str(v.get("id", ""))
                     if vid:
                         hits.append((name, version, vid))
-        ids = list(dict.fromkeys(vid for _, _, vid in hits))
-        for vid in ids[:DETAIL_CAP]:
-            detail = fetch(f"{_API}/vulns/{vid}", None, timeout)
-            if isinstance(detail, dict):
-                details[vid] = detail
     except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
         return [], [f"OSV query failed: {exc}"]
+
+    ids = list(dict.fromkeys(vid for _, _, vid in hits))
+    for vid in ids[:DETAIL_CAP]:
+        try:
+            detail = fetch(f"{_API}/vulns/{vid}", None, timeout)
+        except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError, ValueError):
+            continue  # keep the hit as an id-only row; one bad detail call is not fatal
+        if isinstance(detail, dict):
+            details[vid] = detail
 
     vulns: list[Vulnerability] = []
     for name, version, vid in hits:
         detail = details.get(vid)
+        if detail:
+            title = str(detail.get("summary", ""))
+        elif vid in ids and ids.index(vid) >= DETAIL_CAP:
+            title = "details not fetched (capped)"
+        else:
+            title = "details unavailable"
         vulns.append(
             Vulnerability(
                 name=name,
                 severity=bucket_severity(detail) if detail else "unknown",
                 version=version,
                 vulnerable_range=vid,
-                title=str(detail.get("summary", "")) if detail else "details not fetched (capped)",
+                title=title,
                 url=f"https://osv.dev/vulnerability/{vid}",
                 fix_available=_fix_available(detail) if detail else False,
             )

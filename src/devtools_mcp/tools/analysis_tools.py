@@ -89,7 +89,10 @@ async def devtools_analyze(
 
     df = apply_filters(df, spec)
 
-    if group_by and group_by in df.columns:
+    if group_by:
+        if group_by not in df.columns:
+            cols = ", ".join(df.columns)
+            return f"Cannot group by {group_by!r} — not a column of this run. Available columns: {cols}"
         numeric_cols = [c for c in df.columns if c != group_by and df[c].dtype in (pl.Int64, pl.Float64, pl.UInt64)]
         aggs = [pl.len().alias("count")]
         for col in numeric_cols[:5]:

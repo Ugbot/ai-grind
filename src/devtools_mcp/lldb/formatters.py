@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from devtools_mcp.lldb.models import LldbSnapshot
 
+_RAW_MAX_LINES = 60  # bounded preview of memory/expression/disassemble output
+
 
 def format_snapshot_summary(snapshot: LldbSnapshot) -> str:
     """Format a concise summary of an LLDB snapshot."""
@@ -37,6 +39,17 @@ def format_snapshot_summary(snapshot: LldbSnapshot) -> str:
 
     if snapshot.registers:
         parts.append(f"**Registers:** {len(snapshot.registers)}")
+
+    # memory / expression / disassemble carry their result only in raw_output;
+    # render it (bounded) so those inspections aren't silently empty.
+    structured = snapshot.threads or snapshot.variables or snapshot.breakpoints or snapshot.registers
+    raw = (snapshot.raw_output or "").strip()
+    if raw and not structured:
+        lines = raw.splitlines()
+        shown = "\n".join(lines[:_RAW_MAX_LINES])
+        parts.append(f"```\n{shown}\n```")
+        if len(lines) > _RAW_MAX_LINES:
+            parts.append(f"_… {len(lines) - _RAW_MAX_LINES} more lines — see `devtools_raw`._")
 
     parts.append("")
     parts.append(f'Query with `devtools_analyze(run_id="{snapshot.run_id}")` or `devtools_search()`')

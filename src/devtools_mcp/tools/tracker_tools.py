@@ -9,6 +9,8 @@ paged via tracker_query.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
+from typing import Any
 
 import anyio
 from mcp.server.fastmcp import Context
@@ -32,6 +34,26 @@ def _tracker(ctx: Context) -> TrackerDB:
     db = get_app_ctx(ctx).get_tracker()
     assert db is not None and db.conn is not None, "tracker db unavailable"
     return db
+
+
+async def _offload_tracker(ctx: Context, fn: Callable[[TrackerDB], Any]) -> Any:
+    """Run blocking tracker work (network + SQLite) off the event loop.
+
+    SQLite connections are thread-affine, so the event loop's TrackerDB cannot be
+    handed to a worker thread; open a fresh connection to the same DB inside the
+    thread instead. WAL makes the concurrent open safe while the main connection
+    sits idle during the await.
+    """
+    path = _tracker(ctx).path
+
+    def work() -> Any:
+        db = TrackerDB(path)
+        try:
+            return fn(db)
+        finally:
+            db.close()
+
+    return await anyio.to_thread.run_sync(work)
 
 
 def _task_line(task) -> str:
@@ -538,21 +560,21 @@ async def tracker_issue(
     """
     from devtools_mcp.tracker import issues as issues_mod
 
-    db = _tracker(ctx)
     try:
+        # GitHub calls are blocking HTTP + SQLite writes — run off the event loop.
         if action == "create":
             if not repo:
                 return "create needs repo ('owner/name')"
-            issue = issues_mod.create_issue_for_task(db, key, provider, repo)
+            issue = await _offload_tracker(ctx, lambda db: issues_mod.create_issue_for_task(db, key, provider, repo))
             return f"Created {provider} issue #{issue.ref_id} for `{key.upper()}`: {issue.url}"
         if action == "sync":
-            issue, drift = issues_mod.sync_issue(db, key, provider)
+            issue, drift = await _offload_tracker(ctx, lambda db: issues_mod.sync_issue(db, key, provider))
             result = f"`{key.upper()}` ↔ {provider} #{issue.ref_id} ({issue.state}) {issue.url}"
             if drift:
                 result += "\n\n**Drift:**\n- " + "\n- ".join(drift)
             return result
         if action == "close":
-            issue = issues_mod.close_external_issue(db, key, provider)
+            issue = await _offload_tracker(ctx, lambda db: issues_mod.close_external_issue(db, key, provider))
             return f"Closed {provider} issue #{issue.ref_id} for `{key.upper()}`"
         return f"Unknown action {action!r}. One of: create, sync, close"
     except TrackerError as exc:
@@ -605,7 +627,13 @@ async def tracker_sync(
         if action == "sync":
             if not url:
                 return "sync needs url (a peer's dashboard, e.g. http://host:8765)"
-            counters = sync_mod.sync_once(db, url)
+            from devtools_mcp.net_guard import SsrfError, check_sync_url
+
+            try:
+                check_sync_url(url)
+            except SsrfError as exc:
+                return f"Refused to sync: {exc}"
+            counters = await _offload_tracker(ctx, lambda db: sync_mod.sync_once(db, url))
             return (
                 f"Synced with `{url}` (site `{counters['peer_site'][:12]}…`): "
                 f"pulled {counters['pulled_new']} new ops ({counters['pulled_applied']} applied, "
