@@ -2,12 +2,25 @@
 
 from __future__ import annotations
 
-from devtools_mcp.build.analysis import available_tasks_df, deps_df
+from devtools_mcp.build.analysis import available_tasks_df, deps_df, modules_df
 from devtools_mcp.build.analysis import tests_df as build_tests_df
 from devtools_mcp.build.models import BuildResult
 from devtools_mcp.build.parsers import parse_junit_text
-from devtools_mcp.gradle.parsers import parse_gradle_build, parse_gradle_deps, parse_gradle_tasks
-from devtools_mcp.maven.parsers import parse_maven_build, parse_maven_resolve, parse_maven_tree
+from devtools_mcp.gradle.parsers import (
+    parse_gradle_build,
+    parse_gradle_deps,
+    parse_gradle_insight,
+    parse_gradle_outdated,
+    parse_gradle_projects,
+    parse_gradle_tasks,
+)
+from devtools_mcp.maven.parsers import (
+    parse_maven_build,
+    parse_maven_outdated,
+    parse_maven_projects,
+    parse_maven_resolve,
+    parse_maven_tree,
+)
 
 
 class TestMavenTree:
@@ -192,3 +205,148 @@ class TestJUnit:
 
     def test_bad_xml(self):
         assert parse_junit_text(b"not xml") == []
+
+
+class TestGradleOutdated:
+    REPORT = """\
+{
+  "current": {"dependencies": [{"group": "org.slf4j", "name": "slf4j-api", "version": "2.0.13"}], "count": 1},
+  "outdated": {
+    "dependencies": [
+      {"group": "com.google.guava", "name": "guava", "version": "19.0",
+       "available": {"release": "33.4.8-jre", "milestone": null, "integration": null}},
+      {"group": "junit", "name": "junit", "version": "4.11",
+       "available": {"release": null, "milestone": "4.13.2", "integration": null}}
+    ],
+    "count": 2
+  },
+  "unresolved": {"dependencies": [], "count": 0}
+}
+"""
+
+    def test_outdated_mapping(self):
+        deps = parse_gradle_outdated(self.REPORT)
+        by = {d.artifact: d for d in deps}
+        assert set(by) == {"guava", "junit"}  # `current` bucket excluded
+        assert by["guava"].version == "19.0"
+        assert by["guava"].resolved == "33.4.8-jre"
+        assert by["guava"].conflict and by["guava"].depth == 1
+        assert by["junit"].resolved == "4.13.2"  # falls back to milestone
+
+    def test_outdated_df(self):
+        df = deps_df(BuildResult(run_id="r", tool="outdated", binary="x", dependencies=parse_gradle_outdated(self.REPORT)))
+        assert "function" in df.columns
+        assert df.filter(df["conflict"]).height == 2
+
+    def test_bad_json(self):
+        assert parse_gradle_outdated("not json") == []
+        assert parse_gradle_outdated("[]") == []
+
+
+class TestGradleInsight:
+    SAMPLE = """\
+> Task :dependencyInsight
+com.google.guava:guava:31.0-jre (selected by rule)
+   variant "compileClasspath" [
+      org.gradle.category = library
+   ]
+
+com.google.guava:guava:30.0-jre -> 31.0-jre
+\\--- compileClasspath
+
+com.google.guava:guava:19.0 -> 31.0-jre
++--- project :app
+\\--- compileClasspath
+
+A web-based, searchable dependency report is available by adding the --scan option.
+"""
+
+    def test_selected_header(self):
+        deps = parse_gradle_insight(self.SAMPLE)
+        selected = deps[0]
+        assert selected.artifact == "guava" and selected.depth == 0
+        assert selected.scope == "selected by rule"
+        assert not selected.conflict
+
+    def test_conflict_headers(self):
+        deps = parse_gradle_insight(self.SAMPLE)
+        arrows = [d for d in deps if d.conflict]
+        assert {d.requested for d in arrows} == {"30.0-jre", "19.0"}
+        assert all(d.resolved == "31.0-jre" for d in arrows)
+
+    def test_dependent_chains(self):
+        deps = parse_gradle_insight(self.SAMPLE)
+        chains = [d for d in deps if d.depth >= 1 or d.artifact == "compileClasspath" or "project" in d.artifact]
+        assert any(d.artifact == "compileClasspath" for d in chains)
+        assert any(d.artifact == "project :app" for d in chains)
+
+
+class TestGradleProjects:
+    SAMPLE = """\
+> Task :projects
+
+------------------------------------------------------------
+Root project 'demo'
+------------------------------------------------------------
+
+Root project 'demo'
++--- Project ':app'
+\\--- Project ':lib' - shared library code
+
+To see a list of the tasks of a project, run gradle <project-path>:tasks
+"""
+
+    def test_modules(self):
+        modules = parse_gradle_projects(self.SAMPLE)
+        names = [m.name for m in modules]
+        assert names.count("demo") == 1  # banner + tree deduped
+        assert ":app" in names and ":lib" in names
+
+    def test_modules_df(self):
+        result = BuildResult(run_id="r", tool="projects", binary="x", modules=parse_gradle_projects(self.SAMPLE))
+        df = modules_df(result)
+        assert "function" in df.columns and df.height == len(result.modules)
+
+
+class TestMavenOutdated:
+    SAMPLE = """\
+[INFO] --- versions:2.18.0:display-dependency-updates (default-cli) @ demo ---
+[INFO] The following dependencies in Dependencies have newer versions:
+[INFO]   com.google.guava:guava ......................... 19.0 -> 33.4.8-jre
+[INFO]   junit:junit ......................................... 4.11 -> 4.13.2
+[INFO]
+[INFO] BUILD SUCCESS
+"""
+
+    def test_outdated_mapping(self):
+        deps = parse_maven_outdated(self.SAMPLE)
+        by = {d.artifact: d for d in deps}
+        assert by["guava"].version == "19.0"
+        assert by["guava"].resolved == "33.4.8-jre"
+        assert by["guava"].conflict and by["guava"].depth == 1
+        assert by["junit"].group == "junit"
+
+    def test_dedupe(self):
+        deps = parse_maven_outdated(self.SAMPLE + self.SAMPLE)  # plugin repeats per module
+        assert len(deps) == 2
+
+
+class TestMavenProjects:
+    SAMPLE = """\
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] demo-parent                                                        [pom]
+[INFO] demo-core                                                          [jar]
+[INFO] demo-web                                                           [war]
+[INFO]
+[INFO] ----------------------< com.example:demo-parent >----------------------
+"""
+
+    def test_reactor_order(self):
+        modules = parse_maven_projects(self.SAMPLE)
+        assert [m.name for m in modules] == ["demo-parent", "demo-core", "demo-web"]
+
+    def test_no_reactor(self):
+        assert parse_maven_projects("[INFO] BUILD SUCCESS\n") == []

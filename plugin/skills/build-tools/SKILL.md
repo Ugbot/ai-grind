@@ -25,10 +25,29 @@ backend implementation differs. `binary` = the **project directory** (with the
 | `sync` | resolve / install / refresh / fetch | `dependency:resolve` | `--refresh-dependencies` | `install` | `fetch` |
 | `build` | compile / package | `package` | `build` | `run build` | `build` |
 | `test` | run tests (→ JUnit/libtest) | `test` | `test` | `test` | `test` |
-| `audit` | security advisories | — | — | `audit --json` | `audit` |
-| `outdated` | newer versions available | — | — | `outdated` | — |
+| `audit` | security advisories | OSV.dev over dep tree¹ | OSV.dev over dep tree¹ | `audit --json` | `audit` |
+| `outdated` | newer versions available | `versions:…updates`² | `dependencyUpdates`³ | `outdated` | `outdated`⁴ |
 | `tasks` | runnable goals/tasks/scripts | — | `tasks --all` | package.json scripts | — |
-| `check` | fast type-check | — | — | — | `check` |
+| `check` | verify without full package | `verify` | `check` | — | `check` |
+
+**JVM extras** (maven + gradle only):
+
+| tool | meaning | maven | gradle |
+|---|---|---|---|
+| `insight` | why is X here / who wins the version — needs `args=["<artifact>"]` | `dependency:tree -Dincludes=X` | `dependencyInsight --dependency X` — multi-module: `args=["X", ":module"]` |
+| `projects` | module / reactor listing → modules frame | reactor build order | `projects` |
+
+Gradle `deps`/`sync`/`audit` run a devtools-registered all-projects report task
+(via `--init-script`), so a multi-module root yields the **full tree of every
+module** — plain `gradle dependencies` at the root would be empty.
+
+¹ audit parses the dep tree, then batch-queries OSV.dev — no plugin injection,
+works under Gradle dependency verification; needs network at audit time.
+² fully-qualified `versions-maven-plugin` goal — runs against any pom untouched.
+³ ben-manes versions plugin injected via a devtools-shipped `--init-script` —
+project files untouched; first run downloads the plugin (needs network).
+⁴ needs `cargo install cargo-outdated`; yarn `outdated` is classic-only (berry
+lacks the command).
 
 ```
 devtools_run(suite="npm",   tool="deps", binary="C:/code/app")          # JS dep tree
@@ -57,11 +76,13 @@ conflicts (`requested → resolved`).
 
 - **"What's pulling in package X / why this version?"** → `deps`, filter to X;
   `requested` vs `resolved` shows who won (Maven `(omitted for conflict with …)`,
-  Gradle/npm `requested → resolved`).
+  Gradle/npm `requested → resolved`). On JVM projects, `insight` answers it
+  directly: `devtools_run(suite="gradle", tool="insight", args=["guava"], ...)`.
 - **"Re-sync / install dependencies"** → `sync`.
-- **"Any vulnerabilities?"** → `audit` (npm/pnpm/yarn/cargo) → severity-ranked
+- **"Any vulnerabilities?"** → `audit` (every backend) → severity-ranked
   frame; `devtools_analyze(run_id, kind_pattern="critical|high")`.
-- **"What can I run?"** → `tasks` (Gradle tasks / npm scripts).
+- **"What can I run?"** → `tasks` (Gradle tasks / npm scripts). Any Gradle task
+  or Maven goal runs via the passthrough: `tool="build", args=[":module:anyTask"]`.
 - **Build/test failures** → `build`/`test`; the summary carries the error lines /
   failing `class.method`, and the full log is on disk (`devtools_raw` or the
   [[devtools-visualizer]] terminal).
@@ -72,4 +93,8 @@ conflicts (`requested → resolved`).
   backends treat them as informational, not failures.
 - Multi-module / workspaces: pass `-pl :module` (Maven), `:module:task` (Gradle),
   or workspace flags via `extra_args`.
+- Per-tool detail + accumulated project quirks live in the **live skills**
+  `gradle-commands`, `maven-commands`, `cargo-commands`, `npm-commands`,
+  `pnpm-commands`, `yarn-commands` — keep their verb tables in sync when verbs
+  change here.
 - Overall workflow + the no-token-flood principle: [[devtools-mcp-usage]].

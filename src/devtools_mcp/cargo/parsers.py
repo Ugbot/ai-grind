@@ -61,6 +61,39 @@ def parse_cargo_build(text: str) -> tuple[bool, list[str]]:
     return success, failures
 
 
+def _outdated_cell(entry: dict, key: str) -> str:
+    """cargo-outdated writes "---" for a version it can't state; treat as empty."""
+    value = str(entry.get(key, ""))
+    return "" if value == "---" else value
+
+
+def parse_cargo_outdated(text: str) -> list[Dependency]:
+    """Parse `cargo outdated --format json` into npm-outdated-shaped Dependencies."""
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(data, dict):
+        return []
+    out: list[Dependency] = []
+    for entry in data.get("dependencies") or []:
+        if not isinstance(entry, dict):
+            continue
+        current, latest = _outdated_cell(entry, "project"), _outdated_cell(entry, "latest")
+        out.append(
+            Dependency(
+                artifact=str(entry.get("name", "")),
+                version=current,
+                requested=_outdated_cell(entry, "compat"),
+                resolved=latest,
+                scope=str(entry.get("kind", "") or ""),
+                depth=1,
+                conflict=bool(latest and latest != current),
+            )
+        )
+    return out
+
+
 def parse_cargo_audit(text: str) -> list[Vulnerability]:
     """Parse `cargo audit --json` (RustSec) into Vulnerabilities."""
     try:

@@ -10,7 +10,13 @@ import time
 
 from devtools_mcp.build.exec import run_capture, tail, write_raw
 from devtools_mcp.build.models import BuildResult
-from devtools_mcp.cargo.parsers import parse_cargo_audit, parse_cargo_build, parse_cargo_test, parse_cargo_tree
+from devtools_mcp.cargo.parsers import (
+    parse_cargo_audit,
+    parse_cargo_build,
+    parse_cargo_outdated,
+    parse_cargo_test,
+    parse_cargo_tree,
+)
 from devtools_mcp.models import create_run_base
 
 _ARGV = {
@@ -20,8 +26,9 @@ _ARGV = {
     "deps": lambda a, e: ["tree", *a, *e],
     "sync": lambda a, e: ["fetch", *e],
     "audit": lambda a, e: ["audit", "--json", *e],
+    "outdated": lambda a, e: ["outdated", "--format", "json", *e],
 }
-_INFORMATIONAL = {"deps", "audit"}
+_INFORMATIONAL = {"deps", "audit", "outdated"}
 
 
 def resolve_cargo() -> str | None:
@@ -59,7 +66,7 @@ async def run_cargo(
     if not cargo:
         return "cargo not found. Install Rust via rustup (rustup.rs).", None, ""
     if tool not in _ARGV:
-        return f"Unknown cargo tool: {tool} (build|check|test|deps|sync|audit)", None, ""
+        return f"Unknown cargo tool: {tool} (build|check|test|deps|sync|audit|outdated)", None, ""
 
     argv = _ARGV[tool](args or [], extra_args or [])
     start = time.monotonic()
@@ -75,6 +82,13 @@ async def run_cargo(
     elif tool in ("build", "check"):
         success, failures = parse_cargo_build(text)
         success = success and rc == 0
+    elif tool == "outdated":
+        deps = parse_cargo_outdated(text)
+        if "no such command" in text:
+            failures = ["cargo-outdated is not installed. Install it: cargo install cargo-outdated"]
+            success = False
+        else:
+            success = rc == 0 or bool(deps)
     else:
         success = tool in _INFORMATIONAL or rc == 0
 

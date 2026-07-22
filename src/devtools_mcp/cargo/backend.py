@@ -11,7 +11,7 @@ from devtools_mcp.cargo.runner import check_cargo, resolve_cargo, run_cargo
 from devtools_mcp.models import RunBase
 from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
 
-_TOOLS = ["build", "check", "test", "deps", "sync", "audit"]
+_TOOLS = ["build", "check", "test", "deps", "sync", "audit", "outdated"]
 
 
 async def detect() -> list[InstalledTool]:
@@ -49,6 +49,7 @@ _DF_BUILDERS = {
     "check": deps_df,
     "test": tests_df,
     "audit": vulns_df,
+    "outdated": deps_df,
     "_default": deps_df,
 }
 

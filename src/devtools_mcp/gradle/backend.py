@@ -4,12 +4,21 @@ from __future__ import annotations
 
 from typing import Any
 
-from devtools_mcp.build.analysis import available_tasks_df, deps_df, executed_tasks_df, tests_df
+from devtools_mcp.build.analysis import (
+    available_tasks_df,
+    deps_df,
+    executed_tasks_df,
+    modules_df,
+    tests_df,
+    vulns_df,
+)
 from devtools_mcp.build.formatters import format_build_summary
 from devtools_mcp.build.models import BuildResult
 from devtools_mcp.gradle.runner import check_gradle, run_gradle
 from devtools_mcp.models import RunBase
 from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
+
+_TOOLS = ["build", "test", "check", "deps", "sync", "tasks", "audit", "outdated", "insight", "projects"]
 
 
 async def detect() -> list[InstalledTool]:
@@ -17,10 +26,7 @@ async def detect() -> list[InstalledTool]:
     info = await check_gradle()
     version = info.get("version") or "wrapper"
     path = info.get("path") or "gradlew"
-    return [
-        InstalledTool(suite="gradle", name=t, path=path, version=version, available=True)
-        for t in ("build", "test", "deps", "sync", "tasks")
-    ]
+    return [InstalledTool(suite="gradle", name=t, path=path, version=version, available=True) for t in _TOOLS]
 
 
 async def run(
@@ -44,9 +50,14 @@ def format_summary(result: RunBase) -> str:
 _DF_BUILDERS = {
     "build": executed_tasks_df,
     "test": tests_df,
+    "check": executed_tasks_df,
     "tasks": available_tasks_df,
     "deps": deps_df,
     "sync": deps_df,
+    "audit": vulns_df,
+    "outdated": deps_df,
+    "insight": deps_df,
+    "projects": modules_df,
     "_default": deps_df,
 }
 
@@ -55,7 +66,7 @@ def _register() -> None:
     register_backend(
         BackendSpec(
             suite="gradle",
-            tools=["build", "test", "deps", "sync", "tasks"],
+            tools=_TOOLS,
             detect=detect,
             run=run,
             df_builders=_DF_BUILDERS,

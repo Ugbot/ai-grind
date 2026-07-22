@@ -12,9 +12,16 @@ from devtools_mcp.build.jsdeps import (
     parse_pnpm_list,
     parse_yarn_audit,
     parse_yarn_list,
+    parse_yarn_outdated,
 )
 from devtools_mcp.build.models import BuildResult
-from devtools_mcp.cargo.parsers import parse_cargo_audit, parse_cargo_build, parse_cargo_test, parse_cargo_tree
+from devtools_mcp.cargo.parsers import (
+    parse_cargo_audit,
+    parse_cargo_build,
+    parse_cargo_outdated,
+    parse_cargo_test,
+    parse_cargo_tree,
+)
 
 
 class TestNpmLs:
@@ -225,3 +232,62 @@ test result: FAILED. 1 passed; 1 failed; 1 ignored
         )
         v = parse_cargo_audit(data)
         assert v[0].name == "time" and v[0].fix_available
+
+
+class TestYarnOutdated:
+    NDJSON = "\n".join(
+        [
+            json.dumps({"type": "info", "data": "Color legend"}),
+            json.dumps(
+                {
+                    "type": "table",
+                    "data": {
+                        "head": ["Package", "Current", "Wanted", "Latest", "Package Type", "URL"],
+                        "body": [
+                            ["express", "4.16.0", "4.16.4", "4.18.2", "dependencies", "https://x"],
+                            ["lodash", "4.17.21", "4.17.21", "4.17.21", "dependencies", "https://y"],
+                        ],
+                    },
+                }
+            ),
+        ]
+    )
+
+    def test_table_rows(self):
+        deps = parse_yarn_outdated(self.NDJSON)
+        by = {d.artifact: d for d in deps}
+        assert by["express"].version == "4.16.0"
+        assert by["express"].requested == "4.16.4"
+        assert by["express"].resolved == "4.18.2"
+        assert by["express"].conflict
+        assert not by["lodash"].conflict  # current == latest
+
+    def test_garbage(self):
+        assert parse_yarn_outdated("not json at all") == []
+
+
+class TestCargoOutdated:
+    SAMPLE = json.dumps(
+        {
+            "crate_name": "demo",
+            "dependencies": [
+                {"name": "syn", "project": "1.0.109", "compat": "1.0.109", "latest": "2.0.100", "kind": "Normal"},
+                {"name": "removed-crate", "project": "0.1.0", "compat": "---", "latest": "---", "kind": "Normal"},
+            ],
+        }
+    )
+
+    def test_rows(self):
+        deps = parse_cargo_outdated(self.SAMPLE)
+        by = {d.artifact: d for d in deps}
+        assert by["syn"].version == "1.0.109" and by["syn"].resolved == "2.0.100"
+        assert by["syn"].conflict and by["syn"].scope == "Normal"
+
+    def test_dashes_are_empty(self):
+        by = {d.artifact: d for d in parse_cargo_outdated(self.SAMPLE)}
+        assert by["removed-crate"].resolved == ""
+        assert not by["removed-crate"].conflict
+
+    def test_outdated_df(self):
+        df = deps_df(BuildResult(run_id="r", tool="outdated", binary="x", dependencies=parse_cargo_outdated(self.SAMPLE)))
+        assert df.filter(df["conflict"]).height == 1

@@ -23,7 +23,6 @@
     "skills"
   ],
   "mcpServers": "./.claude-plugin/mcp.json",
-  "hooks": "./hooks/hooks.json",
   "skills": "./plugin/skills",
   "commands": "./plugin/commands",
   "agents": [

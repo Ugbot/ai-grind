@@ -143,7 +143,14 @@ def collect_skills(store: store_mod.SkillDocStore) -> list[Entry]:
     """Every indexable skill: static library (catalog + authored) + live skills.
 
     Deduplicated by name (authored wins over catalog, live is listed separately).
+    Names in the SkillControl disabled set are pruned — static or live — so
+    irrelevant skills (e.g. build tools for languages a machine never touches)
+    can be removed from the router without deleting them anywhere.
     """
+    from devtools_mcp.skilldocs.control import SkillControl
+
+    control = SkillControl(conn=store.conn)
+    disabled = control.disabled()
     root = find_skills_root()
     by_name: dict[str, Entry] = {}
     if root is not None:
@@ -162,7 +169,9 @@ def collect_skills(store: store_mod.SkillDocStore) -> list[Entry]:
         entry = _entry_from(content, "live")
         if entry is not None:
             by_name[name] = entry
-    entries = sorted(by_name.values(), key=lambda e: (e.category, e.name))
+    entries = sorted(
+        (e for e in by_name.values() if e.name not in disabled), key=lambda e: (e.category, e.name)
+    )
     assert len(entries) <= store_mod.SKILLS_MAX, "index size exceeded bound"
     return entries
 

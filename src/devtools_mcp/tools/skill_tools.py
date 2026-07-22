@@ -57,7 +57,10 @@ async def skill_live(
         mode    — content=low|high: set the active power mode (optional name for a
                   per-skill override); no content reports the current state. Flips
                   which variant of dynamic skills is materialized.
-        enable/disable — name: include/exclude a skill from materialization
+        enable/disable — name: include/exclude a skill from materialization AND
+            the router index. Works for static skills too — disable a skill
+            that's irrelevant on this machine (e.g. build tools for a language
+            you don't use) and the router stops advertising it; enable restores.
     Files land in ~/.claude/skills/<name>/SKILL.md (DEVTOOLS_MCP_LIVE_SKILLS_DIR
     overrides), so changes are live at the next skill load.
     """
@@ -121,11 +124,17 @@ async def skill_live(
         if action in ("enable", "disable"):
             if not name:
                 return f"{action} needs name"
+            from devtools_mcp.skilldocs import router
+
             control = SkillControl(conn=store.conn)
             control.set_disabled(name, action == "disable")
             path = store.materialize(name) if store.exists(name) else None
+            router.rebuild(store)  # prune from / restore to the router index immediately
             state = "disabled" if action == "disable" else "enabled"
-            return f"Skill **{name}** {state}" + (f" -> `{path}`" if path else "")
+            return (
+                f"Skill **{name}** {state} and the router index rebuilt"
+                + (f" -> `{path}`" if path else "")
+            )
         return (
             f"Unknown action {action!r}. One of: create, get, list, append, patch, "
             "sync, publish, delete, route, mode, enable, disable"

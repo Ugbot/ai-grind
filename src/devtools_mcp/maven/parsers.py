@@ -1,4 +1,5 @@
-"""Parsers for Maven console output: dependency:tree, reactor summary, resolve."""
+"""Parsers for Maven console output: dependency:tree, reactor summary, resolve,
+versions:display-dependency-updates, and the reactor build order."""
 
 from __future__ import annotations
 
@@ -7,6 +8,10 @@ import re
 from devtools_mcp.build.models import BuildModule, Dependency
 
 _INFO = re.compile(r"^\[INFO\] ?")
+_OUTDATED = re.compile(
+    r"^\s*(?P<group>[\w.\-]+):(?P<artifact>[\w.\-]+)\s+\.{2,}\s+(?P<current>\S+)\s+->\s+(?P<latest>\S+)\s*$"
+)
+_ORDER_ENTRY = re.compile(r"^(?P<name>\S.*?)\s+\[(?P<packaging>[\w\-]+)\]\s*$")
 # tree prefix (groups of 3 chars: "+- ", "\- ", "|  ", "   ") then a coordinate
 _TREE = re.compile(
     r"^(?P<prefix>(?:[ |]{3}|[+\\]- )*)" r"(?P<coord>[\w.\-]+(?::[\w.\-+]+){3,})" r"(?:\s+\((?P<note>[^)]*)\))?$"
@@ -79,6 +84,61 @@ def parse_maven_resolve(text: str) -> list[Dependency]:
         group, artifact, version, scope = _split_coord(m.group("coord"))
         deps.append(Dependency(group=group, artifact=artifact, version=version, resolved=version, scope=scope, depth=1))
     return deps
+
+
+def parse_maven_outdated(text: str) -> list[Dependency]:
+    """Parse `versions:display-dependency-updates` console lines.
+
+    `group:artifact ..... current -> latest` rows, mirroring the npm-outdated
+    shape: version=current, resolved=latest, depth=1, conflict=True.
+    """
+    assert isinstance(text, str), "text must be str"
+    deps: list[Dependency] = []
+    seen: set[tuple[str, str, str]] = set()
+    for raw in text.splitlines()[:MAX_LINES]:
+        m = _OUTDATED.match(_INFO.sub("", raw))
+        if not m:
+            continue
+        key = (m.group("group"), m.group("artifact"), m.group("current"))
+        if key in seen:
+            continue
+        seen.add(key)
+        deps.append(
+            Dependency(
+                group=m.group("group"),
+                artifact=m.group("artifact"),
+                version=m.group("current"),
+                requested=m.group("current"),
+                resolved=m.group("latest"),
+                depth=1,
+                conflict=m.group("latest") != m.group("current"),
+            )
+        )
+    return deps
+
+
+def parse_maven_projects(text: str) -> list[BuildModule]:
+    """Parse the `Reactor Build Order:` block into BuildModules (multi-module)."""
+    assert isinstance(text, str), "text must be str"
+    modules: list[BuildModule] = []
+    in_order = False
+    for raw in text.splitlines()[:MAX_LINES]:
+        line = _INFO.sub("", raw).rstrip()
+        if line.startswith("Reactor Build Order:"):
+            in_order = True
+            continue
+        if not in_order:
+            continue
+        if not line:
+            if modules:  # blank line after entries ends the block; before them, skip
+                break
+            continue
+        m = _ORDER_ENTRY.match(line)
+        if m:
+            modules.append(BuildModule(name=m.group("name")))
+        elif modules:
+            break
+    return modules
 
 
 def parse_maven_build(text: str) -> tuple[bool, list[BuildModule], list[str]]:

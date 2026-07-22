@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from devtools_mcp.build.analysis import deps_df, modules_df, tests_df
+from devtools_mcp.build.analysis import deps_df, modules_df, tests_df, vulns_df
 from devtools_mcp.build.formatters import format_build_summary
 from devtools_mcp.build.models import BuildResult
 from devtools_mcp.maven.runner import check_maven, run_maven
 from devtools_mcp.models import RunBase
 from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
+
+_TOOLS = ["build", "test", "check", "deps", "sync", "audit", "outdated", "insight", "projects"]
 
 
 async def detect() -> list[InstalledTool]:
@@ -19,10 +21,7 @@ async def detect() -> list[InstalledTool]:
     path = info.get("path") or "mvnw"
     # Optimistic: a project may carry mvnw even when mvn isn't on PATH; the runner
     # resolves and errors precisely if neither is found.
-    return [
-        InstalledTool(suite="maven", name=t, path=path, version=version, available=True)
-        for t in ("build", "test", "deps", "sync")
-    ]
+    return [InstalledTool(suite="maven", name=t, path=path, version=version, available=True) for t in _TOOLS]
 
 
 async def run(
@@ -46,8 +45,13 @@ def format_summary(result: RunBase) -> str:
 _DF_BUILDERS = {
     "build": modules_df,
     "test": tests_df,
+    "check": modules_df,
     "deps": deps_df,
     "sync": deps_df,
+    "audit": vulns_df,
+    "outdated": deps_df,
+    "insight": deps_df,
+    "projects": modules_df,
     "_default": deps_df,
 }
 
@@ -56,7 +60,7 @@ def _register() -> None:
     register_backend(
         BackendSpec(
             suite="maven",
-            tools=["build", "test", "deps", "sync"],
+            tools=_TOOLS,
             detect=detect,
             run=run,
             df_builders=_DF_BUILDERS,

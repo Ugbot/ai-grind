@@ -11,7 +11,7 @@ from devtools_mcp.models import RunBase
 from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
 from devtools_mcp.yarn.runner import check_yarn, resolve_yarn, run_yarn
 
-_TOOLS = ["build", "test", "deps", "sync", "audit", "tasks"]
+_TOOLS = ["build", "test", "deps", "sync", "audit", "outdated", "tasks"]
 
 
 async def detect() -> list[InstalledTool]:
@@ -48,6 +48,7 @@ _DF_BUILDERS = {
     "build": deps_df,
     "test": deps_df,
     "audit": vulns_df,
+    "outdated": deps_df,
     "tasks": available_tasks_df,
     "_default": deps_df,
 }

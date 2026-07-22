@@ -34,7 +34,7 @@ note = "LLDB + ASAN debugging in a Linux container (global-only)"
 [[item]]
 src = "C:/code/llm-station/.claude/skills/llm-station-debug"
 type = "skill"
-category = "debug"
+category = "_disabled"
 note = "Valgrind/perf via LLM Station devtools"
 
 [[item]]
@@ -52,19 +52,19 @@ note = "PerfView ETW CPU/thread traces on Windows"
 [[item]]
 src = "C:/code/llm-station/.claude/skills/llm-station-analyze"
 type = "skill"
-category = "code-intel"
+category = "_disabled"
 note = "Call graph / predicate search / task decomposition"
 
 [[item]]
 src = "C:/code/llm-station/.claude/skills/llm-station-search"
 type = "skill"
-category = "code-intel"
+category = "_disabled"
 note = "Indexed codebase search via the daemon"
 
 [[item]]
 src = "C:/code/llm-station/.claude/skills/llm-station-patterns"
 type = "skill"
-category = "code-intel"
+category = "_disabled"
 note = "GoF + crystallized action templates"
 
 [[item]]
@@ -176,52 +176,52 @@ category = "build"
 [[item]]
 src = "C:/code/llm-station/.claude/commands/build.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/callers.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/grep.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/refs.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/rename.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/search.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/start.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/status.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/stop.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/task.md"
 type = "command"
-category = "llm-station"
+category = "_disabled"
 
 # ned-* command variants removed 2026-06-12: upstream llm-station renamed
 # them to the plain commands (build/callers/grep/...) already listed above.

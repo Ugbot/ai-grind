@@ -9,7 +9,7 @@ import shutil
 import time
 
 from devtools_mcp.build.exec import write_raw
-from devtools_mcp.build.jsdeps import parse_package_scripts, parse_yarn_audit, parse_yarn_list
+from devtools_mcp.build.jsdeps import parse_package_scripts, parse_yarn_audit, parse_yarn_list, parse_yarn_outdated
 from devtools_mcp.build.jsrun import assemble, capture
 from devtools_mcp.build.models import BuildResult
 
@@ -19,6 +19,7 @@ _ARGV = {
     "deps": lambda a, e: ["list", "--json", *e],
     "sync": lambda a, e: ["install", *e],
     "audit": lambda a, e: ["audit", "--json", *e],
+    "outdated": lambda a, e: ["outdated", "--json", *e],  # classic only; berry has no outdated
 }
 
 
@@ -61,15 +62,25 @@ async def run_yarn(
         scripts = parse_package_scripts(project)
         return None, assemble("yarn", "tasks", project, "yarn run", 0.0, 0, "", scripts=scripts), ""
     if tool not in _ARGV:
-        return f"Unknown yarn tool: {tool} (build|test|deps|sync|audit|tasks)", None, ""
+        return f"Unknown yarn tool: {tool} (build|test|deps|sync|audit|outdated|tasks)", None, ""
 
     argv = _ARGV[tool](args or [], extra_args or [])
     start = time.monotonic()
     rc, ptext, raw = await capture([yarn, *argv], project, timeout, tool)
     raw_path = write_raw("devtools-yarn-", raw)
-    deps = parse_yarn_list(ptext) if tool == "deps" else []
+    deps = parse_yarn_list(ptext) if tool == "deps" else (parse_yarn_outdated(ptext) if tool == "outdated" else [])
     vulns = parse_yarn_audit(ptext) if tool == "audit" else []
+    success = (rc == 0 or bool(deps) or bool(vulns)) if tool in ("audit", "outdated") else None
     result = assemble(
-        "yarn", tool, project, "yarn " + " ".join(argv), time.monotonic() - start, rc, raw, deps=deps, vulns=vulns
+        "yarn",
+        tool,
+        project,
+        "yarn " + " ".join(argv),
+        time.monotonic() - start,
+        rc,
+        raw,
+        deps=deps,
+        vulns=vulns,
+        success=success,
     )
     return None, result, raw_path
