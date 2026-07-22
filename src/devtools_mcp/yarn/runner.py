@@ -1,45 +1,38 @@
-"""yarn (classic 1.x) execution: dependency tree, install, audit, scripts."""
+"""yarn (classic 1.x) execution: dependency tree, install, audit, outdated, scripts.
+
+Thin config over the shared JS-package-manager runner (build/jsrun).
+"""
 
 from __future__ import annotations
 
-import asyncio
-import os
-import pathlib
-import shutil
-import time
-
-from devtools_mcp.build.exec import write_raw
-from devtools_mcp.build.jsdeps import parse_package_scripts, parse_yarn_audit, parse_yarn_list, parse_yarn_outdated
-from devtools_mcp.build.jsrun import assemble, capture
+from devtools_mcp.build.jsdeps import parse_yarn_audit, parse_yarn_list, parse_yarn_outdated
+from devtools_mcp.build.jsrun import JsPackageManager, check_pm, run_pm
 from devtools_mcp.build.models import BuildResult
 
-_ARGV = {
-    "build": lambda a, e: ["run", *(a or ["build"]), *e],
-    "test": lambda a, e: ["test", *e],
-    "deps": lambda a, e: ["list", "--json", *e],
-    "sync": lambda a, e: ["install", *e],
-    "audit": lambda a, e: ["audit", "--json", *e],
-    "outdated": lambda a, e: ["outdated", "--json", *e],  # classic only; berry has no outdated
-}
+_YARN = JsPackageManager(
+    suite="yarn",
+    version_prefix="yarn ",
+    argv={
+        "build": lambda a, e: ["run", *(a or ["build"]), *e],
+        "test": lambda a, e: ["test", *e],
+        "deps": lambda a, e: ["list", "--json", *e],
+        "sync": lambda a, e: ["install", *e],
+        "audit": lambda a, e: ["audit", "--json", *e],
+        "outdated": lambda a, e: ["outdated", "--json", *e],  # classic only; berry has no outdated
+    },
+    not_found="yarn not found. Install it: `npm i -g yarn`.",
+    dep_parser=parse_yarn_list,
+    outdated_parser=parse_yarn_outdated,
+    audit_parser=parse_yarn_audit,
+)
 
 
 def resolve_yarn() -> str | None:
-    return shutil.which("yarn")
+    return _YARN.resolve()
 
 
 async def check_yarn() -> dict[str, str]:
-    yarn = resolve_yarn()
-    version = ""
-    if yarn:
-        try:
-            proc = await asyncio.create_subprocess_exec(
-                yarn, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
-            )
-            out, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
-            version = "yarn " + out.decode("utf-8", "replace").strip()
-        except (TimeoutError, OSError):
-            version = ""
-    return {"path": yarn or "", "version": version}
+    return await check_pm(_YARN)
 
 
 async def run_yarn(
@@ -51,36 +44,4 @@ async def run_yarn(
     **kwargs: object,
 ) -> tuple[str | None, BuildResult | None, str]:
     """Run a yarn tool in a project directory and normalize the output."""
-    project = binary or os.getcwd()
-    if not pathlib.Path(project).is_dir():
-        return f"project dir not found: {project}", None, ""
-    yarn = resolve_yarn()
-    if not yarn:
-        return "yarn not found. Install it: `npm i -g yarn`.", None, ""
-
-    if tool == "tasks":
-        scripts = parse_package_scripts(project)
-        return None, assemble("yarn", "tasks", project, "yarn run", 0.0, 0, "", scripts=scripts), ""
-    if tool not in _ARGV:
-        return f"Unknown yarn tool: {tool} (build|test|deps|sync|audit|outdated|tasks)", None, ""
-
-    argv = _ARGV[tool](args or [], extra_args or [])
-    start = time.monotonic()
-    rc, ptext, raw = await capture([yarn, *argv], project, timeout, tool)
-    raw_path = write_raw("devtools-yarn-", raw)
-    deps = parse_yarn_list(ptext) if tool == "deps" else (parse_yarn_outdated(ptext) if tool == "outdated" else [])
-    vulns = parse_yarn_audit(ptext) if tool == "audit" else []
-    success = (rc == 0 or bool(deps) or bool(vulns)) if tool in ("audit", "outdated") else None
-    result = assemble(
-        "yarn",
-        tool,
-        project,
-        "yarn " + " ".join(argv),
-        time.monotonic() - start,
-        rc,
-        raw,
-        deps=deps,
-        vulns=vulns,
-        success=success,
-    )
-    return None, result, raw_path
+    return await run_pm(_YARN, tool=tool, binary=binary, args=args, extra_args=extra_args, timeout=timeout, **kwargs)

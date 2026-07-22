@@ -9,7 +9,6 @@ REST, which is this module's job.
 
 from __future__ import annotations
 
-import functools
 from pathlib import Path
 
 import anyio
@@ -37,6 +36,26 @@ def _tracker(ctx: Context) -> TrackerDB:
     db = get_app_ctx(ctx).get_tracker()
     assert db is not None and db.conn is not None, "tracker db unavailable"
     return db
+
+
+async def _offload_with_db(ctx: Context, fn) -> object:
+    """Run fn(db) in a worker thread with a fresh TrackerDB.
+
+    The event loop's connection is thread-affine (sqlite check_same_thread), so
+    it cannot be handed to a worker thread; open a fresh connection to the same
+    DB inside the thread. WAL keeps the concurrent open safe while the main
+    connection is idle during the await.
+    """
+    path = _tracker(ctx).path
+
+    def work() -> object:
+        db = TrackerDB(path)
+        try:
+            return fn(db)
+        finally:
+            db.close()
+
+    return await anyio.to_thread.run_sync(work)
 
 
 def _load_config(repo_root: str | None) -> StationConfig:
@@ -184,7 +203,7 @@ async def station_link(
             # org may be empty in config: link_project adopts the key's org
             # from /auth/me before issuing any org-scoped call.
             with _client_for(cfg, cfg.station.org or "unresolved") as client:
-                summary = await anyio.to_thread.run_sync(project_link.link_project, db, cfg, client)
+                summary = await _offload_with_db(ctx, lambda tdb: project_link.link_project(tdb, cfg, client))
             return (
                 f"Linked **{summary['project_key']}** -> {summary['remote_project']} "
                 f"as {summary['member']} in org {summary['org_id']} (repo {summary['repo_id']}).\n"
@@ -231,14 +250,12 @@ async def station_sync(
     they open the dashboard's /station/auth page in a browser and sign in
     (station_link action='auth' reprints the instructions).
     """
-    db = _tracker(ctx)
     try:
         cfg = _load_config(repo_root)
         domains = None if domain == "all" else (domain,)
         if domains is not None and domain not in DOMAINS:
             return f"Unknown domain {domain!r}. One of: {', '.join(DOMAINS)} (or 'all')."
-        run = functools.partial(engine.run_sync, db, cfg, domains, dry_run)
-        reports = await anyio.to_thread.run_sync(run)
+        reports = await _offload_with_db(ctx, lambda tdb: engine.run_sync(tdb, cfg, domains, dry_run))
     except TrackerError as exc:
         return f"station_sync failed: {exc}"
     header = "**Station sync (dry run — nothing written)**" if dry_run else "**Station sync**"

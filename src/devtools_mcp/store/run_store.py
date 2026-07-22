@@ -153,6 +153,13 @@ class RunStore:
                 out.append(run_id)
         return out
 
+    def _run_mtime(self, run_id: str) -> float:
+        """Directory mtime as an age key; missing/racing dirs sort newest (kept)."""
+        try:
+            return self._run_dir(run_id).stat().st_mtime
+        except OSError:
+            return float("inf")
+
     def _prune_if_needed(self) -> None:
         max_runs = int(os.environ.get("DEVTOOLS_MCP_MAX_RUNS", "0") or "0")
         if max_runs <= 0:
@@ -160,5 +167,7 @@ class RunStore:
         ids = self.list_run_ids()
         if len(ids) <= max_runs:
             return
-        for run_id in ids[: len(ids) - max_runs]:
+        # Evict oldest first — run_ids are UUIDs, so lexicographic order is not age order.
+        by_age = sorted(ids, key=self._run_mtime)
+        for run_id in by_age[: len(ids) - max_runs]:
             self.delete_run(run_id)

@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import itertools
 import os
 import pathlib
 import shutil
 import time
-
-import itertools
 
 from devtools_mcp.build.exec import run_capture, tail, write_raw
 from devtools_mcp.build.models import BuildResult, Dependency
@@ -32,8 +31,14 @@ _MAX_REPORTS = 100  # bound: dependencyUpdates report files read per run
 
 
 def resolve_gradle(project_dir: str) -> str | None:
-    """gradlew wrapper in the project, else gradle on PATH."""
-    for w in ("gradlew.bat", "gradlew"):
+    """gradlew wrapper in the project, else gradle on PATH.
+
+    Standard wrapper projects commit both gradlew and gradlew.bat, so the POSIX
+    script must come first on non-Windows — otherwise the non-executable .bat is
+    picked and the run fails.
+    """
+    wrappers = ("gradlew.bat", "gradlew") if os.name == "nt" else ("gradlew", "gradlew.bat")
+    for w in wrappers:
         p = pathlib.Path(project_dir) / w
         if p.exists():
             return str(p)
@@ -91,13 +96,18 @@ def _argv(tool: str, args: list[str] | None, extra: list[str] | None) -> list[st
     return []
 
 
-def _read_outdated_reports(project: str) -> list[Dependency]:
-    """Merge every dependencyUpdates report.json under the project (multi-module)."""
+def _read_outdated_reports(project: str, newer_than: float | None = None) -> list[Dependency]:
+    """Merge every dependencyUpdates report.json under the project (multi-module).
+
+    `newer_than` skips reports left by a previous run (see parse_junit_dir).
+    """
     deps: list[Dependency] = []
     seen: set[tuple[str, str, str]] = set()
     reports = pathlib.Path(project).glob("**/build/dependencyUpdates/report.json")
     for report in itertools.islice(reports, _MAX_REPORTS):
         try:
+            if newer_than is not None and report.stat().st_mtime < newer_than:
+                continue
             rows = parse_gradle_outdated(report.read_text(encoding="utf-8", errors="replace"))
         except OSError:
             continue
@@ -128,9 +138,11 @@ async def run_gradle(
         return 'gradle insight needs args=["<artifact>"] (e.g. args=["guava"]).', None, ""
     argv = _argv(tool, args, extra_args)
     if not argv:
-        return f"Unknown gradle tool: {tool} (build|test|check|deps|sync|tasks|audit|outdated|insight|projects)", None, ""
+        verbs = "build|test|check|deps|sync|tasks|audit|outdated|insight|projects"
+        return f"Unknown gradle tool: {tool} ({verbs})", None, ""
 
     start = time.monotonic()
+    launched_at = time.time() - 2  # wall-clock; report files older than this are from a prior run
     rc, text = await run_capture([gradle, *argv], cwd=project, timeout=timeout)
     raw_path = write_raw("devtools-gradle-", text)
 
@@ -145,7 +157,7 @@ async def run_gradle(
     elif tool == "insight":
         deps = parse_gradle_insight(text)
     elif tool == "outdated":
-        deps = _read_outdated_reports(project)
+        deps = _read_outdated_reports(project, newer_than=launched_at)
         success = rc == 0 or bool(deps)
     elif tool == "audit":
         deps = parse_gradle_deps(text)
@@ -155,7 +167,14 @@ async def run_gradle(
     elif tool == "projects":
         modules = parse_gradle_projects(text)
     available = parse_gradle_tasks(text) if tool == "tasks" else []
-    tests = parse_junit_dir(project, _JUNIT_DIRS) if tool in _BUILDISH else []
+    # Only distrust stale reports when the build failed — otherwise a successful
+    # rerun with UP-TO-DATE tests (gradle doesn't rewrite the XML) would wrongly
+    # show zero tests. A failed compile, though, must not surface last run's passes.
+    tests = (
+        parse_junit_dir(project, _JUNIT_DIRS, newer_than=None if success else launched_at)
+        if tool in _BUILDISH
+        else []
+    )
 
     base = create_run_base(
         suite="gradle", tool=tool, binary=project, args=argv, duration_seconds=time.monotonic() - start, exit_code=rc

@@ -100,6 +100,8 @@ def parse_cargo_audit(text: str) -> list[Vulnerability]:
         data = json.loads(text)
     except json.JSONDecodeError:
         return []
+    if not isinstance(data, dict):
+        return []
     vulns: list[Vulnerability] = []
     for entry in (data.get("vulnerabilities", {}) or {}).get("list", []) or []:
         adv = entry.get("advisory", {}) or {}

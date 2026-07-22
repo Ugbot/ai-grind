@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
 import tempfile
 from pathlib import Path
 
+import anyio
 from mcp.server.fastmcp import Context
 
 from devtools_mcp.registry import get_backend
@@ -15,8 +17,10 @@ from devtools_mcp.server import get_app_ctx, get_run, mcp
 async def devtools_check(ctx: Context) -> str:
     """Detect all installed development tools and their versions.
 
-    Probes the system for valgrind, lldb, dtrace, and perf.
-    Run this first to see what's available.
+    Probes every registered suite — the profilers/debuggers (valgrind, lldb,
+    dtrace, perf, etw, vtune, jvm, cdb, py, node, renderdoc) and the build/
+    package-manager backends (maven, gradle, npm, pnpm, yarn, cargo) — and
+    reports which tools are available on this machine. Run this first.
     """
     app = get_app_ctx(ctx)
     return app.registry.format_check()
@@ -31,6 +35,7 @@ async def devtools_run(
     args: list[str] | None = None,
     extra_args: list[str] | None = None,
     timeout: int = 300,
+    working_dir: str = "",
     workspace_id: str | None = None,
     label: str = "",
     notes: str = "",
@@ -39,19 +44,27 @@ async def devtools_run(
     parent_run_id: str = "",
     batch_id: str = "",
 ) -> str:
-    """Run any development tool against a binary.
+    """Run any development tool against a binary or project.
 
-    Dispatches to the correct backend (valgrind, dtrace, perf) based on suite.
-    Returns a concise summary with run_id for deeper analysis via devtools_analyze
-    or devtools_search.
+    Dispatches to the backend named by `suite`. Run devtools_check first to see
+    the installed suites and tools. Two families:
+      - profilers/debuggers: valgrind, lldb, dtrace, perf, etw, vtune, jvm, cdb,
+        py, node, renderdoc — `binary` is the executable (or a PID for jvm and
+        py attach verbs).
+      - build/package managers: maven, gradle, npm, pnpm, yarn, cargo — `binary`
+        is the project directory.
+    Returns a concise summary with a run_id for devtools_analyze / devtools_search.
 
     Args:
-        suite: Tool suite — "valgrind", "dtrace", "perf"
-        tool: Specific tool — e.g. "memcheck", "callgrind", "massif", "stat", "trace"
-        binary: Path to the executable to analyze
-        args: Arguments to pass to the binary
+        suite: Tool suite (see devtools_check for the full list)
+        tool: Verb within the suite — e.g. "memcheck"/"callgrind" (valgrind),
+            "build"/"test"/"audit" (build backends), "cpu" (dtrace/py)
+        binary: Executable to analyze, or the project directory for build suites
+        args: Arguments to pass to the binary / build verb
         extra_args: Extra flags for the tool (e.g. valgrind suppression files)
-        timeout: Max seconds to wait (default 300)
+        timeout: Max seconds to wait (default 300; raise it for real builds)
+        working_dir: Directory to run in (supported by suites that honor it, e.g.
+            valgrind — for binaries that read data files by relative path)
         workspace_id: Workspace to store results
         label: Short human title for the run catalog (shown on dashboard cards)
         notes: What/why context — shown as preview text on dashboard cards
@@ -78,12 +91,16 @@ async def devtools_run(
     except KeyError as e:
         return str(e)
 
+    run_kwargs: dict = {}
+    if working_dir:
+        run_kwargs["working_dir"] = working_dir
     err, parsed, raw_path = await backend.run(
         tool=tool,
         binary=binary,
         args=args,
         extra_args=extra_args,
         timeout=timeout,
+        **run_kwargs,
     )
 
     if err:
@@ -161,11 +178,24 @@ async def devtools_raw(ctx: Context, run_id: str, workspace_id: str | None = Non
         else:
             return f"No raw output stored for run `{run_id}`."
     else:
-        try:
-            with open(raw_path, errors="replace") as f:
-                content = f.read()
-        except FileNotFoundError:
+        max_len = 200_000
+
+        def _read_head() -> str | None:
+            # Raw profiles can be tens/hundreds of MB — read only the cap off the
+            # event loop, never the whole file into memory.
+            try:
+                with open(raw_path, errors="replace") as f:
+                    return f.read(max_len + 1)
+            except FileNotFoundError:
+                return None
+
+        head = await anyio.to_thread.run_sync(_read_head)
+        if head is None:
             return f"Raw output file not found: {raw_path}"
+        if len(head) > max_len:
+            size = os.path.getsize(raw_path) if os.path.isfile(raw_path) else len(head)
+            return head[:max_len] + f"\n\n... truncated (~{size:,} total bytes)"
+        return head
 
     max_len = 200_000
     if len(content) > max_len:

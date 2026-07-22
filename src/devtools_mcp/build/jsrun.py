@@ -8,7 +8,16 @@ handing the parser a clean copy.
 
 from __future__ import annotations
 
-from devtools_mcp.build.exec import run_capture, tail
+import asyncio
+import os
+import pathlib
+import shutil
+import time
+from collections.abc import Callable
+from dataclasses import dataclass, field
+
+from devtools_mcp.build.exec import run_capture, tail, write_raw
+from devtools_mcp.build.jsdeps import parse_package_scripts
 from devtools_mcp.build.models import BuildResult, BuildTask, Dependency, Vulnerability
 from devtools_mcp.models import create_run_base
 
@@ -57,3 +66,93 @@ def assemble(
         available_tasks=available,
         raw_output=tail(raw),
     )
+
+
+def _no_parse(_text: str) -> list:
+    return []
+
+
+@dataclass(frozen=True)
+class JsPackageManager:
+    """One JS package manager's config; the runner logic is shared (run_pm).
+
+    npm/pnpm/yarn differ only in the binary, version banner, argv per verb, and
+    which parser reads deps/outdated/audit output — so those are data here and
+    the flow lives once in run_pm. `tasks` is handled uniformly from package.json.
+    """
+
+    suite: str
+    version_prefix: str
+    argv: dict[str, Callable[[list[str], list[str]], list[str]]]
+    not_found: str
+    dep_parser: Callable[[str], list[Dependency]] = _no_parse
+    outdated_parser: Callable[[str], list[Dependency]] = _no_parse
+    audit_parser: Callable[[str], list[Vulnerability]] = _no_parse
+    informational: frozenset[str] = field(default_factory=lambda: frozenset({"audit", "outdated"}))
+
+    def resolve(self) -> str | None:
+        return shutil.which(self.suite)
+
+    def verbs(self) -> str:
+        return "|".join([*self.argv, "tasks"])
+
+
+async def check_pm(pm: JsPackageManager) -> dict[str, str]:
+    """Probe `<pm> --version`; version banner is prefix + reported version."""
+    exe = pm.resolve()
+    version = ""
+    if exe:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                exe, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+            )
+            out, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
+            version = pm.version_prefix + out.decode("utf-8", "replace").strip()
+        except (TimeoutError, OSError):
+            version = ""
+    return {"path": exe or "", "version": version}
+
+
+async def run_pm(
+    pm: JsPackageManager,
+    tool: str = "deps",
+    binary: str = "",
+    args: list[str] | None = None,
+    extra_args: list[str] | None = None,
+    timeout: int = 1800,
+    **kwargs: object,
+) -> tuple[str | None, BuildResult | None, str]:
+    """Run one verb of a JS package manager and normalize the output."""
+    project = binary or os.getcwd()
+    if not pathlib.Path(project).is_dir():
+        return f"project dir not found: {project}", None, ""
+    exe = pm.resolve()
+    if not exe:
+        return pm.not_found, None, ""
+    if tool == "tasks":
+        scripts = parse_package_scripts(project)
+        return None, assemble(pm.suite, "tasks", project, f"{pm.suite} run", 0.0, 0, "", scripts=scripts), ""
+    if tool not in pm.argv:
+        return f"Unknown {pm.suite} tool: {tool} ({pm.verbs()})", None, ""
+
+    argv = pm.argv[tool](args or [], extra_args or [])
+    start = time.monotonic()
+    rc, ptext, raw = await capture([exe, *argv], project, timeout, tool)
+    raw_path = write_raw(f"devtools-{pm.suite}-", raw)
+    deps = pm.dep_parser(ptext) if tool == "deps" else (pm.outdated_parser(ptext) if tool == "outdated" else [])
+    vulns = pm.audit_parser(ptext) if tool == "audit" else []
+    # audit/outdated exit non-zero when they find things — findings are not failure.
+    success = (rc == 0 or bool(deps) or bool(vulns)) if tool in pm.informational else None
+    result = assemble(
+        pm.suite,
+        tool,
+        project,
+        f"{pm.suite} " + " ".join(argv),
+        time.monotonic() - start,
+        rc,
+        raw,
+        deps=deps,
+        vulns=vulns,
+        success=success,
+    )
+    return None, result, raw_path

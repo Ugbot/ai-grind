@@ -73,8 +73,12 @@ async def debug_start(
         await session.cleanup()
         return f"Failed to start LLDB: {e}"
 
-    # Load the binary
-    await session.execute_command(f'file "{binary}"')
+    # Load the binary — surface a load failure instead of a false "started".
+    file_out = await session.execute_command(f'file "{binary}"')
+    if "error:" in file_out.lower():
+        await session.cleanup()
+        detail = next((ln for ln in file_out.splitlines() if "error:" in ln.lower()), file_out.strip())
+        return f"Failed to load binary `{binary}`: {detail}"
     session.target = binary
 
     # Set arguments if provided
@@ -169,10 +173,13 @@ async def debug(
         if action == "breakpoint":
             if not location:
                 return "Missing `location` for breakpoint action"
-            # Detect file:line vs function name
-            if ":" in location and not location.startswith("0x"):
-                file_part, line_part = location.split(":", 1)
-                output = await session.execute_command(f'breakpoint set --file "{file_part}" --line {line_part}')
+            # file:line only when the part after ':' is a line number — otherwise a
+            # C++ qualified name like MyClass::method (which contains ':') is a name.
+            file_line = re.fullmatch(r"(.+):(\d+)", location) if not location.startswith("0x") else None
+            if file_line:
+                output = await session.execute_command(
+                    f'breakpoint set --file "{file_line.group(1)}" --line {file_line.group(2)}'
+                )
             else:
                 output = await session.execute_command(f'breakpoint set --name "{location}"')
             if condition:

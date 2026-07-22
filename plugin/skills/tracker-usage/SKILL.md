@@ -17,7 +17,7 @@ global SQLite database (`~/.devtools-mcp/tracker.db`, override with the
 profiling tools, **responses are always bounded** — full data is queried in
 pages via `tracker_query`, never dumped.
 
-## The ten tools
+## The eleven tools
 
 | Tool | Verbs (`action=`) | Role |
 |---|---|---|
@@ -29,6 +29,7 @@ pages via `tracker_query`, never dumped.
 | `tracker_commits` | link, scan | Commit-hash linking |
 | `tracker_deps` | add, remove, list, resolve | Dependencies + "what needs to happen" |
 | `tracker_issue` | create, sync, close | GitHub (et al.) issue bridge |
+| `tracker_files` | — (report touches, claim, check) | Local agent-collab: file touch log + advisory claims + contested-file checks |
 | `tracker_query` | — (`view=`) | Bounded reporting |
 | `tracker_sync` | status, sync | Local-first CRDT replication between machines |
 
@@ -70,6 +71,9 @@ Epics/stories should summarize scope; subtasks can be punch-card sized.
   `[ ]` open, `[>]` in progress, `[!]` blocked, `[x]` done, `[-]` cancelled.
 - `rollup` — per project+kind status counts and criteria pass totals.
 - `criteria`, `commits`, `tags` — the supporting tables.
+- `deps` — dependency edges; `issues` — linked external issues (GitHub et al.).
+- `activity`, `claims` — local agent-collab: recent file touches and advisory
+  file claims (see the `agent-collab` skill).
 
 `columns=["schema"]` lists a view's columns. `sort_by` + `sort_descending`
 order any column.

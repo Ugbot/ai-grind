@@ -59,8 +59,15 @@ def parse_junit_text(data: bytes | str) -> list[TestCase]:
     return cases
 
 
-def parse_junit_dir(project: str, patterns: list[str]) -> list[TestCase]:
-    """Glob `patterns` under `project`, parse every JUnit file, aggregate cases."""
+def parse_junit_dir(project: str, patterns: list[str], newer_than: float | None = None) -> list[TestCase]:
+    """Glob `patterns` under `project`, parse every JUnit file, aggregate cases.
+
+    `newer_than` (a Unix mtime) skips report files older than it — pass the run's
+    start time so a build that fails to compile doesn't surface a *previous* run's
+    passing results. Reports written during the run are newer and kept; if a task
+    was UP-TO-DATE and nothing was rewritten, those cases are legitimately absent
+    for this invocation.
+    """
     assert isinstance(project, str) and project, "project required"
     assert patterns, "patterns required"
     base = Path(project)
@@ -74,6 +81,8 @@ def parse_junit_dir(project: str, patterns: list[str]) -> list[TestCase]:
                 return cases
             seen += 1
             try:
+                if newer_than is not None and path.stat().st_mtime < newer_than:
+                    continue
                 cases.extend(parse_junit_text(path.read_bytes()))
             except OSError:
                 continue

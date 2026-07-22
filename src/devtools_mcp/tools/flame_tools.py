@@ -24,7 +24,7 @@ from devtools_mcp.flamegraph.render_text import top_table
 from devtools_mcp.registry import get_backend
 from devtools_mcp.server import get_run, mcp
 
-_MAX_DATA_STACKS = 50_000  # hard cap on JSON stacks returned in "data" format
+_MAX_DATA_STACKS = 2_000  # cap on JSON stacks returned inline; heaviest kept, rest noted
 
 
 @mcp.tool()
@@ -52,7 +52,8 @@ async def devtools_flamegraph(
         top_n: (text only) Rows in the hottest-functions table (default 15).
         workspace_id: Workspace containing the run.
     """
-    assert fmt in ("text", "data"), f"fmt must be 'text' or 'data', got {fmt!r}"
+    if fmt not in ("text", "data"):
+        return f"fmt must be 'text' or 'data', got {fmt!r}"
 
     _ws, run = get_run(ctx, run_id, workspace_id)
 
@@ -74,16 +75,21 @@ async def devtools_flamegraph(
     assert len(samples) > 0, "stacks() returned empty list after non-empty check"
 
     if fmt == "data":
-        # Return folded stacks as a JSON array for GUI consumers (e.g. ImPlot).
-        assert len(samples) <= _MAX_DATA_STACKS, (
-            f"too many stacks ({len(samples):,}) for data export; "
-            f"cap is {_MAX_DATA_STACKS:,} — filter first with devtools_analyze"
-        )
+        # Folded stacks as a JSON array for GUI consumers (e.g. ImPlot). This flows
+        # through the model context, so keep the heaviest stacks and note the rest
+        # rather than dumping the whole (potentially multi-MB) set.
         folded_text = emit_folded(samples)
-        # Re-parse to normalise and produce the {stack, count} shape.
-        normalised = parse_folded(folded_text)
-        payload = [{"stack": ";".join(s.frames), "count": s.weight} for s in normalised]
-        header = f"Folded stack data — {run.suite}:{run.tool} · " f"{len(payload):,} stacks · run `{run_id}`\n\n"
+        normalised = sorted(parse_folded(folded_text), key=lambda s: s.weight, reverse=True)
+        total = len(normalised)
+        kept = normalised[:_MAX_DATA_STACKS]
+        payload = [{"stack": ";".join(s.frames), "count": s.weight} for s in kept]
+        note = (
+            f" (top {_MAX_DATA_STACKS:,} by weight; {total - _MAX_DATA_STACKS:,} lighter stacks omitted — "
+            "open the dashboard for the full flame graph)"
+            if total > _MAX_DATA_STACKS
+            else ""
+        )
+        header = f"Folded stack data — {run.suite}:{run.tool} · {len(payload):,} stacks{note} · run `{run_id}`\n\n"
         return header + json.dumps(payload)
 
     # fmt == "text"

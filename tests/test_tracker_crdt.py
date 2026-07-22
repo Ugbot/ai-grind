@@ -185,6 +185,34 @@ class TestMerge:
         with pytest.raises(TrackerError, match="batch too large"):
             crdt.merge_ops(db_a, [{"hlc": "x"}] * (crdt.MAX_OPS_PER_BATCH + 1))
 
+    def test_deferred_op_recovers_in_later_batch(self, db_a, db_b):
+        """A child that arrives before its project must land once the project
+        shows up in a *separate, later* batch — not only within one batch's passes."""
+        tasks.create_project(db_a, "GR", "Grind")
+        task, _ = tasks.create_task(db_a, "GR", "child-first")
+        all_ops = crdt.ops_after(db_a.conn)
+        project_ops = [op for op in all_ops if op["tbl"] == "projects"]
+        task_ops = [op for op in all_ops if op["tbl"] == "tasks"]
+        assert project_ops and task_ops
+
+        def _landed(key: str) -> bool:
+            return db_b.conn.execute("SELECT 1 FROM tasks WHERE key = ?", (key,)).fetchone() is not None
+
+        # Batch 1: only the task op — its project referent is absent, so it defers.
+        first = crdt.merge_ops(db_b, task_ops)
+        assert first["deferred"] >= 1
+        assert not _landed(task.key)  # not landed yet
+
+        # Batch 2: the project op arrives separately — the backlog must recover.
+        second = crdt.merge_ops(db_b, project_ops)
+        assert second["recovered"] >= 1
+        assert _landed(task.key)
+        assert tasks.get_task(db_b.conn, task.key).title == "child-first"
+
+        # A third empty-ish merge makes no further changes and stays converged.
+        crdt.merge_ops(db_b, crdt.ops_after(db_a.conn))
+        assert _converged(db_a, db_b)
+
 
 class TestStatus:
     def test_status_shape(self, db_a):

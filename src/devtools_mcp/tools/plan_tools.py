@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 
+import anyio
 from mcp.server.fastmcp import Context
 
 from devtools_mcp.planning import PlannerError, resolve
@@ -53,7 +54,8 @@ async def plan(
         planner = resolve()
         if planner is None:
             return "No planner available (DEVTOOLS_MCP_PLANNER=none). Dispatch a skill from the router index."
-        result = planner.plan(goal_state, world_state, mode, layered)
+        # A remote planner backend does blocking HTTP — keep it off the event loop.
+        result = await anyio.to_thread.run_sync(planner.plan, goal_state, world_state, mode, layered)
     except PlannerError as exc:
         return f"Error: {exc}"
     if not result.ok:

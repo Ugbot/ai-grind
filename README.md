@@ -12,9 +12,9 @@ The same problem applies to the plan itself. Plans made in chat evaporate betwee
 
 ## The pieces
 
-1. **devtools-mcp** — the MCP server: 16 backends spanning profilers (VTune, ETW/PerfView, perf, DTrace, Valgrind, JFR/async-profiler, py-spy, V8), debuggers (LLDB, CDB), and build/package systems (Maven, Gradle, npm, pnpm, yarn, Cargo), all behind one normalized vocabulary, with flame graphs and a local browser dashboard for the human in the loop.
+1. **devtools-mcp** — the MCP server: 17 backends spanning profilers (VTune, ETW/PerfView, perf, DTrace, Valgrind, JFR/async-profiler, py-spy, V8, RenderDoc), debuggers (LLDB, CDB), and build/package systems (Maven, Gradle, npm, pnpm, yarn, Cargo), all behind one normalized vocabulary, with flame graphs and a local browser dashboard for the human in the loop.
 2. **The tracker** — persistent project management driven entirely through MCP tools: tasks with `PROJ-123` keys, hierarchy, status workflow with an acceptance-test close gate, commit linking, auto-tagging, GitHub issue sync, and a dependency resolver.
-3. **The skills library** (`skills/`) — ~50 skills that teach the assistant *how* to use all of this and more: driving each profiler and reading its output, interpreting flame graphs, the tracker workflows, making PowerShell behave on Windows (5.1 vs 7), uv for Python, and project-specific drivers.
+3. **The skills library** (`skills/`) — 79 skills that teach the assistant *how* to use all of this and more: driving each profiler and reading its output, interpreting flame graphs, the tracker workflows, making PowerShell behave on Windows (5.1 vs 7), uv for Python, and project-specific drivers.
 
 > **Design rule (everywhere):** the LLM is never flooded with raw, symbol-heavy tool output. Every run is stored as a queryable Polars DataFrame; tools return only bounded summaries (top-N, percentages, a `run_id`) and large artifacts (flame-graph SVGs, raw traces) are written to disk and returned as a path. Drill in on demand with `devtools_analyze` / `devtools_query`.
 
@@ -30,7 +30,7 @@ Instead of dozens of individual tool wrappers, devtools-mcp provides **a few cat
 | **Flame** | `devtools_flamegraph` | Render any sampling run as an SVG flame graph + bounded text tree |
 | **Visualize** | `devtools_dashboard` | Launch a local browser "visualization terminal" for all runs |
 | **Debug** | `debug_start`, `debug`, `debug_inspect`, `debug_stop` | Interactive LLDB sessions with structured snapshots |
-| **Track** | `tracker_project`, `tracker_task`, `tracker_status`, `tracker_criteria`, `tracker_tag`, `tracker_commits`, `tracker_deps`, `tracker_issue`, `tracker_query` | Persistent plans, tasks, acceptance gates, and "what's next" |
+| **Track** | `tracker_project`, `tracker_task`, `tracker_status`, `tracker_criteria`, `tracker_tag`, `tracker_commits`, `tracker_deps`, `tracker_issue`, `tracker_query`, `tracker_sync`, `tracker_files` | Persistent plans, tasks, acceptance gates, and "what's next" |
 
 ### Supported backends
 
@@ -46,6 +46,7 @@ Instead of dozens of individual tool wrappers, devtools-mcp provides **a few cat
 | **CDB** | stacks (`~*k`), analyze (`!analyze -v`), inspect — batch-mode Windows debugger | Windows |
 | **Python** | cpu (py-spy sampling), threads (py-spy dump), cprofile (deterministic) | any (cProfile stdlib; py-spy = `pip install py-spy`) |
 | **Node/JS** | cpu (`--cpu-prof`), alloc (`--heap-prof`) — V8 profiles → flame graph | any (Node.js) |
+| **RenderDoc** | capture, analyze, counters, resources, thumb — GPU frame capture (D3D/Vulkan/OpenGL) → per-drawcall tree + GPU-time flame graph | Windows, Linux (GPU + interactive session) |
 | **Maven** | build, test, deps, sync | any (mvn or project `mvnw`) |
 | **Gradle** | build, test, deps, sync, tasks | any (gradle or project `gradlew`) |
 | **npm** | build, test, deps, sync, audit, outdated, tasks | any (Node.js) |
@@ -84,7 +85,7 @@ A persistent, SQLite-backed task tracker built into the server, so the LLM can
 put its plan **directly into durable storage** instead of leaving it in chat.
 Pause a session, resume tomorrow, switch from Claude Code to Cursor — the
 epics, subtasks, acceptance criteria, and "what's next" are all still there.
-Ten `tracker_*` tools over one global database (`~/.devtools-mcp/tracker.db`,
+Eleven `tracker_*` tools over one global database (`~/.devtools-mcp/tracker.db`,
 override with `DEVTOOLS_MCP_TRACKER_DB`):
 
 | Tool | Role |
@@ -97,8 +98,9 @@ override with `DEVTOOLS_MCP_TRACKER_DB`):
 | `tracker_commits` | Commit links: manual or `git log` scan for task keys in messages (scan runs the subprocess off the event loop and batches links in one transaction — never blocks the server) |
 | `tracker_deps` | Task dependencies + execution-plan resolver: what's ready now, what's blocked by what, parallelizable order |
 | `tracker_issue` | GitHub issue bridge (create from task with criteria checklist, sync drift, close); provider-abstracted, `GITHUB_TOKEN`/`GH_TOKEN` |
-| `tracker_query` | Bounded reporting: `tasks` / `tree` / `rollup` / `criteria` / `commits` / `tags` views |
+| `tracker_query` | Bounded reporting: `tasks` / `tree` / `rollup` / `criteria` / `commits` / `tags` / `deps` / `issues` / `activity` / `claims` views |
 | `tracker_sync` | Local-first collaboration: CRDT sync with another replica (see below) |
+| `tracker_files` | Local agent collaboration: report file touches, place advisory claims, list contested files |
 
 Same no-token-flood contract as the profiling tools: every response is bounded
 markdown; the data lives in SQLite (WAL, indexed for the tag/kind/rollup and
@@ -165,7 +167,7 @@ rewrites both survive a CRDT merge (that's the point) and duplicate content.
 ### Skills library
 
 `skills/` is the other half of the toolkit: the knowledge that makes the tools
-usable. Around 50 Claude Code skills covering how to drive each profiler and
+usable. 79 Claude Code skills covering how to drive each profiler and
 *read* its output (etw-profiling, vtune-profiling, flamegraph-reading, jvm /
 python / node profiling), the tracker workflows (tracker-usage, -breakdown,
 -acceptance, -github-sync), build tooling, a full set of
@@ -189,7 +191,7 @@ uv sync
 
 This repo is a self-contained Claude Code **plugin marketplace**
 (`.claude-plugin/marketplace.json`) shipping one plugin, `devtools-mcp`, that
-bundles the MCP server **and** the full skills library (50 skills, 15 commands,
+bundles the MCP server **and** the full skills library (79 skills, 5 commands,
 3 agents), plus the agent-collab hooks. Install it in Claude Code:
 
 ```
@@ -368,7 +370,7 @@ Claude Code ←→ MCP Protocol ←→ devtools-mcp server
 ## Testing
 
 ```bash
-# Run full test suite (437 tests)
+# Run full test suite (735 tests)
 uv run pytest tests/ -v
 
 # Tests cover:
@@ -436,6 +438,7 @@ src/devtools_mcp/
 ├── cdb/                   # Windows debugger backend (batch CDB)
 ├── py/                    # Python backend — py-spy, thread dumps, cProfile
 ├── node/                  # Node/JS backend — V8 --cpu-prof / --heap-prof
+├── renderdoc/             # RenderDoc backend — GPU frame capture/analyze/counters/resources/thumb
 ├── build/                 # shared build core — models, JUnit, JS dep/audit parsers, frames
 ├── maven/ gradle/         # JVM build backends
 ├── npm/ pnpm/ yarn/       # JS package-manager backends

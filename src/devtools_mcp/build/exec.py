@@ -8,6 +8,8 @@ in the result; the parsed frame is the queryable surface.
 from __future__ import annotations
 
 import asyncio
+import os
+import signal
 import tempfile
 import uuid
 from pathlib import Path
@@ -15,24 +17,46 @@ from pathlib import Path
 MAX_OUTPUT_CHARS = 8 << 20  # 8 MiB cap on captured output
 TAIL_LINES = 200  # bounded preview kept in the result
 TIMEOUT_RC = 124  # conventional "timed out" exit code
+LAUNCH_RC = 127  # conventional "command not found / could not exec" exit code
+_POSIX = os.name != "nt"
+
+
+def _terminate(proc: asyncio.subprocess.Process) -> None:
+    """Kill the whole process group on POSIX (build tools spawn daemons/children);
+    fall back to killing just the process on Windows or if the group is gone."""
+    try:
+        if _POSIX:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        else:
+            proc.kill()
+    except (ProcessLookupError, PermissionError, OSError):
+        pass
 
 
 async def run_capture(cmd: list[str], cwd: str, timeout: int) -> tuple[int, str]:
     """Run `cmd` in `cwd`, merging stdout+stderr; return (returncode, text).
 
-    Never raises on a non-zero exit or a timeout — the caller decides what a
-    failure means for that tool. Output is capped so a pathological build can't
-    blow up memory.
+    Never raises on a non-zero exit, a timeout, or a failed launch — the caller
+    decides what a failure means for that tool. Output is capped so a pathological
+    build can't blow up memory.
     """
     assert cmd, "empty command"
     assert timeout > 0, f"timeout must be positive: {timeout}"
-    proc = await asyncio.create_subprocess_exec(
-        *cmd, cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
-    )
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=cwd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            start_new_session=_POSIX,  # own process group so a timeout can kill children too
+        )
+    except (OSError, ValueError) as exc:
+        # e.g. exec'ing a wrong-platform wrapper (.bat on POSIX) or a missing binary.
+        return LAUNCH_RC, f"[devtools] could not launch {cmd[0]}: {exc}"
     try:
         out, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except TimeoutError:
-        proc.kill()
+        _terminate(proc)
         await proc.wait()
         return TIMEOUT_RC, f"[devtools] command timed out after {timeout}s: {' '.join(cmd)}"
     text = out.decode("utf-8", "replace") if out else ""

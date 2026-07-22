@@ -28,8 +28,13 @@ _BUILDISH = ("build", "test", "check")
 
 
 def resolve_maven(project_dir: str) -> str | None:
-    """mvnw wrapper in the project, else mvn on PATH."""
-    for w in ("mvnw.cmd", "mvnw.bat", "mvnw"):
+    """mvnw wrapper in the project, else mvn on PATH.
+
+    Wrapper projects commit both mvnw and mvnw.cmd, so the POSIX script must come
+    first on non-Windows — otherwise the Windows .cmd is picked and fails to exec.
+    """
+    wrappers = ("mvnw.cmd", "mvnw.bat", "mvnw") if os.name == "nt" else ("mvnw", "mvnw.cmd", "mvnw.bat")
+    for w in wrappers:
         p = pathlib.Path(project_dir) / w
         if p.exists():
             return str(p)
@@ -85,6 +90,7 @@ async def run_maven(
 
     cmd = [mvn, "-B", "-ntp", *goals, *(extra_args or [])]
     start = time.monotonic()
+    launched_at = time.time() - 2  # wall-clock; surefire reports older than this are from a prior run
     rc, text = await run_capture(cmd, cwd=project, timeout=timeout)
     raw_path = write_raw("devtools-mvn-", text)
 
@@ -107,7 +113,12 @@ async def run_maven(
         success = rc == 0 and not osv_errors
     if tool == "projects":
         modules = parse_maven_projects(text) or modules
-    tests = parse_junit_dir(project, _JUNIT_DIRS) if tool in _BUILDISH else []
+    # Filter stale surefire reports only on failure (see gradle runner for why).
+    tests = (
+        parse_junit_dir(project, _JUNIT_DIRS, newer_than=None if success else launched_at)
+        if tool in _BUILDISH
+        else []
+    )
 
     base = create_run_base(
         suite="maven", tool=tool, binary=project, args=goals, duration_seconds=time.monotonic() - start, exit_code=rc

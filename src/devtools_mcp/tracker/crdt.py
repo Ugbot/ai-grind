@@ -139,27 +139,43 @@ def merge_ops(db: TrackerDB, ops: list[dict]) -> dict[str, int]:
     Idempotent: ops already seen (same hlc+site) are skipped. Applied ops are
     stored verbatim so they keep propagating. Trigger capture is suppressed for
     the duration so merged rows don't echo as new local ops.
+
+    Ops whose referent (project/parent) hasn't landed yet are deferred to a
+    persistent backlog and retried on every subsequent merge — so a child that
+    arrives in an earlier batch than its parent still converges once the parent
+    shows up in a later batch, not only within a single batch's passes.
     """
     if len(ops) > MAX_OPS_PER_BATCH:
         raise TrackerError(f"op batch too large: {len(ops)} > {MAX_OPS_PER_BATCH}")
-    counters = {"received": len(ops), "new": 0, "applied": 0, "stale": 0, "deferred": 0}
-    if not ops:
-        return counters
+    counters = {"received": len(ops), "new": 0, "applied": 0, "stale": 0, "deferred": 0, "recovered": 0}
     incoming = sorted(ops, key=lambda o: o["hlc"])
     with db.transaction() as conn:
+        _ensure_deferred_table(conn)
         conn.execute("UPDATE crdt_state SET value = '1' WHERE key = 'applying'")
         try:
             fresh = _record_incoming(conn, incoming, counters)
-            pending = [op for op in fresh if _is_winner(conn, op)]
-            counters["stale"] += len(fresh) - len(pending)
-            for _ in range(MAX_MERGE_PASSES):  # bounded: deferred ops shrink each pass
-                still = [op for op in pending if not _apply_op(conn, op)]
-                counters["applied"] += len(pending) - len(still)
-                if not still or len(still) == len(pending):
-                    pending = still
-                    break
-                pending = still
-            counters["deferred"] = len(pending)
+            fresh_winners = [op for op in fresh if _is_winner(conn, op)]
+            counters["stale"] += len(fresh) - len(fresh_winners)
+
+            # Retry the persistent backlog alongside this batch: a fresh op here may
+            # be the referent a previously-deferred op was waiting on. Drop backlog
+            # ops a newer op has since superseded (no longer the LWW winner).
+            backlog = _load_deferred(conn)
+            backlog_winners = [op for op in backlog if _is_winner(conn, op)]
+            _clear_deferred(conn, [op for op in backlog if op not in backlog_winners])
+
+            def _key(op: dict) -> tuple[str, str]:
+                return (op["hlc"], op["site_id"])
+
+            still = _apply_passes(conn, fresh_winners + backlog_winners)
+            still_keys = {_key(op) for op in still}
+
+            counters["applied"] = sum(1 for op in fresh_winners if _key(op) not in still_keys)
+            counters["deferred"] = len(fresh_winners) - counters["applied"]
+            counters["recovered"] = sum(1 for op in backlog_winners if _key(op) not in still_keys)
+
+            _clear_deferred(conn, [op for op in backlog_winners if _key(op) not in still_keys])
+            _mark_deferred(conn, still)
             _recompute_depths(conn)
         finally:
             conn.execute("UPDATE crdt_state SET value = '0' WHERE key = 'applying'")
@@ -169,6 +185,52 @@ def merge_ops(db: TrackerDB, ops: list[dict]) -> dict[str, int]:
         counters["applied"] + counters["stale"] + counters["deferred"] == counters["new"]
     ), "merge counters do not add up"
     return counters
+
+
+def _ensure_deferred_table(conn: sqlite3.Connection) -> None:
+    """Persistent set of ops awaiting a referent; keyed like crdt_ops."""
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS crdt_deferred (hlc TEXT NOT NULL, site_id TEXT NOT NULL, "
+        "PRIMARY KEY (hlc, site_id))"
+    )
+
+
+def _load_deferred(conn: sqlite3.Connection) -> list[dict]:
+    """The full op dicts for every backlogged (hlc, site_id), oldest first."""
+    rows = conn.execute(
+        "SELECT o.hlc, o.site_id, o.tbl, o.pk, o.op, o.payload FROM crdt_deferred d "
+        "JOIN crdt_ops o ON o.hlc = d.hlc AND o.site_id = d.site_id ORDER BY o.hlc LIMIT ?",
+        (MAX_OPS_PER_BATCH,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def _mark_deferred(conn: sqlite3.Connection, ops: list[dict]) -> None:
+    conn.executemany(
+        "INSERT OR IGNORE INTO crdt_deferred (hlc, site_id) VALUES (?, ?)",
+        [(op["hlc"], op["site_id"]) for op in ops],
+    )
+
+
+def _clear_deferred(conn: sqlite3.Connection, ops: list[dict]) -> None:
+    conn.executemany(
+        "DELETE FROM crdt_deferred WHERE hlc = ? AND site_id = ?",
+        [(op["hlc"], op["site_id"]) for op in ops],
+    )
+
+
+def _apply_passes(conn: sqlite3.Connection, pending: list[dict]) -> list[dict]:
+    """Apply winning ops in bounded passes; return those still deferred.
+
+    Each pass may land a referent an earlier-listed op needs, so we loop until no
+    further progress (or the pass bound) rather than a single sweep.
+    """
+    for _ in range(MAX_MERGE_PASSES):
+        still = [op for op in pending if not _apply_op(conn, op)]
+        if not still or len(still) == len(pending):
+            return still
+        pending = still
+    return pending
 
 
 def _record_incoming(conn: sqlite3.Connection, ops: list[dict], counters: dict) -> list[dict]:
