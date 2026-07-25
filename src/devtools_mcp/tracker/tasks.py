@@ -102,6 +102,20 @@ def get_task(conn: sqlite3.Connection, key: str) -> Task:
     return Task.from_row(row)
 
 
+def get_task_by_uid(conn: sqlite3.Connection, uid: str) -> Task:
+    """Fetch a task by its CRDT uid; raises TrackerError if absent.
+
+    The uid is the stable identity. Unlike `key`, it is never reassigned when a
+    merge resolves a PROJ-123 collision, so it is what external systems (issue
+    trackers, bookmarks) should record.
+    """
+    assert uid, "empty task uid"
+    row = conn.execute("SELECT * FROM tasks WHERE uid = ?", (uid.strip().lower(),)).fetchone()
+    if row is None:
+        raise TrackerError(f"Task with uid {uid!r} not found")
+    return Task.from_row(row)
+
+
 def children_of(conn: sqlite3.Connection, task_id: int) -> list[Task]:
     """Direct children ordered by sort_order."""
     assert task_id > 0, f"bad task_id {task_id}"
