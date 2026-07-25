@@ -544,16 +544,25 @@ async def tracker_issue(
     key: str,
     provider: str = "github",
     repo: str | None = None,
+    ref_id: str | None = None,
 ) -> str:
     """Bridge tracker tasks to external issue trackers (GitHub; GitLab planned).
 
     Auth: GITHUB_TOKEN or GH_TOKEN env var (classic or fine-grained with issue
-    write access).
+    write access). Note this is the *server's* environment — `gh auth` alone is
+    not picked up.
+
+    Every issue body carries a machine-readable marker,
+    `<!-- devtools-mcp:task=PROJ-123 -->`, so the link survives a rebuilt
+    tracker DB, a fresh CRDT replica, or an issue opened by hand.
 
     Actions:
         create — key + repo ('owner/name'): create a remote issue from the task
                  (description + acceptance-criteria checklist + back-link), label
                  it with the task's tags, and store the external ref
+        adopt  — key + repo + ref_id: link an issue that already exists (opened
+                 by hand or by another replica), stamping the marker into its
+                 body if absent. Refuses an issue marked for a different task.
         sync   — key: pull remote state, stamp last_synced, report drift between
                  local task status and remote open/closed state
         close  — key: close the linked remote issue
@@ -567,6 +576,14 @@ async def tracker_issue(
                 return "create needs repo ('owner/name')"
             issue = await _offload_tracker(ctx, lambda db: issues_mod.create_issue_for_task(db, key, provider, repo))
             return f"Created {provider} issue #{issue.ref_id} for `{key.upper()}`: {issue.url}"
+        if action == "adopt":
+            if not repo or not ref_id:
+                return "adopt needs repo ('owner/name') and ref_id (the issue number)"
+            issue, stamped = await _offload_tracker(
+                ctx, lambda db: issues_mod.adopt_issue(db, key, provider, repo, ref_id)
+            )
+            note = "marker stamped into the issue body" if stamped else "already marked"
+            return f"Adopted {provider} issue #{issue.ref_id} for `{key.upper()}` ({note}): {issue.url}"
         if action == "sync":
             issue, drift = await _offload_tracker(ctx, lambda db: issues_mod.sync_issue(db, key, provider))
             result = f"`{key.upper()}` ↔ {provider} #{issue.ref_id} ({issue.state}) {issue.url}"
@@ -576,7 +593,7 @@ async def tracker_issue(
         if action == "close":
             issue = await _offload_tracker(ctx, lambda db: issues_mod.close_external_issue(db, key, provider))
             return f"Closed {provider} issue #{issue.ref_id} for `{key.upper()}`"
-        return f"Unknown action {action!r}. One of: create, sync, close"
+        return f"Unknown action {action!r}. One of: create, adopt, sync, close"
     except TrackerError as exc:
         return f"Error: {exc}"
     except NotImplementedError as exc:

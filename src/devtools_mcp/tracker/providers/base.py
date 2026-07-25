@@ -22,6 +22,7 @@ class ExternalIssue(BaseModel):
     url: str
     state: str
     title: str
+    body: str = ""
 
 
 class IssueProvider(ABC):

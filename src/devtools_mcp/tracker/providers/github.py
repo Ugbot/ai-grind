@@ -90,6 +90,7 @@ class GitHubProvider(IssueProvider):
             url=body.get("html_url", ""),
             state=body.get("state", "unknown"),
             title=body.get("title", ""),
+            body=body.get("body") or "",
         )
 
     def create_issue(self, repo: str, title: str, body: str, labels: list[str]) -> ExternalIssue:
