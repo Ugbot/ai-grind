@@ -83,7 +83,10 @@ def test_bad_mode_and_name_rejected():
 def test_shared_connection_not_closed():
     import sqlite3
 
+    from devtools_mcp.skilldocs.schema import apply_migrations
+
     conn = sqlite3.connect(":memory:")
+    apply_migrations(conn)  # a borrowed conn is expected to be already migrated
     c = SkillControl(conn=conn)
     c.set_mode("low")
     c.close()  # must NOT close a borrowed connection

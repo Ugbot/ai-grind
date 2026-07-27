@@ -12,18 +12,73 @@ import polars as pl
 from devtools_mcp.models import RunBase
 from devtools_mcp.store.hydrate import hydrate_result, serialize_result
 from devtools_mcp.store.paths import data_root
+from devtools_mcp.store.run_index import RunIndex, resolve_db_path
 
 
 class RunStore:
-    """Persists runs under ~/.devtools-mcp/runs/{run_id}/."""
+    """Persists runs under ~/.devtools-mcp/runs/{run_id}/.
+
+    Blobs live on disk; a small SQLite index (runs.db) makes id/task_key lookups
+    O(index) instead of scanning + JSON-parsing every meta.json. The index is
+    self-healing: any run dir present on disk but missing from it is backfilled
+    on first read (so runs written before the index existed still resolve).
+    """
 
     def __init__(self, root: Path | None = None) -> None:
         self.root = root or data_root()
         self.runs_path = self.root / "runs"
         self.runs_path.mkdir(parents=True, exist_ok=True)
+        self._index: RunIndex | None = None
+        self._index_reconciled = False
+
+    def _index_db(self) -> RunIndex:
+        if self._index is None:
+            # Explicit root → index sits beside this store's runs dir; else the
+            # env override / shared data root wins (resolve_db_path).
+            path = resolve_db_path(self.root) if self.root != data_root() else resolve_db_path(None)
+            self._index = RunIndex(path)
+        return self._index
 
     def _run_dir(self, run_id: str) -> Path:
         return self.runs_path / run_id
+
+    def _index_fields_from_meta(self, run_id: str) -> dict[str, str]:
+        """Pull the indexed columns out of a run's meta.json (disk fallback)."""
+        meta_path = self._run_dir(run_id) / "meta.json"
+        if not meta_path.is_file():
+            return {}
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return {}
+        raw_tags = meta.get("tags") or []
+        tags = ",".join(str(t) for t in raw_tags) if isinstance(raw_tags, list) else str(raw_tags)
+        return {
+            "suite": str(meta.get("suite", "")),
+            "tool": str(meta.get("tool", "")),
+            "task_key": str(meta.get("task_key", "")),
+            "git_commit": str(meta.get("git_commit", "")),
+            "created_at": str(meta.get("timestamp", "")),
+            "tags": tags,
+            "workspace": str(meta.get("workspace_id", "") or meta.get("workspace_name", "")),
+        }
+
+    def _index_run(self, run_id: str) -> None:
+        fields = self._index_fields_from_meta(run_id)
+        if fields:
+            self._index_db().upsert(run_id, **fields)  # type: ignore[arg-type]
+
+    def _reconcile_index(self) -> None:
+        """One-shot backfill: index any on-disk run dir the index hasn't seen."""
+        if self._index_reconciled:
+            return
+        self._index_reconciled = True
+        if not self.runs_path.is_dir():
+            return
+        known = self._index_db().indexed_ids()
+        for p in self.runs_path.iterdir():
+            if p.is_dir() and p.name not in known and (p / "result.json").is_file():
+                self._index_run(p.name)
 
     def persist(
         self,
@@ -65,6 +120,16 @@ class RunStore:
         if summary:
             (dest / "summary.md").write_text(summary, encoding="utf-8")
 
+        self._index_db().upsert(
+            run_id,
+            suite=result.suite,
+            tool=result.tool,
+            task_key=result.task_key,
+            git_commit=result.git_commit,
+            created_at=result.timestamp.isoformat(),
+            tags=",".join(result.tags),
+            workspace=workspace_id or workspace_name,
+        )
         self._prune_if_needed()
         return run_id
 
@@ -118,15 +183,16 @@ class RunStore:
     def list_run_ids(self) -> list[str]:
         if not self.runs_path.is_dir():
             return []
-        ids = [p.name for p in self.runs_path.iterdir() if p.is_dir() and (p / "result.json").is_file()]
-        return sorted(ids)
+        self._reconcile_index()
+        return self._index_db().list_ids()
 
     def delete_run(self, run_id: str) -> bool:
         dest = self._run_dir(run_id)
-        if not dest.is_dir():
-            return False
-        shutil.rmtree(dest, ignore_errors=True)
-        return True
+        existed = dest.is_dir()
+        if existed:
+            shutil.rmtree(dest, ignore_errors=True)
+        self._index_db().delete(run_id)
+        return existed
 
     def export_bundle(self, run_id: str, dest_zip: Path) -> str:
         import zipfile
@@ -142,16 +208,16 @@ class RunStore:
         return str(dest_zip)
 
     def runs_for_task_key(self, task_key: str) -> list[str]:
-        task_key = task_key.strip().upper()
-        out: list[str] = []
-        for run_id in self.list_run_ids():
-            meta_path = self._run_dir(run_id) / "meta.json"
-            if not meta_path.is_file():
-                continue
-            meta = json.loads(meta_path.read_text(encoding="utf-8"))
-            if str(meta.get("task_key", "")).upper() == task_key:
-                out.append(run_id)
-        return out
+        if not self.runs_path.is_dir():
+            return []
+        self._reconcile_index()
+        return self._index_db().ids_for_task_key(task_key)
+
+    def close(self) -> None:
+        """Close the SQLite index connection (idempotent). Blobs are untouched."""
+        if self._index is not None:
+            self._index.close()
+            self._index = None
 
     def _run_mtime(self, run_id: str) -> float:
         """Directory mtime as an age key; missing/racing dirs sort newest (kept)."""

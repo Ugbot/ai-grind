@@ -126,6 +126,73 @@ class TestStore:
             store.delete("live-test")
 
 
+class TestSchema:
+    def test_fresh_store_fully_migrated(self, store):
+        from devtools_mcp.skilldocs.schema import MIGRATIONS, schema_version
+
+        assert schema_version(store.conn) == MIGRATIONS[-1][0]
+        names = {row[0] for row in store.conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+        assert {"schema_migrations", "skill_docs", "skill_updates", "skill_control"} <= names
+
+    def test_pragmas(self, store):
+        assert store.conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+        assert store.conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+
+    def test_reopen_idempotent(self, tmp_path):
+        from devtools_mcp.skilldocs.schema import MIGRATIONS, schema_version
+
+        first = SkillDocStore(root=tmp_path / "docs")
+        first.close()
+        second = SkillDocStore(root=tmp_path / "docs")
+        try:
+            assert schema_version(second.conn) == MIGRATIONS[-1][0]
+            count = second.conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
+            assert count == len(MIGRATIONS)
+        finally:
+            second.close()
+
+    def test_resolve_db_path_explicit_root(self, tmp_path):
+        assert store_mod.resolve_db_path(tmp_path / "x") == tmp_path / "x" / "skilldocs.db"
+
+    def test_resolve_db_path_env_override(self, tmp_path, monkeypatch):
+        target = tmp_path / "custom" / "sd.db"
+        monkeypatch.setenv(store_mod.ENV_DB_PATH, str(target))
+        assert store_mod.resolve_db_path() == target
+
+    def test_resolve_db_path_honors_data_root(self, tmp_path, monkeypatch):
+        monkeypatch.delenv(store_mod.ENV_DB_PATH, raising=False)
+        monkeypatch.setenv("DEVTOOLS_MCP_DATA", str(tmp_path / "data"))
+        assert store_mod.resolve_db_path() == tmp_path / "data" / "skilldocs.db"
+
+    def test_preversioning_db_upgrades_cleanly(self, tmp_path):
+        """A skilldocs.db created the old ad-hoc way (no schema_migrations) with
+        existing rows migrates to v1 on open, data intact."""
+        import sqlite3
+
+        from devtools_mcp.skilldocs.schema import MIGRATIONS, schema_version
+
+        db_path = tmp_path / "legacy" / "skilldocs.db"
+        db_path.parent.mkdir(parents=True)
+        raw = sqlite3.connect(str(db_path), isolation_level=None)
+        raw.execute("CREATE TABLE IF NOT EXISTS skill_docs (name TEXT PRIMARY KEY, created_at TEXT, updated_at TEXT)")
+        raw.execute(
+            "CREATE TABLE IF NOT EXISTS skill_updates "
+            "(id INTEGER PRIMARY KEY, name TEXT NOT NULL, update_blob BLOB NOT NULL, ts TEXT NOT NULL)"
+        )
+        raw.execute("CREATE TABLE IF NOT EXISTS skill_control (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)")
+        raw.execute("INSERT INTO skill_docs (name, created_at, updated_at) VALUES ('legacy', 'x', 'y')")
+        raw.execute("INSERT INTO skill_control (key, value, updated_at) VALUES ('mode', 'low', 'z')")
+        raw.close()
+
+        store = SkillDocStore(root=db_path.parent)
+        try:
+            assert schema_version(store.conn) == MIGRATIONS[-1][0]
+            assert store.conn.execute("SELECT name FROM skill_docs WHERE name='legacy'").fetchone() is not None
+            assert store.conn.execute("SELECT value FROM skill_control WHERE key='mode'").fetchone()[0] == "low"
+        finally:
+            store.close()
+
+
 class TestConvergence:
     def test_concurrent_edits_merge(self, store, store_b):
         store.create("live-test", _content())

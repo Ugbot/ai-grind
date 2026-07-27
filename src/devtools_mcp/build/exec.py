@@ -33,12 +33,15 @@ def _terminate(proc: asyncio.subprocess.Process) -> None:
         pass
 
 
-async def run_capture(cmd: list[str], cwd: str, timeout: int) -> tuple[int, str]:
+async def run_capture(cmd: list[str], cwd: str, timeout: int, env: dict[str, str] | None = None) -> tuple[int, str]:
     """Run `cmd` in `cwd`, merging stdout+stderr; return (returncode, text).
 
     Never raises on a non-zero exit, a timeout, or a failed launch — the caller
     decides what a failure means for that tool. Output is capped so a pathological
     build can't blow up memory.
+
+    `env`, when given, is the *complete* environment for the child (pass a merge
+    of os.environ + overrides). When None the child inherits this process's env.
     """
     assert cmd, "empty command"
     assert timeout > 0, f"timeout must be positive: {timeout}"
@@ -49,6 +52,7 @@ async def run_capture(cmd: list[str], cwd: str, timeout: int) -> tuple[int, str]
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             start_new_session=_POSIX,  # own process group so a timeout can kill children too
+            env=env,
         )
     except (OSError, ValueError) as exc:
         # e.g. exec'ing a wrong-platform wrapper (.bat on POSIX) or a missing binary.

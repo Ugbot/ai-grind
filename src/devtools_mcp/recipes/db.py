@@ -1,9 +1,9 @@
-"""Tracker database: connection management, pragmas, and migrations.
+"""Recipes database: connection management, pragmas, and migrations.
 
-One global SQLite file (default ~/.devtools-mcp/tracker.db, overridable via
-DEVTOOLS_MCP_TRACKER_DB). WAL journal, foreign keys ON, explicit transactions
-via TrackerDB.transaction() (BEGIN IMMEDIATE so concurrent server instances
-serialize writes safely).
+One global SQLite file (default ~/.devtools-mcp/recipes.db, overridable via
+DEVTOOLS_MCP_RECIPES_DB). WAL journal, foreign keys ON, explicit transactions
+via RecipesDB.transaction() (BEGIN IMMEDIATE so concurrent server instances
+serialize writes safely). Mirrors tracker/db.py.
 """
 
 from __future__ import annotations
@@ -15,17 +15,18 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 
-from devtools_mcp.tracker.schema import MIGRATIONS, MIGRATIONS_MAX
+from devtools_mcp.recipes.schema import MIGRATIONS, MIGRATIONS_MAX
 
-ENV_DB_PATH: str = "DEVTOOLS_MCP_TRACKER_DB"
+ENV_DB_PATH: str = "DEVTOOLS_MCP_RECIPES_DB"
+ENV_DBOS_DB_PATH: str = "DEVTOOLS_MCP_DBOS_DB"
 BUSY_TIMEOUT_MS: int = 5000
 
 
-class TrackerError(Exception):
-    """Runtime tracker error (bad input, policy violation, missing row).
+class RecipesError(Exception):
+    """Runtime recipes error (bad input, missing recipe, malformed spec).
 
-    These are expected conditions reported back to the caller — never a
-    programmer-error invariant (those are asserts).
+    An expected condition reported back to the caller — never a programmer-error
+    invariant (those are asserts).
     """
 
 
@@ -38,19 +39,35 @@ def utc_now_iso() -> str:
 
 
 def resolve_db_path() -> Path:
-    """Resolve the tracker DB path: per-store env override first, else under the
+    """Resolve the recipes DB path: per-store env override first, else under the
     shared data root (honoring DEVTOOLS_MCP_DATA via store/paths.py::data_root)."""
     from devtools_mcp.store.paths import data_root
 
     override = os.environ.get(ENV_DB_PATH, "").strip()
-    path = Path(override) if override else data_root() / "tracker.db"
+    path = Path(override) if override else data_root() / "recipes.db"
     assert path.name, f"db path has no filename: {path!r}"
     assert not path.is_dir(), f"db path is a directory: {path}"
     return path
 
 
-class TrackerDB:
-    """Owns one sqlite3 connection to the tracker database."""
+def resolve_dbos_db_path() -> Path:
+    """Resolve the DBOS *system* DB path (durability layer, separate from recipes.db).
+
+    Per-store env override (DEVTOOLS_MCP_DBOS_DB) first, else under the shared
+    data root (honoring DEVTOOLS_MCP_DATA). Uses the ``.db`` extension for
+    consistency with the other SQLite stores.
+    """
+    from devtools_mcp.store.paths import data_root
+
+    override = os.environ.get(ENV_DBOS_DB_PATH, "").strip()
+    path = Path(override) if override else data_root() / "dbos.db"
+    assert path.name, f"dbos db path has no filename: {path!r}"
+    assert not path.is_dir(), f"dbos db path is a directory: {path}"
+    return path
+
+
+class RecipesDB:
+    """Owns one sqlite3 connection to the recipes database."""
 
     def __init__(self, path: Path) -> None:
         assert isinstance(path, Path), f"path must be Path, got {type(path)}"
@@ -66,29 +83,11 @@ class TrackerDB:
         fk_on = self.conn.execute("PRAGMA foreign_keys").fetchone()[0]
         assert fk_on == 1, "foreign_keys pragma did not take"
         apply_migrations(self.conn)
-        self._init_crdt()
-
-    def _init_crdt(self) -> None:
-        """Wire this connection into the CRDT layer: identity, clock, capture fn.
-
-        The v3 capture triggers call `crdt_hlc()`; registering it per connection
-        means every mutation through this TrackerDB is stamped, and a connection
-        that skips registration fails loudly instead of silently dropping ops.
-        """
-        from devtools_mcp.tracker import crdt  # deferred: crdt imports this module
-
-        self.site_id = crdt.ensure_identity(self.conn)
-        assert len(self.site_id) >= 8, f"bad site id {self.site_id!r}"
-        self.hlc = crdt.HLC(self.site_id)
-        self.conn.create_function("crdt_hlc", 0, self.hlc.next_str, deterministic=False)
-        watermark = crdt.latest_hlc(self.conn)
-        if watermark is not None:
-            self.hlc.observe(watermark)  # never re-issue a stamp from a past session
 
     @contextlib.contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
         """Explicit write transaction: BEGIN IMMEDIATE / COMMIT, ROLLBACK on error."""
-        assert self.conn is not None, "transaction on closed TrackerDB"
+        assert self.conn is not None, "transaction on closed RecipesDB"
         self.conn.execute("BEGIN IMMEDIATE")
         try:
             yield self.conn
@@ -106,12 +105,12 @@ class TrackerDB:
         assert self.conn is None, "close did not clear connection"
 
 
-def open_tracker(path: Path | None = None) -> TrackerDB:
-    """Open (and migrate) the tracker database at `path` or the resolved default."""
+def open_recipes(path: Path | None = None) -> RecipesDB:
+    """Open (and migrate) the recipes database at `path` or the resolved default."""
     resolved = path if path is not None else resolve_db_path()
     assert isinstance(resolved, Path), f"resolved path must be Path, got {type(resolved)}"
-    db = TrackerDB(resolved)
-    assert db.conn is not None, "open_tracker produced closed db"
+    db = RecipesDB(resolved)
+    assert db.conn is not None, "open_recipes produced closed db"
     return db
 
 

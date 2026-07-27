@@ -47,10 +47,17 @@ class TestPathResolution:
 
     def test_default_under_home(self, monkeypatch):
         monkeypatch.delenv(ENV_DB_PATH, raising=False)
+        monkeypatch.delenv("DEVTOOLS_MCP_DATA", raising=False)
         path = resolve_db_path()
         assert path.name == "tracker.db"
         assert path.parent.name == ".devtools-mcp"
         assert Path.home() in path.parents
+
+    def test_honors_data_root_override(self, tmp_path, monkeypatch):
+        monkeypatch.delenv(ENV_DB_PATH, raising=False)
+        monkeypatch.setenv("DEVTOOLS_MCP_DATA", str(tmp_path / "custom-data"))
+        path = resolve_db_path()
+        assert path == tmp_path / "custom-data" / "tracker.db"
 
     def test_open_tracker_uses_env(self, tmp_path, monkeypatch):
         target = tmp_path / "envdb" / "tracker.db"
