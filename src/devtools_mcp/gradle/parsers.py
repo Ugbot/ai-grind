@@ -144,9 +144,7 @@ def parse_gradle_insight(text: str) -> list[Dependency]:
         m = _DEP.match(raw)
         if m:
             rest, omitted = _strip_markers(m.group("rest"))
-            deps.append(
-                Dependency(artifact=rest, depth=len(m.group("prefix")) // 5, omitted=omitted)
-            )
+            deps.append(Dependency(artifact=rest, depth=len(m.group("prefix")) // 5, omitted=omitted))
             continue
         if raw.startswith((" ", ">", "-")):
             continue

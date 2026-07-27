@@ -171,9 +171,7 @@ async def run_gradle(
     # rerun with UP-TO-DATE tests (gradle doesn't rewrite the XML) would wrongly
     # show zero tests. A failed compile, though, must not surface last run's passes.
     tests = (
-        parse_junit_dir(project, _JUNIT_DIRS, newer_than=None if success else launched_at)
-        if tool in _BUILDISH
-        else []
+        parse_junit_dir(project, _JUNIT_DIRS, newer_than=None if success else launched_at) if tool in _BUILDISH else []
     )
 
     base = create_run_base(

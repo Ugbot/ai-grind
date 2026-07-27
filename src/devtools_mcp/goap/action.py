@@ -37,13 +37,8 @@ class ActionValidator(type):
             if value is Ellipsis:
                 raise ValueError(f"Preconditions cannot be services (...): '{name}'")
 
-            elif (
-                hasattr(value, "goap_effect_reference")
-                and value.goap_effect_reference not in all_effects
-            ):
-                raise ValueError(
-                    f"Invalid reference name for precondition '{name}': {value.name!r}"
-                )
+            elif hasattr(value, "goap_effect_reference") and value.goap_effect_reference not in all_effects:
+                raise ValueError(f"Invalid reference name for precondition '{name}': {value.name!r}")
 
 
 class Action(metaclass=ActionValidator):

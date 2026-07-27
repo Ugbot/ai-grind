@@ -289,5 +289,7 @@ class TestCargoOutdated:
         assert not by["removed-crate"].conflict
 
     def test_outdated_df(self):
-        df = deps_df(BuildResult(run_id="r", tool="outdated", binary="x", dependencies=parse_cargo_outdated(self.SAMPLE)))
+        df = deps_df(
+            BuildResult(run_id="r", tool="outdated", binary="x", dependencies=parse_cargo_outdated(self.SAMPLE))
+        )
         assert df.filter(df["conflict"]).height == 1

@@ -1,4 +1,10 @@
-"""LLDB backend registration for the tool registry."""
+"""LLDB backend registration for the tool registry.
+
+The interactive PTY LLDB stack is gone — native debugging goes through the
+unified debug suite's lldb-dap adapter. This backend survives for two jobs:
+hydrating historical LldbSnapshot runs from disk (store/hydrate.py resolves
+them by _module/_class) and serving their df_builders/summaries.
+"""
 
 from __future__ import annotations
 
@@ -12,28 +18,29 @@ from devtools_mcp.lldb.analysis import (
 )
 from devtools_mcp.lldb.formatters import format_snapshot_summary
 from devtools_mcp.lldb.models import LldbSnapshot
-from devtools_mcp.lldb.session import check_lldb
 from devtools_mcp.models import RunBase
 from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
 
 
 async def detect() -> list[InstalledTool]:
-    """Detect LLDB installation."""
-    info = await check_lldb()
+    """Probe lldb-dap — the implementation behind native debug sessions."""
+    from devtools_mcp.debug.adapters.lldb_dap import detect as detect_lldb_dap
+
+    tool = await detect_lldb_dap()
     return [
         InstalledTool(
             suite="lldb",
-            name="lldb",
-            path=info.get("path", "lldb"),
-            version=info.get("version", ""),
-            available=info.get("installed") == "true",
+            name="lldb-dap",
+            path=tool.path,
+            version=tool.version,
+            available=tool.available,
         )
     ]
 
 
 async def run(**kwargs: object) -> tuple[str, None, str]:
     """LLDB doesn't use batch run — it's session-based. Use debug_start instead."""
-    return "LLDB is session-based. Use debug_start() to create a session.", None, ""
+    return "Native debugging is session-based. Use debug_start() (lldb-dap adapter).", None, ""
 
 
 def format_summary(result: RunBase) -> str:

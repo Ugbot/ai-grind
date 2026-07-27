@@ -40,9 +40,7 @@ class RegressiveGOAPAStarNode:
         # i.e. x -- action --> y is encoded as (x, None), (y, action)
         return other.action.get_cost(other.services)
 
-    def apply_action(
-            self, world_state: State, action: Action
-    ) -> "RegressiveGOAPAStarNode":
+    def apply_action(self, world_state: State, action: Action) -> "RegressiveGOAPAStarNode":
         new_current_state = world_state.copy()
 
         for effect_key, effect_value in action.effects.items():
@@ -130,9 +128,7 @@ class RegressiveGOAPAStarSearch(AStarAlgorithm):
                 neighbour = node.apply_action(self._world_state, action)
 
                 # Ensure we can visit this node
-                if not action.check_procedural_precondition(
-                        neighbour.services, is_planning=True
-                ):
+                if not action.check_procedural_precondition(neighbour.services, is_planning=True):
                     continue
 
                 neighbours.append(neighbour)
@@ -142,9 +138,7 @@ class RegressiveGOAPAStarSearch(AStarAlgorithm):
     def get_h_score(self, node: "RegressiveGOAPAStarNode"):
         return len(node.unsatisfied_keys)
 
-    def get_g_score(
-            self, node: "RegressiveGOAPAStarNode", neighbour: "RegressiveGOAPAStarNode"
-    ):
+    def get_g_score(self, node: "RegressiveGOAPAStarNode", neighbour: "RegressiveGOAPAStarNode"):
         return node.compute_cost(neighbour)
 
 

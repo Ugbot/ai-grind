@@ -42,8 +42,7 @@ def _label(name: str) -> str:
     return name if len(name) <= _LABEL_MAX else name[: _LABEL_MAX - 1] + "…"
 
 
-def render_graph_svg(graph: CodeGraph, focus: str | None = None, hops: int = 1,
-                     href_base: str = "/graph") -> str:
+def render_graph_svg(graph: CodeGraph, focus: str | None = None, hops: int = 1, href_base: str = "/graph") -> str:
     """Render the neighbourhood of `focus` (or the highest-degree node) as SVG."""
     if not graph.nodes:
         return "<p class='note'>Empty graph. Run <code>graph_build</code> then <code>graph_export</code>.</p>"

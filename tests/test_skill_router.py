@@ -29,7 +29,7 @@ def test_read_frontmatter_invalid():
 
 
 def test_parse_goap_block():
-    doc = "intro\n```goap\n{\"preconditions\": {\"a\": true}, \"effects\": {\"b\": true}}\n```\nrest"
+    doc = 'intro\n```goap\n{"preconditions": {"a": true}, "effects": {"b": true}}\n```\nrest'
     assert router.parse_goap(doc) == {"preconditions": {"a": True}, "effects": {"b": True}}
 
 
@@ -61,14 +61,10 @@ def _seed_library(tmp_path: pathlib.Path) -> pathlib.Path:
     root = tmp_path / "skills"
     cat = root / "catalog" / "skills" / "profiling" / "demo-cat"
     cat.mkdir(parents=True)
-    (cat / "SKILL.md").write_text(
-        "---\nname: demo-cat\ndescription: a catalog demo\n---\nbody\n", encoding="utf-8"
-    )
+    (cat / "SKILL.md").write_text("---\nname: demo-cat\ndescription: a catalog demo\n---\nbody\n", encoding="utf-8")
     exp = root / "catalog" / "skills" / "experimental" / "narrative" / "demo-exp"
     exp.mkdir(parents=True)
-    (exp / "SKILL.md").write_text(
-        "---\nname: demo-exp\ndescription: a sidelined skill\n---\nbody\n", encoding="utf-8"
-    )
+    (exp / "SKILL.md").write_text("---\nname: demo-exp\ndescription: a sidelined skill\n---\nbody\n", encoding="utf-8")
     meta = root / "authored" / "skills" / "meta"
     meta.mkdir(parents=True)
     (meta / "skill-router.rules.md").write_text("# Skill Router\n\nSEEDED RULES.\n", encoding="utf-8")

@@ -13,8 +13,12 @@ from devtools_mcp.server import get_app_ctx, mcp
 _ALLOW_ENV = "DEVTOOLS_MCP_ALLOW_INSTALL"
 
 
+def _suites_with_specs() -> list[str]:
+    return sorted(s for s in list_backends() if get_backend(s).install is not None or get_backend(s).tool_installs)
+
+
 @mcp.tool()
-async def devtools_install(ctx: Context, suite: str, execute: bool = False, timeout: int = 900) -> str:
+async def devtools_install(ctx: Context, suite: str, tool: str = "", execute: bool = False, timeout: int = 900) -> str:
     """Show (or run) the install commands for a tool suite's underlying tool.
 
     Default is a dry-run plan: the exact per-OS commands (winget/apt/pip/
@@ -24,21 +28,32 @@ async def devtools_install(ctx: Context, suite: str, execute: bool = False, time
 
     Args:
         suite: Backend suite name (see devtools_check for the list)
+        tool: Specific tool within the suite, for suites whose tools install
+              separately (e.g. suite="debug", tool="debugpy")
         execute: Run the steps instead of printing them (env-gated)
         timeout: Max seconds per step when executing (default 900)
     """
     try:
         backend = get_backend(suite)
     except KeyError:
-        with_specs = sorted(s for s in list_backends() if get_backend(s).install is not None)
-        return f"Unknown suite '{suite}'. Suites with install specs: {', '.join(with_specs) or 'none'}"
+        return f"Unknown suite '{suite}'. Suites with install specs: {', '.join(_suites_with_specs()) or 'none'}"
 
-    spec = backend.install
+    spec = backend.tool_installs.get(tool) if tool else backend.install
+    if spec is None and tool:
+        per_tool = sorted(backend.tool_installs)
+        return (
+            f"No install spec for tool '{tool}' in suite '{suite}'. "
+            f"Tools with install specs: {', '.join(per_tool) or 'none'}"
+        )
     if spec is None:
-        with_specs = sorted(s for s in list_backends() if get_backend(s).install is not None)
+        if backend.tool_installs:
+            per_tool = sorted(backend.tool_installs)
+            return (
+                f"Suite '{suite}' installs per tool — pass tool=. " f"Tools with install specs: {', '.join(per_tool)}"
+            )
         return (
             f"Suite '{suite}' declares no install spec. "
-            f"Suites with install specs: {', '.join(with_specs) or 'none'}"
+            f"Suites with install specs: {', '.join(_suites_with_specs()) or 'none'}"
         )
 
     steps = steps_for(spec)

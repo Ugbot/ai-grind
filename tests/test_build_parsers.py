@@ -253,7 +253,9 @@ class TestGradleOutdated:
         assert by["junit"].resolved == "4.13.2"  # falls back to milestone
 
     def test_outdated_df(self):
-        df = deps_df(BuildResult(run_id="r", tool="outdated", binary="x", dependencies=parse_gradle_outdated(self.REPORT)))
+        df = deps_df(
+            BuildResult(run_id="r", tool="outdated", binary="x", dependencies=parse_gradle_outdated(self.REPORT))
+        )
         assert "function" in df.columns
         assert df.filter(df["conflict"]).height == 2
 
