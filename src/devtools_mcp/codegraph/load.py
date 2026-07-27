@@ -61,8 +61,7 @@ class CodeGraph:
                     break
         included = set(placement)
         sub_edges = [
-            e for e in self.edges
-            if str(e.get("source", "")) in included and str(e.get("target", "")) in included
+            e for e in self.edges if str(e.get("source", "")) in included and str(e.get("target", "")) in included
         ]
         assert len(placement) <= max_nodes, "ego exceeded node bound"
         return placement, sub_edges

@@ -115,9 +115,7 @@ async def run_maven(
         modules = parse_maven_projects(text) or modules
     # Filter stale surefire reports only on failure (see gradle runner for why).
     tests = (
-        parse_junit_dir(project, _JUNIT_DIRS, newer_than=None if success else launched_at)
-        if tool in _BUILDISH
-        else []
+        parse_junit_dir(project, _JUNIT_DIRS, newer_than=None if success else launched_at) if tool in _BUILDISH else []
     )
 
     base = create_run_base(

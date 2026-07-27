@@ -58,22 +58,18 @@ class SkillControl:
 
     def __init__(self, root: Path | None = None, conn: sqlite3.Connection | None = None) -> None:
         if conn is not None:
+            # Shared connection (from a SkillDocStore) — already migrated; never
+            # re-create tables and never own/close it.
             self.conn = conn
             self._owns_conn = False
         else:
-            from devtools_mcp.store.paths import data_root
+            # Standalone: open the SAME skilldocs DB through the shared helper so
+            # pragmas + migrations match the store exactly (skill_control lives
+            # in migration v1, so no ad-hoc CREATE TABLE here).
+            from devtools_mcp.skilldocs.store import connect, resolve_db_path
 
-            base = root or data_root()
-            base.mkdir(parents=True, exist_ok=True)
-            self.conn = sqlite3.connect(base / "skilldocs.db", isolation_level=None)
-            self.conn.row_factory = sqlite3.Row
-            self.conn.execute("PRAGMA journal_mode=WAL")
-            self.conn.execute("PRAGMA busy_timeout=5000")
+            self.conn = connect(resolve_db_path(root))
             self._owns_conn = True
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS skill_control ("
-            "key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)"
-        )
         assert self.conn is not None, "control store failed to open"
 
     def close(self) -> None:

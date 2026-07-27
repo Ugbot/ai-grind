@@ -38,9 +38,12 @@ def utc_now_iso() -> str:
 
 
 def resolve_db_path() -> Path:
-    """Resolve the tracker DB path: env override first, else the global default."""
+    """Resolve the tracker DB path: per-store env override first, else under the
+    shared data root (honoring DEVTOOLS_MCP_DATA via store/paths.py::data_root)."""
+    from devtools_mcp.store.paths import data_root
+
     override = os.environ.get(ENV_DB_PATH, "").strip()
-    path = Path(override) if override else Path.home() / ".devtools-mcp" / "tracker.db"
+    path = Path(override) if override else data_root() / "tracker.db"
     assert path.name, f"db path has no filename: {path!r}"
     assert not path.is_dir(), f"db path is a directory: {path}"
     return path

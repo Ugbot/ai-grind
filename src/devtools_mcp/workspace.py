@@ -189,12 +189,22 @@ class AppContext:
     """Application context: workspaces, debug sessions, tool registry."""
 
     workspaces: dict[str, Workspace] = field(default_factory=dict)
-    lldb_sessions: dict[str, object] = field(default_factory=dict)
     registry: object = field(default=None)
     default_workspace_id: str = ""
     viz_server: object = field(default=None)
     tracker: object = field(default=None)
+    recipes: object = field(default=None)
+    skilldocs: object = field(default=None)
     run_store: RunStore = field(default_factory=RunStore)
+    debug_manager: object = field(default=None)
+
+    def get_debug_manager(self):
+        """Open (or return) the unified debug session manager."""
+        if self.debug_manager is None:
+            from devtools_mcp.debug.session import DebugSessionManager
+
+            self.debug_manager = DebugSessionManager()
+        return self.debug_manager
 
     def get_tracker(self):
         """Open (or return) the persistent tracker database."""
@@ -204,6 +214,24 @@ class AppContext:
             self.tracker = open_tracker()
         assert self.tracker is not None, "tracker failed to open"
         return self.tracker
+
+    def get_recipes(self):
+        """Open (or return) the persistent recipes database."""
+        if self.recipes is None:
+            from devtools_mcp.recipes import open_recipes
+
+            self.recipes = open_recipes()
+        assert self.recipes is not None, "recipes db failed to open"
+        return self.recipes
+
+    def get_skilldocs(self):
+        """Open (or return) the persistent live-skill (skilldocs) store."""
+        if self.skilldocs is None:
+            from devtools_mcp.skilldocs import SkillDocStore
+
+            self.skilldocs = SkillDocStore()
+        assert self.skilldocs is not None, "skilldocs store failed to open"
+        return self.skilldocs
 
     def get_workspace(self, workspace_id: str | None = None) -> Workspace:
         """Get workspace by ID, or default."""
@@ -226,7 +254,8 @@ class AppContext:
         return ws.hydrate_from_disk()
 
     def cleanup_all(self) -> None:
-        """Clean up session temp dirs, viz server, tracker — not persisted runs."""
+        """Clean up session temp dirs, viz server, and the SQLite stores — not
+        persisted runs."""
         if self.viz_server is not None:
             with contextlib.suppress(Exception):
                 self.viz_server.stop()
@@ -234,5 +263,38 @@ class AppContext:
             with contextlib.suppress(Exception):
                 self.tracker.close()
             self.tracker = None
+        if self.recipes is not None:
+            with contextlib.suppress(Exception):
+                self.recipes.close()
+            self.recipes = None
+        if self.skilldocs is not None:
+            with contextlib.suppress(Exception):
+                self.skilldocs.close()
+            self.skilldocs = None
+        self._close_debug_manager()
         for ws in self.workspaces.values():
             ws.cleanup()
+
+    def _close_debug_manager(self) -> None:
+        """Tear down live debug sessions so adapter subprocesses aren't orphaned.
+
+        DebugSessionManager.stop_all() is async (it awaits per-session DAP
+        disconnects). In the server it is already awaited in app_lifespan right
+        before cleanup_all, so here (a sync context, usually with the event loop
+        still running) we only drop the reference. When cleanup_all is invoked
+        standalone with no running loop — e.g. a direct AppContext in a test — we
+        best-effort drive stop_all() to completion so subprocesses are reaped.
+        """
+        mgr = self.debug_manager
+        if mgr is None:
+            return
+        stop_all = getattr(mgr, "stop_all", None)
+        if stop_all is not None:
+            import asyncio
+
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:  # no running loop → safe to drive it ourselves
+                with contextlib.suppress(Exception):
+                    asyncio.run(stop_all())
+        self.debug_manager = None

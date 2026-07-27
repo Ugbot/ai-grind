@@ -121,7 +121,7 @@ def _collect_tree(tree: Path) -> list[Entry]:
     out: list[Entry] = []
     if not tree.is_dir():
         return out
-    for md in sorted(tree.rglob("SKILL.md"))[:store_mod.SKILLS_MAX]:  # bounded
+    for md in sorted(tree.rglob("SKILL.md"))[: store_mod.SKILLS_MAX]:  # bounded
         rel = md.relative_to(tree)
         # Skip sidelined categories (experimental / _archive) — harvested for
         # reference but not synced to mirrors, so not loadable; keep them out of
@@ -166,12 +166,10 @@ def collect_skills(store: store_mod.SkillDocStore) -> list[Entry]:
             content = store.get_text(name)
         except store_mod.SkillDocError:
             continue
-        entry = _entry_from(content, "live")
-        if entry is not None:
-            by_name[name] = entry
-    entries = sorted(
-        (e for e in by_name.values() if e.name not in disabled), key=lambda e: (e.category, e.name)
-    )
+        live_entry = _entry_from(content, "live")
+        if live_entry is not None:
+            by_name[name] = live_entry
+    entries = sorted((e for e in by_name.values() if e.name not in disabled), key=lambda e: (e.category, e.name))
     assert len(entries) <= store_mod.SKILLS_MAX, "index size exceeded bound"
     return entries
 
@@ -241,11 +239,9 @@ def rebuild(store: store_mod.SkillDocStore, mode: str | None = None) -> Path | N
     if mode is None:
         from devtools_mcp.skilldocs.control import SkillControl
 
-        control = SkillControl()
-        try:
-            mode = control.global_mode()
-        finally:
-            control.close()
+        # Reuse the store's connection instead of opening a second independent
+        # one — same DB, one migrated connection, nothing to close.
+        mode = SkillControl(conn=store.conn).global_mode()
     entries = collect_skills(store)
     index = build_index(entries, mode)
     if not store.exists(ROUTER_NAME):

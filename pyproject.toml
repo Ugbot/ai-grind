@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "click>=8.3.1",
+    "dbos>=2.28.0",
     "httpx>=0.28.1",
     "lxml>=6.0.2",
     "mcp>=1.26.0",

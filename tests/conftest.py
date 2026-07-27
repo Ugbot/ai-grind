@@ -21,6 +21,27 @@ def _isolated_data_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("DEVTOOLS_MCP_LIVE_SKILLS_DIR", str(tmp_path / "live-skills"))
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _dbos_singleton(tmp_path_factory):
+    """Launch the DBOS durable executor once for the whole session, then destroy it.
+
+    DBOS is a process-global singleton; constructing it twice raises and an async
+    workflow binds to the launching event loop. So it is launched exactly once
+    here (session scope) with its SQLite system database pointed at a temp file
+    (never the real ~/.devtools-mcp/dbos.sqlite), and torn down at session end so
+    the singleton does not leak across test runs. The recipe workflow/step
+    decorators are registered by importing the runner before launch."""
+    os.environ["DEVTOOLS_MCP_DBOS_DB"] = str(tmp_path_factory.mktemp("dbos") / "dbos.sqlite")
+    from devtools_mcp.recipes.dbos_app import destroy_dbos, launch_dbos
+
+    launch_dbos()
+    try:
+        yield
+    finally:
+        destroy_dbos()
+        os.environ.pop("DEVTOOLS_MCP_DBOS_DB", None)
+
+
 def _random_hex(n: int = 8) -> str:
     return "0x" + "".join(random.choices("0123456789ABCDEF", k=n))
 

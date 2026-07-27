@@ -151,12 +151,21 @@ def page(
     status: dict | None = None,
     auto_refresh: bool = False,
 ) -> str:
-    """Wrap body in the shared shell (header, nav, content column)."""
+    """Wrap body in the shared shell (header, nav, content column).
+
+    The nav is the built-in tabs plus any tabs contributed through the viz page
+    registry (viz/pages.py) — so an out-of-tree plugin's console page appears in
+    the nav without editing this list. The reference registered page is
+    /recipes; built-ins stay hard-coded here.
+    """
+    from devtools_mcp.viz import pages as _pages
+
     tabs = [
         ("runs", "/", "Runs"),
         ("search", "/search", "Search"),
         ("tracker", "/tracker", "Tracker"),
         ("collab", "/collab", "Collab"),
+        *_pages.registered_tabs(),
         ("graph", "/graph", "Graph"),
         ("tools", "/tools", "Tools"),
     ]
@@ -774,9 +783,149 @@ def skills_panel(rows: list[dict], mode: str) -> str:
         f"{len(rows)} skill(s) indexed.</p>"
         "<p><button onclick=\"setglobal('low')\">Set mode: low</button> "
         "<button onclick=\"setglobal('high')\">Set mode: high</button> "
-        "<button onclick=\"rebuild()\">Rebuild router</button></p>"
+        '<button onclick="rebuild()">Rebuild router</button></p>'
     )
     return page("skills", header + "".join(sections) + script, active="runs")
+
+
+# --- recipes ------------------------------------------------------------------
+
+# Recipe/run status → the tracker `.st` colour vocabulary (dot + label).
+_RUN_STATUS_ST: dict[str, str] = {
+    "passed": "done",
+    "failed": "blocked",
+    "running": "in_progress",
+    "pending": "open",
+    "cancelled": "cancelled",
+    "skipped": "cancelled",
+    "": "open",
+}
+
+
+def _run_status_badge(status: str) -> str:
+    """A coloured status pill reusing the tracker `.st` dot styling."""
+    st = _RUN_STATUS_ST.get(status or "", "open")
+    label = (status or "never run").replace("_", " ")
+    return f"<span class='st {st}'>{_h(label)}</span>"
+
+
+def recipes_page(recipes: list[dict]) -> str:
+    """All recipes as cards: name, kind, last-run status, a Run button."""
+    if not recipes:
+        body = (
+            "<h2>Recipes</h2><div class='empty'>No recipes yet. Register one with "
+            "<code>recipe(action=&quot;register&quot;)</code> or seed a batch with "
+            "<code>recipe(action=&quot;seed&quot;)</code>.</div>"
+        )
+        return page("recipes", body, active="recipes", auto_refresh=True)
+    cards = []
+    for r in recipes:
+        key = r["key"]
+        summary = r.get("summary") or ""
+        desc_html = f"<div class='card-desc'>{_snippet(summary, 180)}</div>" if summary.strip() else ""
+        run_form = (
+            f"<form method='post' action='/recipes/{_h(key)}/run' style='display:inline'>"
+            "<button class='btn' type='submit'>Run</button></form>"
+        )
+        force_form = (
+            f"<form method='post' action='/recipes/{_h(key)}/run' style='display:inline'>"
+            "<input type='hidden' name='force' value='1'>"
+            "<button class='btn' type='submit'>Force</button></form>"
+        )
+        body = (
+            f"<div class='row spread'>"
+            f"<span class='key'>{_h(key)}</span>"
+            f"<span class='badge'>{_h(r.get('kind', 'task'))}</span></div>"
+            f"<h4>{_h(r.get('name', key))}</h4>"
+            f"{desc_html}"
+            f"<div class='row spread' style='margin-top:8px'>"
+            f"{_run_status_badge(r.get('last_status', ''))}"
+            f"<span class='sub'>{_h(r.get('steps', 0))} steps · {_h(r.get('runs', 0))} runs</span></div>"
+        )
+        actions = f"<a href='/recipes/{_h(key)}'>runs</a> · {run_form} {force_form}"
+        cards.append(_clickable_card(f"/recipes/{_h(key)}", body, actions, aria=f"Open recipe {key}"))
+    body = f"<h2>Recipes <span class='count'>{len(recipes)}</span></h2><div class='grid'>{''.join(cards)}</div>"
+    return page("recipes", body, active="recipes", auto_refresh=True)
+
+
+def recipe_runs_page(recipe: dict, runs_table: str) -> str:
+    """One recipe: its metadata + run history table, with a Run button."""
+    key = recipe["key"]
+    crumbs = f"<a href='/recipes'>recipes</a> / {_h(key)}"
+    run_form = (
+        f"<form method='post' action='/recipes/{_h(key)}/run' style='display:inline'>"
+        "<button type='submit'>Run</button></form>"
+    )
+    force_form = (
+        f"<form method='post' action='/recipes/{_h(key)}/run' style='display:inline;margin-left:6px'>"
+        "<input type='hidden' name='force' value='1'>"
+        "<button type='submit'>Force re-run</button></form>"
+    )
+    steps_html = "".join(
+        f"<li><b>{_h(s.get('label', ''))}</b> <code>{_h(s.get('command', ''))}</code>"
+        + (f" <span class='sub'>cwd {_h(s['cwd'])}</span>" if s.get("cwd") else "")
+        + "</li>"
+        for s in recipe.get("steps", [])[:200]
+    )
+    steps_block = f"<h3>Steps</h3><ul class='check'>{steps_html}</ul>" if steps_html else ""
+    body = (
+        f"<h2><span class='key'>{_h(key)}</span> {_h(recipe.get('name', key))}</h2>"
+        f"<div class='row'><span class='badge'>{_h(recipe.get('kind', 'task'))}</span>"
+        f"<span class='pill'>{_h(str(recipe.get('spec_hash', ''))[:12])}</span>{run_form}{force_form}</div>"
+        + (f"<div class='desc'>{_h(recipe.get('summary', ''))}</div>" if recipe.get("summary") else "")
+        + f"{steps_block}<h3>Runs</h3>{runs_table}"
+    )
+    return page(f"{key} recipe", body, crumbs, active="recipes")
+
+
+def recipe_run_page(run: dict, steps: list[dict], recipe_key: str) -> str:
+    """One run: status header + per-step table (status/exit/duration) + tails.
+
+    Auto-refreshes while the run is still `running` so a long recipe streams its
+    progress into the page without blocking the POST that started it.
+    """
+    rid = run.get("run_id", "")
+    crumbs = (
+        f"<a href='/recipes'>recipes</a> / <a href='/recipes/{_h(recipe_key)}'>{_h(recipe_key)}</a> / run {_h(rid)}"
+    )
+    still_running = run.get("status") == "running"
+    rows = []
+    for s in steps[:500]:
+        exit_code = s.get("exit_code")
+        dur = s.get("duration_ms")
+        rows.append(
+            "<tr>"
+            f"<td>{_h(s.get('ordinal', 0) + 1 if isinstance(s.get('ordinal'), int) else s.get('ordinal', ''))}</td>"
+            f"<td>{_h(s.get('label', ''))}</td>"
+            f"<td>{_run_status_badge(s.get('status', ''))}</td>"
+            f"<td>{_h('' if exit_code is None else exit_code)}</td>"
+            f"<td>{_h('' if dur is None else str(dur) + 'ms')}</td>"
+            f"<td><code>{_h(s.get('command', ''))}</code></td>"
+            "</tr>"
+        )
+    table = (
+        "<table><tr><th>#</th><th>step</th><th>status</th><th>exit</th><th>duration</th><th>command</th></tr>"
+        f"{''.join(rows)}</table>"
+        if rows
+        else "<p class='note'>no steps recorded</p>"
+    )
+    tails = []
+    for s in steps[:500]:
+        tail_text = s.get("tail") or ""
+        if tail_text.strip():
+            tails.append(
+                f"<h3>{_h(s.get('label', ''))} <span class='sub'>output tail</span></h3><pre>{_h(tail_text)}</pre>"
+            )
+    running_note = "<p class='warn'>Run in progress — this page refreshes automatically.</p>" if still_running else ""
+    raw = f"<p class='note'>full output: <code>{_h(run.get('raw_path', ''))}</code></p>" if run.get("raw_path") else ""
+    body = (
+        f"<h2>Run <span class='pill'>#{_h(rid)}</span> {_run_status_badge(run.get('status', ''))}</h2>"
+        f"<p class='note'>recipe <a href='/recipes/{_h(recipe_key)}'>{_h(recipe_key)}</a> · "
+        f"exit {_h('' if run.get('exit_code') is None else run.get('exit_code'))} · "
+        f"started {_h(run.get('started_at', ''))} · finished {_h(run.get('finished_at') or '—')}</p>"
+        f"{running_note}{table}{''.join(tails)}{raw}"
+    )
+    return page(f"run {rid}", body, crumbs, active="recipes", auto_refresh=still_running)
 
 
 def graph_page(svg: str, focus: str, node_count: int, edge_count: int, note: str = "") -> str:

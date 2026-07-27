@@ -29,6 +29,54 @@ SKILLS_MAX: int = 500
 FRONTMATTER_SCAN_LINES: int = 60  # bound mirrors skills/sync.py
 CONTROL_DOC: str = "skill-control"  # reserved: control state, never a loadable skill
 
+ENV_DB_PATH: str = "DEVTOOLS_MCP_SKILLDOCS_DB"  # dedicated env override for the skilldocs DB
+BUSY_TIMEOUT_MS: int = 5000
+
+
+def resolve_db_path(root: Path | None = None) -> Path:
+    """Resolve the skilldocs DB path.
+
+    An explicit ``root`` base dir wins (test isolation, mirrors open_tracker's
+    explicit-path override); otherwise the per-store env override
+    (DEVTOOLS_MCP_SKILLDOCS_DB) wins; otherwise it lives under the shared data
+    root (honoring DEVTOOLS_MCP_DATA). Mirrors tracker/db.py:20,40-46.
+    """
+    if root is not None:
+        path = root / "skilldocs.db"
+    else:
+        override = os.environ.get(ENV_DB_PATH, "").strip()
+        if override:
+            path = Path(override)
+        else:
+            from devtools_mcp.store.paths import data_root
+
+            path = data_root() / "skilldocs.db"
+    assert path.name, f"db path has no filename: {path!r}"
+    assert not path.is_dir(), f"db path is a directory: {path}"
+    return path
+
+
+def connect(path: Path) -> sqlite3.Connection:
+    """Open a skilldocs connection with the standard pragmas + migrations.
+
+    WAL + foreign_keys=ON (with the same fk assert as tracker/db.py:61,63-64) +
+    busy_timeout, then apply the versioned migrations from schema.py. Shared by
+    SkillDocStore and standalone SkillControl so both get an identical,
+    fully-migrated connection instead of divergent ad-hoc setups.
+    """
+    from devtools_mcp.skilldocs.schema import apply_migrations
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(path), isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute(f"PRAGMA busy_timeout={BUSY_TIMEOUT_MS}")
+    fk_on = conn.execute("PRAGMA foreign_keys").fetchone()[0]
+    assert fk_on == 1, "foreign_keys pragma did not take"
+    apply_migrations(conn)
+    return conn
+
 
 class SkillDocError(Exception):
     """Expected/reportable condition (bad input, unknown skill) — not a bug."""
@@ -75,24 +123,8 @@ class SkillDocStore:
     """SQLite-persisted collection of live skill docs. One store per data root."""
 
     def __init__(self, root: Path | None = None) -> None:
-        from devtools_mcp.store.paths import data_root
-
-        base = root or data_root()
-        base.mkdir(parents=True, exist_ok=True)
-        self.path = base / "skilldocs.db"
-        self.conn = sqlite3.connect(self.path, isolation_level=None)
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA journal_mode=WAL")
-        self.conn.execute("PRAGMA busy_timeout=5000")
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS skill_docs ("
-            "name TEXT PRIMARY KEY, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
-        )
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS skill_updates ("
-            "id INTEGER PRIMARY KEY, name TEXT NOT NULL, update_blob BLOB NOT NULL, ts TEXT NOT NULL)"
-        )
-        self.conn.execute("CREATE INDEX IF NOT EXISTS idx_skill_updates_name ON skill_updates(name, id)")
+        self.path = resolve_db_path(root)
+        self.conn = connect(self.path)
         assert self.conn is not None, "store failed to open"
 
     def close(self) -> None:

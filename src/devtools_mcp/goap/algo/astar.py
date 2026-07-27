@@ -44,12 +44,8 @@ class AStarAlgorithm(ABC):
                 if neighbour in rejects:
                     continue
 
-                tentative_g_score = g_scores[current] + self.get_g_score(
-                    current, neighbour
-                )
-                tentative_is_better = tentative_g_score < g_scores.get(
-                    neighbour, float_info.max
-                )
+                tentative_g_score = g_scores[current] + self.get_g_score(current, neighbour)
+                tentative_is_better = tentative_g_score < g_scores.get(neighbour, float_info.max)
 
                 if neighbour in candidates and not tentative_is_better:
                     continue

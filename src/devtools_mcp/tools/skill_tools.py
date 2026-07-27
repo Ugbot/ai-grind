@@ -6,7 +6,7 @@ from __future__ import annotations
 import anyio
 from mcp.server.fastmcp import Context
 
-from devtools_mcp.server import mcp
+from devtools_mcp.server import get_app_ctx, mcp
 from devtools_mcp.skilldocs import SkillDocError, SkillDocStore
 from devtools_mcp.skilldocs import store as store_mod
 from devtools_mcp.skilldocs.control import SkillControl, SkillControlError
@@ -14,8 +14,15 @@ from devtools_mcp.skilldocs.control import SkillControl, SkillControlError
 GET_PREVIEW_MAX: int = 6_000  # chars of skill content echoed back to the model
 
 
-def _store() -> SkillDocStore:
-    return SkillDocStore()
+def _store(ctx: Context) -> SkillDocStore:
+    """The AppContext-owned live-skill store (opened once, closed in cleanup_all).
+
+    Reusing the shared instance avoids leaking a per-call connection and keeps a
+    single migrated connection for the whole process.
+    """
+    store = get_app_ctx(ctx).get_skilldocs()
+    assert isinstance(store, SkillDocStore), "app skilldocs store is the wrong type"
+    return store
 
 
 def _bounded(content: str) -> str:
@@ -65,7 +72,7 @@ async def skill_live(
     Files land in ~/.claude/skills/<name>/SKILL.md (DEVTOOLS_MCP_LIVE_SKILLS_DIR
     overrides), so changes are live at the next skill load.
     """
-    store = _store()
+    store = _store(ctx)
     try:
         if action == "create":
             if not name or not content:
@@ -106,9 +113,10 @@ async def skill_live(
                 return f"Refused to sync: {exc}"
 
             def _do_sync() -> dict:
-                # Fresh store in the worker thread — sqlite is thread-affine; the
-                # loop's blocking urllib per-doc must not run on the event loop.
-                thread_store = _store()
+                # Fresh independent store in the worker thread — sqlite is
+                # thread-affine, so the shared AppContext connection must not be
+                # touched off the event loop; the blocking urllib per-doc runs here.
+                thread_store = SkillDocStore()
                 try:
                     return sync_once(thread_store, url)
                 finally:
@@ -147,18 +155,14 @@ async def skill_live(
             path = store.materialize(name) if store.exists(name) else None
             router.rebuild(store)  # prune from / restore to the router index immediately
             state = "disabled" if action == "disable" else "enabled"
-            return (
-                f"Skill **{name}** {state} and the router index rebuilt"
-                + (f" -> `{path}`" if path else "")
-            )
+            return f"Skill **{name}** {state} and the router index rebuilt" + (f" -> `{path}`" if path else "")
         return (
             f"Unknown action {action!r}. One of: create, get, list, append, patch, "
             "sync, publish, delete, route, mode, enable, disable"
         )
     except (SkillDocError, SkillControlError) as exc:
         return f"Error: {exc}"
-    finally:
-        store.close()
+    # store is owned by the AppContext (closed in cleanup_all) — do not close here.
 
 
 def _mode_action(store: SkillDocStore, name: str | None, content: str | None) -> str:

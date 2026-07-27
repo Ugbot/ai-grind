@@ -6,6 +6,7 @@ Tool definitions are in the tools/ package. Backends register via registry.py.
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -51,6 +52,23 @@ def _maybe_start_dashboard(ctx: AppContext) -> None:
     print(f"devtools-mcp: dashboard at {url} (tracker at {url}/tracker)", file=sys.stderr)
 
 
+def _launch_dbos() -> None:
+    """Launch the DBOS durable executor (idempotent) for the recipe engine.
+
+    Brought up at server startup so the recipe workflow can run durably and the
+    dashboard's trigger-run handler can enqueue it. Never fatal — recipes simply
+    fall back to erroring on run if DBOS cannot launch.
+    """
+    import sys
+
+    try:
+        from devtools_mcp.recipes.dbos_app import launch_dbos
+
+        launch_dbos()
+    except Exception as exc:  # pragma: no cover - startup resilience
+        print(f"devtools-mcp: DBOS failed to launch: {exc}", file=sys.stderr)
+
+
 # Set by main() in service mode: FastMCP's streamable-http lifespan only runs
 # on the first client session, so a shared instance bootstraps its context (and
 # dashboard) eagerly at boot and the lifespan adopts it instead of re-creating.
@@ -79,11 +97,15 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     # Auto-detect installed tools
     ctx.registry = ToolRegistry()
     await ctx.registry.detect_all()
+    _launch_dbos()
     _maybe_start_dashboard(ctx)
 
     try:
         yield ctx
     finally:
+        if ctx.debug_manager is not None:
+            with contextlib.suppress(Exception):
+                await ctx.debug_manager.stop_all()
         ctx.cleanup_all()
 
 
@@ -107,13 +129,20 @@ mcp = FastMCP(
         "run one; devtools_analyze()/devtools_query() to drill into the frame; "
         "devtools_search()/devtools_correlate() across runs; devtools_flamegraph(run_id) for an "
         "SVG + text flame graph from any sampling run; devtools_dashboard() to open a browser "
-        "visualization terminal. LLDB debug_* tools provide interactive sessions. "
+        "visualization terminal. debug_* tools provide unified interactive debugging across languages "
+        "(debugpy/lldb-dap/js-debug/kotlin DAP adapters): launch or attach, conditional breakpoints, "
+        "logpoints, watches, stepping — every stop auto-captures a queryable snapshot with a diff vs "
+        "the previous stop, and debug plans sweep many stops in one call. "
         "tracker_* tools: a persistent SQLite-backed task tracker (mini-JIRA) — projects, "
         "hierarchical tasks with PROJ-123 keys, acceptance criteria linked to tests, commit "
         "links, auto-tag rules, GitHub issue sync; query it via tracker_query (bounded views), "
         "ask tracker_deps(action='resolve') what needs to happen next (ready/blocked/order), "
         "and replicate it across machines with tracker_sync (CRDT local-first; peers are other "
-        "dashboards). The dashboard also renders the tracker as card boards at /tracker."
+        "dashboards). The dashboard also renders the tracker as card boards at /tracker. "
+        "recipe: a general recipe/pipeline engine — register a recipe (an ordered list of shell "
+        "steps), then recipe(action='run') runs them one after another stop-on-fail with results "
+        "cached in SQLite (a passed run is reused until the spec changes); domain-agnostic "
+        "(build/test/setup/deploy), browsable at /recipes."
     ),
 )
 
@@ -139,6 +168,13 @@ def get_run(
 
 # --- Register all tools ---
 import devtools_mcp.tools  # noqa: E402, F401
+
+# Out-of-tree plugins attach their @mcp.tool()s via the 'devtools_mcp.mcp_tools'
+# entry-point group — loaded HERE, after `mcp` exists and the in-tree tools are
+# registered (backends load earlier, at line 21, before `mcp` is defined).
+from devtools_mcp.registry import load_tool_plugins  # noqa: E402
+
+load_tool_plugins()
 
 
 def main() -> None:
@@ -197,6 +233,7 @@ def main() -> None:
             # dashboard (and its collab ingest API) must be reachable from boot.
             global _EAGER_CTX
             _EAGER_CTX = _bootstrap_ctx()
+            _launch_dbos()
             _maybe_start_dashboard(_EAGER_CTX)
 
     mcp.run(transport=transport)

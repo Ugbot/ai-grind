@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from devtools_mcp.flamegraph.render_svg import render_svg  # browser viz page only; not MCP tool API
 from devtools_mcp.index import build_index, correlate_runs, search_index
 from devtools_mcp.registry import get_backend
-from devtools_mcp.viz import render
+from devtools_mcp.viz import pages, render
 
 _RAW_MAX = 200_000
 _PUSH_MAX_BYTES = 50_000_000
@@ -271,6 +271,8 @@ class _Handler(BaseHTTPRequestHandler):
                 self._station_auth_page(query)
             elif parts[0] == "api":
                 self._route_api_get(parts[1:], query)
+            elif (page := pages.get_page(parts[0])) is not None:
+                self._dispatch_page_get(page, parts[1:], query)
             else:
                 self._send(render.page("not found", "<p>404</p>"), 404)
         except Exception as e:
@@ -344,6 +346,8 @@ class _Handler(BaseHTTPRequestHandler):
                 ws = app.get_workspace()
                 ok = ws.delete_run(run_id)
                 self._send(render.page("deleted", f"<p>Run {'deleted' if ok else 'not found'}</p>"))
+            elif (page := pages.get_page(parts[0])) is not None and page.post is not None:
+                self._dispatch_page_post(page, parts[1:], body)
             else:
                 self._send_json({"error": "not found"}, 404)
         except Exception as e:
@@ -495,14 +499,16 @@ class _Handler(BaseHTTPRequestHandler):
         src = (query.get("src") or [os.environ.get("DEVTOOLS_MCP_CODEGRAPH_JSON", "")])[0]
         focus = (query.get("focus") or [None])[0]
         if not src or not os.path.isfile(src):
-            self._send(render.page(
-                "code graph",
-                "<h2>Code graph</h2><p class='note'>No graph loaded. Build one natively with "
-                "<code>llm-station run graph_build</code> then <code>graph_export</code>, save the JSON, "
-                "and open <code>/graph?src=&lt;path-to-knowledge-graph.json&gt;</code> "
-                "(or set <code>DEVTOOLS_MCP_CODEGRAPH_JSON</code>).</p>",
-                active="runs",
-            ))
+            self._send(
+                render.page(
+                    "code graph",
+                    "<h2>Code graph</h2><p class='note'>No graph loaded. Build one natively with "
+                    "<code>llm-station run graph_build</code> then <code>graph_export</code>, save the JSON, "
+                    "and open <code>/graph?src=&lt;path-to-knowledge-graph.json&gt;</code> "
+                    "(or set <code>DEVTOOLS_MCP_CODEGRAPH_JSON</code>).</p>",
+                    active="runs",
+                )
+            )
             return
         try:
             with open(src, encoding="utf-8") as fh:
@@ -583,6 +589,43 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_response(303)
         self.send_header("Location", f"/tracker/task/{key}")
         self.end_headers()
+
+    # -- registered console pages (viz/pages.py) -----------------------------
+
+    def _dispatch_page_get(self, page: pages.VizPage, rest: list[str], query: dict) -> None:
+        """Route a GET to a registered page: render() at the root, else get()."""
+        if not rest:
+            reply = page.render() if page.render is not None else (page.get(rest, query) if page.get else None)
+        else:
+            reply = page.get(rest, query) if page.get is not None else None
+        self._send_page_reply(reply)
+
+    def _dispatch_page_post(self, page: pages.VizPage, rest: list[str], body: str) -> None:
+        """Route a POST to a registered page (already past _guard_state_change)."""
+        assert page.post is not None, "page has no POST handler"
+        self._send_page_reply(page.post(rest, body))
+
+    def _send_page_reply(self, reply: object) -> None:
+        """Translate a registered handler's reply (None / str / VizResponse) to HTTP."""
+        if reply is None:
+            self._send(render.page("not found", "<p>404</p>"), 404)
+            return
+        if isinstance(reply, str):
+            self._send(reply)
+            return
+        assert isinstance(reply, pages.VizResponse), f"bad page reply type {type(reply)}"
+        if reply.location is not None:
+            status = reply.status if reply.status in (301, 302, 303, 307, 308) else 303
+            self.send_response(status)
+            self.send_header("Location", reply.location)
+            self.end_headers()
+            return
+        data = reply.body.encode("utf-8", "replace")
+        self.send_response(reply.status)
+        self.send_header("Content-Type", reply.content_type)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def _route_search(self, app: object, query: dict) -> None:
         ws = app.get_workspace()
@@ -951,6 +994,9 @@ class VizServer:
 
     def start(self, host: str = "127.0.0.1", port: int = 8765) -> str:
         assert not self.running, "viz server already running"
+        # Discover console pages (in-tree /recipes + any 'devtools_mcp.viz_pages'
+        # plugins) so their tabs + routes are live before the first request.
+        pages.load_viz_pages()
         httpd = ThreadingHTTPServer((host, port), _Handler)
         httpd.app_ctx = self.app_ctx  # type: ignore[attr-defined]
         bound_port = httpd.server_address[1]

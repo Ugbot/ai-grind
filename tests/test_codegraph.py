@@ -11,14 +11,46 @@ SAMPLE = {
     "kind": "codebase",
     "project": "demo",
     "nodes": [
-        {"id": "file:a.py:a.py", "type": "file", "name": "a.py", "filePath": "a.py",
-         "lineRange": [0, 0], "complexity": 0, "summary": "", "tags": []},
-        {"id": "function:a.py:main", "type": "function", "name": "main", "filePath": "a.py",
-         "lineRange": [1, 10], "complexity": 3, "summary": "def main()", "tags": ["exported"]},
-        {"id": "function:a.py:helper", "type": "function", "name": "helper", "filePath": "a.py",
-         "lineRange": [12, 20], "complexity": 1, "summary": "", "tags": []},
-        {"id": "class:a.py:Widget", "type": "class", "name": "Widget", "filePath": "a.py",
-         "lineRange": [22, 40], "complexity": 0, "summary": "", "tags": []},
+        {
+            "id": "file:a.py:a.py",
+            "type": "file",
+            "name": "a.py",
+            "filePath": "a.py",
+            "lineRange": [0, 0],
+            "complexity": 0,
+            "summary": "",
+            "tags": [],
+        },
+        {
+            "id": "function:a.py:main",
+            "type": "function",
+            "name": "main",
+            "filePath": "a.py",
+            "lineRange": [1, 10],
+            "complexity": 3,
+            "summary": "def main()",
+            "tags": ["exported"],
+        },
+        {
+            "id": "function:a.py:helper",
+            "type": "function",
+            "name": "helper",
+            "filePath": "a.py",
+            "lineRange": [12, 20],
+            "complexity": 1,
+            "summary": "",
+            "tags": [],
+        },
+        {
+            "id": "class:a.py:Widget",
+            "type": "class",
+            "name": "Widget",
+            "filePath": "a.py",
+            "lineRange": [22, 40],
+            "complexity": 0,
+            "summary": "",
+            "tags": [],
+        },
     ],
     "edges": [
         {"source": s, "target": t, "type": r, "direction": "forward", "weight": w}
@@ -50,8 +82,8 @@ def test_ego_neighbourhood():
     g = load_graph(SAMPLE)
     placement, edges = g.ego("function:a.py:main", hops=1)
     assert placement["function:a.py:main"] == 0
-    assert placement["function:a.py:helper"] == 1   # dependency (out)
-    assert placement["file:a.py:a.py"] == -1        # dependent (in, contains)
+    assert placement["function:a.py:helper"] == 1  # dependency (out)
+    assert placement["file:a.py:a.py"] == -1  # dependent (in, contains)
     # only edges among included nodes; Widget->helper excluded (Widget not in ego)
     assert all(e["source"] in placement and e["target"] in placement for e in edges)
     assert not any(e["source"] == "class:a.py:Widget" for e in edges)

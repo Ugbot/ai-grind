@@ -20,8 +20,15 @@ BODY_MAX_BYTES: int = 32 * 1024 * 1024  # 32 MiB
 
 def sync(db, client, cfg, project_row, state_row, dry_run) -> dict:  # noqa: ANN001 - domain-syncer contract
     """Push the local graph export if its hash differs from the last sync."""
-    report: dict = {"domain": "codegraph", "pushed": 0, "pulled": 0,
-                    "conflicts": 0, "skipped": 0, "errors": 0, "notes": []}
+    report: dict = {
+        "domain": "codegraph",
+        "pushed": 0,
+        "pulled": 0,
+        "conflicts": 0,
+        "skipped": 0,
+        "errors": 0,
+        "notes": [],
+    }
     assert project_row["org_id"], "unlinked project reached codegraph sync"
 
     path = os.environ.get(ENV_CODEGRAPH_JSON, "").strip()
@@ -52,9 +59,7 @@ def sync(db, client, cfg, project_row, state_row, dry_run) -> dict:  # noqa: ANN
         report["skipped"] += 1
         return report
     if not dry_run:
-        remote = client.code_graph_upload(
-            {"project": project, "body": raw, "node_count": nodes, "edge_count": edges}
-        )
+        remote = client.code_graph_upload({"project": project, "body": raw, "node_count": nodes, "edge_count": edges})
         links.insert_link(db, "codegraph", project, str(remote["id"]), project_row["org_id"], None, sha)
     report["pushed"] += 1
     return report
