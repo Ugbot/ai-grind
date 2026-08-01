@@ -150,6 +150,55 @@ the flag upstream rather than in `catalog/`, because `harvest.py` re-copies.
 `comment-sicko`'s agent name contains a space, so `no-comments` spawns it as
 `subagent_type: "Comment Sicko"`.
 
+### rudybear/renderdoc-skill — Alexey Medvedev — MIT
+Source: https://github.com/rudybear/renderdoc-skill
+`renderdoc-gpu-debug`. Vendored at `C:/code/vendor-skills/renderdoc-skill`.
+
+Wraps [`rdc-cli`](https://github.com/BANANASJIM/rdc-cli) (66 commands over
+RenderDoc's **Python** API): pixel history, shader debugging, mesh output,
+render-target export, frame comparison.
+
+**Complements — does not replace — the authored `renderdoc-frame-analysis`
+skill.** They use different backends, and that difference decides which to reach
+for:
+
+| | backend | needs |
+|---|---|---|
+| `renderdoc-frame-analysis` (authored) | devtools-mcp `renderdoc` suite → `renderdoccmd.exe` / `qrenderdoc.exe` | RenderDoc install only |
+| `renderdoc-gpu-debug` (vendored) | `rdc-cli` → `renderdoc.pyd` Python module | RenderDoc **built from source** with Python bindings |
+
+**RUNTIME PREREQUISITE IS UNMET ON THIS MACHINE (checked 2026-08-01).**
+`rdc-cli` 0.6.3 installs fine, but `rdc doctor` reports three failures:
+
+```
+[FAIL] renderdoc-module    not found in search paths
+[FAIL] replay-support      renderdoc module unavailable
+[FAIL] win-python-version  renderdoc.pyd not found
+```
+
+Cause: the stock Windows RenderDoc installer (1.45, `C:\Program Files\RenderDoc`)
+ships `renderdoc.dll` and an embedded **Python 3.6** (`python36.dll`), but no
+`renderdoc.pyd`. That module is not on PyPI and must be built from source, and
+the system Python here is 3.12 — so the bindings would have to be rebuilt
+against it.
+
+The remedy is `rdc setup-renderdoc` (a from-source RenderDoc build). Its
+prerequisites ARE present — VS Build Tools 17.14.36127.28 and `renderdoccmd`
+1.45 — so this is a long build, not a missing dependency. It has deliberately
+NOT been run: it is a multi-GB, long-running third-party build, and that is the
+owner's call.
+
+Everything else passes: `renderdoccmd`, the RenderDoc install, and the Vulkan
+layer registered at `C:\Program Files\RenderDoc\renderdoc.json`.
+
+Note also that `rdc.exe` installs to
+`C:\Users\Capta\AppData\Roaming\Python\Python312\Scripts`, which is **not on
+PATH** — that must be added before the skill's commands resolve.
+
+Until then GPU frame work is not blocked: `devtools_check` reports all five
+devtools-mcp `renderdoc` tools available (capture / analyze / counters /
+resources / thumb), and that remains the working path.
+
 ## Retired 2026-08-19 (dedup pass)
 
 Ten harvested skills left the library after an audit of all 122 loadable skills.

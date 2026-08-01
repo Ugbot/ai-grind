@@ -751,3 +751,9 @@ src = "C:/code/vendor-skills/cursor-plugins/thermos/agents/thermo-nuclear-code-q
 type = "agent"
 category = "review"
 note = "thermo-nuclear-code-quality-review-subagent — cursor/plugins thermos (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/renderdoc-skill/.claude/skills/renderdoc-gpu-debug"
+type = "skill"
+category = "profiling"
+note = "renderdoc-gpu-debug — rudybear/renderdoc-skill (MIT, (c) 2025 Alexey Medvedev). 66-command rdc-cli wrapper: pixel history, shader debug, mesh output, RT export. Complements the authored renderdoc-frame-analysis skill (devtools-mcp backend, renderdoccmd-driven). REQUIRES rdc-cli + renderdoc.pyd — see THIRD_PARTY_SKILLS.md for the unmet-prereq note."
