@@ -167,33 +167,71 @@ for:
 | `renderdoc-frame-analysis` (authored) | devtools-mcp `renderdoc` suite → `renderdoccmd.exe` / `qrenderdoc.exe` | RenderDoc install only |
 | `renderdoc-gpu-debug` (vendored) | `rdc-cli` → `renderdoc.pyd` Python module | RenderDoc **built from source** with Python bindings |
 
-**RUNTIME PREREQUISITE IS UNMET ON THIS MACHINE (checked 2026-08-01).**
-`rdc-cli` 0.6.3 installs fine, but `rdc doctor` reports three failures:
+**RUNTIME IS NOW WORKING (built and verified 2026-08-01).** `rdc doctor` exits 0
+with every check `[ok]`, including `renderdoc-module: version=1.45` and
+`replay-support: renderdoc replay API surface found`.
+
+### The working configuration — use exactly this
 
 ```
-[FAIL] renderdoc-module    not found in search paths
-[FAIL] replay-support      renderdoc module unavailable
-[FAIL] win-python-version  renderdoc.pyd not found
+rdc.exe                 C:\Users\Capta\AppData\Roaming\Python\Python312\Scripts\rdc.exe
+RENDERDOC_PYTHON_PATH   C:\Users\Capta\AppData\Local\rdc\renderdoc
 ```
 
-Cause: the stock Windows RenderDoc installer (1.45, `C:\Program Files\RenderDoc`)
-ships `renderdoc.dll` and an embedded **Python 3.6** (`python36.dll`), but no
-`renderdoc.pyd`. That module is not on PyPI and must be built from source, and
-the system Python here is 3.12 — so the bindings would have to be rebuilt
-against it.
+`rdc.exe`'s directory is **not on PATH** — add it, or invoke by full path.
 
-The remedy is `rdc setup-renderdoc` (a from-source RenderDoc build). Its
-prerequisites ARE present — VS Build Tools 17.14.36127.28 and `renderdoccmd`
-1.45 — so this is a long build, not a missing dependency. It has deliberately
-NOT been run: it is a multi-GB, long-running third-party build, and that is the
-owner's call.
+### Three traps found getting here. Do not re-discover them.
 
-Everything else passes: `renderdoccmd`, the RenderDoc install, and the Vulkan
-layer registered at `C:\Program Files\RenderDoc\renderdoc.json`.
+**1. The build needs a WRITABLE `sys.base_prefix`.** `rdc setup-renderdoc` calls
+`_prepare_win_python`, which writes a dummy `python{ver}.zip` next to the Python
+prefix. With the stock Python at `C:\Program Files\Python312` that is
+`PermissionError` without elevation. It uses `sys.base_prefix` **deliberately**
+(its own comment: "sys.prefix is a venv for uv tool installs"), so an ordinary
+venv does NOT dodge it.
 
-Note also that `rdc.exe` installs to
-`C:\Users\Capta\AppData\Roaming\Python\Python312\Scripts`, which is **not on
-PATH** — that must be added before the skill's commands resolve.
+The fix, no elevation required: build from a venv created off a **uv-managed**
+Python, whose base prefix lives under `%APPDATA%\uv\python\...` and is
+user-writable, and which ships `include/Python.h` and `libs/python312.lib`:
+
+```
+uv python install 3.12
+uv venv --python <uv-managed python.exe> C:\Users\Capta\.rdc-build-venv
+uv pip install --python C:\Users\Capta\.rdc-build-venv\Scripts\python.exe rdc-cli
+C:\Users\Capta\.rdc-build-venv\Scripts\rdc.exe setup-renderdoc --version v1.45 --jobs 8
+```
+Build took **10m34s, 0 warnings, 0 errors**, and needed ~5 GB of disk.
+
+**2. That build venv CRASHES rdc at runtime — use it ONLY to run the build.**
+`rdc.exe` from `.rdc-build-venv` segfaults (`0xC0000005`) on *any* invocation,
+including `--help`, independent of `RENDERDOC_PYTHON_PATH`. The `rdc.exe` on the
+stock Program Files Python works fine. The fault is in the uv standalone
+interpreter + rdc-cli combination, not in RenderDoc. Run the build with the uv
+venv; run everything else with the normal install.
+
+**3. The build registers a SECOND Vulkan implicit layer, and capture then breaks.**
+`setup-renderdoc` adds
+`HKCU\SOFTWARE\Khronos\Vulkan\ImplicitLayers` →
+`C:\Users\Capta\AppData\Local\rdc\renderdoc\renderdoc.json`, while the stock
+install already has one in HKLM. Two `VK_LAYER_RENDERDOC_Capture` layers make
+capture ambiguous — `rdc doctor` flags it explicitly, and it is a machine-wide
+hazard affecting every Vulkan app, not just RenderDoc's own tooling.
+
+Resolved by deleting the **HKCU** value and keeping the stock HKLM registration:
+that restores the machine's prior layer state, and replay is unaffected because
+it goes through the module named by `RENDERDOC_PYTHON_PATH`, not through the
+layer. Both DLLs are v45 from the same upstream commit, so captures taken by the
+stock layer replay correctly in the freshly built module. Verified afterwards
+that a Venus VK target still runs clean (exit 0).
+
+### Still true
+`renderdoc-gpu-debug` complements rather than replaces `renderdoc-frame-analysis`
+— the devtools-mcp suite is the headless capture/analyze/counters path, this is
+the deep interactive surface (pixel history, shader debug, mesh output).
+
+**Note that GPU frame CAPTURE itself is a separate problem** and neither skill
+solves it: `renderdoccmd capture` has no frame-selection option and only waits
+for a human F12, so automated capture needs the RenderDoc **in-application API**
+compiled into the app (Venus tracker VENG-472).
 
 Until then GPU frame work is not blocked: `devtools_check` reports all five
 devtools-mcp `renderdoc` tools available (capture / analyze / counters /
