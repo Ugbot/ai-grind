@@ -136,3 +136,34 @@ def focus(root: CallNode, name: str) -> CallNode | None:
             continue  # don't descend — its subtree is already merged
         stack.extend(node.children.values())
     return focused if found else None
+
+
+def function_frame(samples: list) -> "object":
+    """Per-function DataFrame from stack samples: self/total counts + % share.
+
+    The universal function-level view for any sampling backend that produces
+    StackSamples (dtrace profile, perf record, etw cpu, jvm jfr/asprof, cdb
+    stacks). Percent columns are normalized by the run's own total weight so
+    two runs with different sample counts compare fairly.
+    """
+    import polars as pl
+
+    root = build_call_tree(samples, root_name="all")
+    stats = function_stats(root)
+    stats.pop("all", None)
+    total = sum(s.weight for s in samples) or 1
+    rows = [
+        {
+            "function": name,
+            "self": self_w,
+            "total": tot_w,
+            "self_pct": round(100.0 * self_w / total, 2),
+            "total_pct": round(100.0 * tot_w / total, 2),
+        }
+        for name, (self_w, tot_w) in stats.items()
+    ]
+    if not rows:
+        return pl.DataFrame(
+            schema={"function": pl.Utf8, "self": pl.Int64, "total": pl.Int64,
+                    "self_pct": pl.Float64, "total_pct": pl.Float64})
+    return pl.DataFrame(rows).sort("total", descending=True)

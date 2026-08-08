@@ -248,4 +248,63 @@ async def devtools_compare(
         df = apply_filters(df, spec)
         return format_filtered(df, f"Comparison: {run_a.suite}:{run_a.tool} (A → B)", spec)
 
+    # Generic stack-based comparison: any suite whose backend produces
+    # StackSamples (dtrace profile, perf record, etw cpu, jvm jfr/asprof, cdb
+    # stacks) compares at the function level. Percent columns are normalized
+    # per run, so different total sample counts (different capture windows)
+    # compare fairly; raw counts are kept for min_delta and magnitude context.
+    try:
+        backend = get_backend(run_a.suite)
+    except KeyError:
+        backend = None
+    if backend is not None and backend.stacks is not None:
+        from devtools_mcp.flamegraph.tree import function_frame
+
+        samples_a = backend.stacks(run_a)
+        samples_b = backend.stacks(run_b)
+        if not samples_a or not samples_b:
+            return (
+                f"One of the runs has no stack samples "
+                f"(A: {len(samples_a or [])}, B: {len(samples_b or [])})."
+            )
+        fa = function_frame(samples_a).rename(
+            {"self": "self_a", "total": "total_a",
+             "self_pct": "self_pct_a", "total_pct": "total_pct_a"})
+        fb = function_frame(samples_b).rename(
+            {"self": "self_b", "total": "total_b",
+             "self_pct": "self_pct_b", "total_pct": "total_pct_b"})
+        df = fa.join(fb, on="function", how="full", coalesce=True).fill_null(0)
+        df = df.with_columns([
+            (pl.col("self_b") - pl.col("self_a")).alias("self_delta"),
+            (pl.col("total_b") - pl.col("total_a")).alias("total_delta"),
+            (pl.col("total_pct_b") - pl.col("total_pct_a"))
+                .round(2).alias("total_pct_delta"),
+        ])
+        # Column order: the story first (function, normalized shares, delta),
+        # raw counts last for magnitude.
+        df = df.select([
+            "function", "total_pct_a", "total_pct_b", "total_pct_delta",
+            "self_a", "self_b", "self_delta", "total_a", "total_b",
+            "total_delta",
+        ])
+        if min_delta is not None:
+            df = df.filter(pl.col("total_delta").abs() >= min_delta)
+        spec = build_filter_spec(
+            function_pattern=function_pattern,
+            exclude_functions=exclude_functions,
+            sort_by=sort_by,
+            offset=offset,
+            limit=limit,
+        )
+        if sort_by is None:
+            df = df.sort(pl.col("total_pct_delta").abs(), descending=True)
+        df = apply_filters(df, spec)
+        n_a = sum(x.weight for x in samples_a)
+        n_b = sum(x.weight for x in samples_b)
+        title = (
+            f"Comparison: {run_a.suite}:{run_a.tool} (A → B) · "
+            f"{n_a:,} → {n_b:,} samples · %-columns normalized per run"
+        )
+        return format_filtered(df, title, spec)
+
     return f"Comparison not yet implemented for suite '{run_a.suite}'"

@@ -2,20 +2,34 @@
 
 from __future__ import annotations
 
+import re
+
 import polars as pl
 
 from devtools_mcp.dtrace.models import DTraceResult
 from devtools_mcp.models import StackSample
 
+# Trailing instruction offset in a dtrace ustack frame ("func+0x1a4"). Kept in
+# the RAW stored stacks, stripped here so every consumer (flame graph, analyze,
+# compare) aggregates by FUNCTION: with offsets left in, one hot function
+# fragments into dozens of offset buckets — a per-function view showed
+# join_probe_typed's biggest "function" at 4.9% when the real function held
+# ~40% of the run.
+_OFFSET_RE = re.compile(r"\+0x[0-9a-fA-F]+$")
+
 
 def dtrace_stack_samples(result: DTraceResult) -> list[StackSample]:
-    """Map DTrace stacks to flame-graph StackSamples (leaf-last → root-first)."""
+    """Map DTrace stacks to flame-graph StackSamples (leaf-last → root-first).
+
+    Frames are normalized: the trailing +0x offset is dropped (see _OFFSET_RE).
+    """
     samples: list[StackSample] = []
     for stack in result.stacks:
         if not stack.frames:
             continue
         # DTrace prints stacks leaf-first; flame graphs want root-first.
-        samples.append(StackSample(frames=list(reversed(stack.frames)), weight=stack.count))
+        frames = [_OFFSET_RE.sub("", f) for f in reversed(stack.frames)]
+        samples.append(StackSample(frames=frames, weight=stack.count))
     return samples
 
 
