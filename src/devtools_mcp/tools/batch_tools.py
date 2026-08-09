@@ -36,6 +36,7 @@ async def devtools_run(
     extra_args: list[str] | None = None,
     timeout: int = 300,
     working_dir: str = "",
+    env: dict[str, str] | None = None,
     workspace_id: str | None = None,
     label: str = "",
     notes: str = "",
@@ -65,6 +66,11 @@ async def devtools_run(
         timeout: Max seconds to wait (default 300; raise it for real builds)
         working_dir: Directory to run in (supported by suites that honor it, e.g.
             valgrind — for binaries that read data files by relative path)
+        env: Extra environment variables for the PROFILED process, merged over
+            the server's own environment. Required whenever the thing you are
+            measuring is env-gated — feature flags, kill switches, worker
+            counts — otherwise the profile silently describes the DEFAULT
+            configuration rather than the one you asked for.
         workspace_id: Workspace to store results
         label: Short human title for the run catalog (shown on dashboard cards)
         notes: What/why context — shown as preview text on dashboard cards
@@ -94,6 +100,8 @@ async def devtools_run(
     run_kwargs: dict = {}
     if working_dir:
         run_kwargs["working_dir"] = working_dir
+    if env:
+        run_kwargs["env"] = env
     err, parsed, raw_path = await backend.run(
         tool=tool,
         binary=binary,

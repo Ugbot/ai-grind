@@ -34,9 +34,16 @@ async def run_dtrace(
     one_liner: str | None = None,
     pid: int | None = None,
     sudo: bool = True,
+    env: dict[str, str] | None = None,
     **kwargs: object,
 ) -> tuple[str | None, DTraceResult | None, str]:
     """Run a DTrace script or one-liner.
+
+    `env`: extra environment for the PROFILED process. Merged over the
+    server's own environment (not replacing it — dtrace itself needs PATH and
+    sudo needs its own vars). Without this, profiling a binary whose behaviour
+    is env-gated (feature flags, worker counts, kill switches) silently
+    measures the default configuration instead of the one asked for.
 
     Returns (error_msg, parsed_result, raw_output_path).
     """
@@ -100,6 +107,7 @@ async def run_dtrace(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             start_new_session=True,  # own process group so a timeout kills root dtrace too
+            env=({**os.environ, **env} if env else None),
         )
 
         try:
