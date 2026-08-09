@@ -127,3 +127,87 @@ class TestCompareJoinMath:
         assert by["new_path"]["total_pct_delta"] == 40.0
         assert by["shared"]["total_pct_delta"] == 40.0
         assert by["m"]["total_pct_delta"] == 0.0
+
+
+class TestAggregateAcrossRuns:
+    """The N-run aggregation math devtools_aggregate builds on.
+
+    The point of aggregating is separating BROAD costs (present in most
+    workloads — optimize once, win everywhere) from SPIKY ones (huge in a
+    single workload). total_share = mean_pct * runs / n_runs encodes exactly
+    that: a function at 10% in every run outranks one at 50% in a single run.
+    """
+
+    def _frames(self):
+        # 3 "queries": `broad` is present everywhere at ~10%; `spiky` is
+        # absent from two and dominant in one.
+        runs = [
+            [StackSample(frames=["m", "broad"], weight=10),
+             StackSample(frames=["m", "other"], weight=90)],
+            [StackSample(frames=["m", "broad"], weight=12),
+             StackSample(frames=["m", "other"], weight=88)],
+            [StackSample(frames=["m", "broad"], weight=11),
+             StackSample(frames=["m", "spiky"], weight=50),
+             StackSample(frames=["m", "other"], weight=39)],
+        ]
+        return [function_frame(r) for r in runs]
+
+    def _agg(self, frames, col="self_pct"):
+        stacked = pl.concat(
+            [f.select(["function", col]).with_columns(pl.lit(f"r{i}").alias("run"))
+             for i, f in enumerate(frames)],
+            how="vertical",
+        )
+        n = len(frames)
+        return (
+            stacked.group_by("function")
+            .agg([
+                pl.len().alias("runs"),
+                pl.col(col).mean().round(2).alias("mean_pct"),
+                pl.col(col).max().round(2).alias("max_pct"),
+                pl.col("run").sort_by(col, descending=True).first().alias("top_run"),
+            ])
+            .with_columns(
+                (pl.col("mean_pct") * pl.col("runs") / n).round(2).alias("total_share")
+            )
+            .sort("total_share", descending=True)
+        )
+
+    def test_breadth_beats_a_single_spike(self):
+        agg = self._agg(self._frames())
+        by = {r["function"]: r for r in agg.iter_rows(named=True)}
+        # spiky: 50% but in 1 of 3 runs -> 16.67; broad: ~11% in 3 of 3 -> ~11.
+        assert by["spiky"]["runs"] == 1
+        assert by["broad"]["runs"] == 3
+        assert by["spiky"]["max_pct"] == 50.0
+        # `other` is broad AND large: it must outrank both.
+        assert by["other"]["total_share"] > by["spiky"]["total_share"]
+        assert by["other"]["total_share"] > by["broad"]["total_share"]
+
+    def test_top_run_points_at_the_worst_workload(self):
+        agg = self._agg(self._frames())
+        by = {r["function"]: r for r in agg.iter_rows(named=True)}
+        assert by["spiky"]["top_run"] == "r2"      # the only run it appears in
+        assert by["broad"]["top_run"] == "r1"      # 12% > 10%
+
+    def test_min_runs_isolates_cross_cutting_costs(self):
+        agg = self._agg(self._frames()).filter(pl.col("runs") >= 3)
+        names = set(agg["function"].to_list())
+        assert "spiky" not in names
+        assert {"broad", "other", "m"} <= names
+
+    def test_per_run_normalization_prevents_long_captures_outvoting(self):
+        # Same shapes, but run 2 captured 100x longer. Percentages must make
+        # the aggregate identical to the equal-length case.
+        base = self._frames()
+        scaled_runs = [
+            [StackSample(frames=["m", "broad"], weight=10),
+             StackSample(frames=["m", "other"], weight=90)],
+            [StackSample(frames=["m", "broad"], weight=1200),
+             StackSample(frames=["m", "other"], weight=8800)],
+            [StackSample(frames=["m", "broad"], weight=11),
+             StackSample(frames=["m", "spiky"], weight=50),
+             StackSample(frames=["m", "other"], weight=39)],
+        ]
+        scaled = self._agg([function_frame(r) for r in scaled_runs])
+        assert scaled.sort("function").equals(self._agg(base).sort("function"))

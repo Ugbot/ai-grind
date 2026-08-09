@@ -8,7 +8,7 @@ from mcp.server.fastmcp import Context
 from devtools_mcp.filters import apply_filters, build_filter_spec
 from devtools_mcp.formatters import format_filtered
 from devtools_mcp.registry import get_backend
-from devtools_mcp.server import get_run, mcp
+from devtools_mcp.server import get_app_ctx, get_run, mcp
 
 
 @mcp.tool()
@@ -181,6 +181,126 @@ async def devtools_query(
             return f"No matching columns. Available: {df.columns}"
 
     return format_filtered(df, f"Query: {run.suite}:{run.tool}", spec)
+
+
+@mcp.tool()
+async def devtools_aggregate(
+    ctx: Context,
+    run_ids: list[str] | None = None,
+    tag: str | None = None,
+    metric: str = "self",
+    function_pattern: str | None = None,
+    exclude_functions: str | None = None,
+    top_n: int = 25,
+    min_runs: int = 1,
+    workspace_id: str | None = None,
+) -> str:
+    """Aggregate per-function cost across MANY sampling runs at once.
+
+    devtools_compare answers "what changed between run A and run B".
+    This answers the other question a profiling campaign asks: "across my
+    whole benchmark suite, where does the time actually go, and which costs
+    are BROAD (many workloads) versus SPIKY (one workload)?" — the split that
+    decides whether an optimization pays once or everywhere.
+
+    Percentages are normalized per run before combining, so a long capture
+    cannot outvote a short one. Reports, per function:
+      runs        — how many runs it appears in (breadth)
+      mean_pct    — mean share across the runs it appears in
+      max_pct     — its worst single run
+      top_run     — which run that was (where to go profile next)
+      total_share — mean_pct * runs / n_runs: the suite-wide ranking key
+
+    Args:
+        run_ids: Runs to aggregate. None = every stacks-capable run matching
+            `tag` (or all of them, if no tag).
+        tag: Only aggregate runs carrying this tag (e.g. "tpch-sf10").
+        metric: "self" (exclusive — where cycles burn) or "total"
+            (inclusive — subtree cost, for finding expensive call paths).
+        function_pattern: Regex to include only matching functions.
+        exclude_functions: Regex to drop functions (e.g. framework frames).
+        top_n: Rows to return.
+        min_runs: Only report functions appearing in at least this many runs
+            (raise it to isolate the genuinely cross-cutting costs).
+        workspace_id: Workspace containing the runs.
+    """
+    if metric not in ("self", "total"):
+        return f"metric must be 'self' or 'total', got {metric!r}"
+
+    app = get_app_ctx(ctx)
+    ws = app.get_workspace(workspace_id)
+
+    if run_ids:
+        candidates = list(run_ids)
+    else:
+        candidates = [r["run_id"] for r in ws.list_runs()]
+
+    from devtools_mcp.flamegraph.tree import function_frame
+
+    frames: list[tuple[str, object]] = []
+    skipped: list[str] = []
+    for rid in candidates:
+        try:
+            run = ws.get_run(rid)
+        except (KeyError, ValueError):
+            skipped.append(f"{rid[:8]}(missing)")
+            continue
+        if tag is not None and tag not in (run.tags or []):
+            continue
+        try:
+            backend = get_backend(run.suite)
+        except KeyError:
+            continue
+        if backend.stacks is None:
+            continue
+        samples = backend.stacks(run)
+        if not samples:
+            skipped.append(f"{rid[:8]}(no stacks)")
+            continue
+        label = run.label or f"{run.suite}:{run.tool}"
+        frames.append((f"{label} [{rid[:8]}]", function_frame(samples)))
+
+    if not frames:
+        return (
+            "No stacks-capable runs matched. "
+            f"(candidates={len(candidates)}, tag={tag!r})"
+        )
+
+    col = "self_pct" if metric == "self" else "total_pct"
+    stacked = pl.concat(
+        [f.select(["function", col]).with_columns(pl.lit(name).alias("run"))
+         for name, f in frames],
+        how="vertical",
+    )
+    n_runs = len(frames)
+    agg = (
+        stacked.group_by("function")
+        .agg([
+            pl.len().alias("runs"),
+            pl.col(col).mean().round(2).alias("mean_pct"),
+            pl.col(col).max().round(2).alias("max_pct"),
+            pl.col("run").sort_by(col, descending=True).first().alias("top_run"),
+        ])
+        .filter(pl.col("runs") >= min_runs)
+        .with_columns(
+            (pl.col("mean_pct") * pl.col("runs") / n_runs).round(2).alias("total_share")
+        )
+        .sort("total_share", descending=True)
+    )
+
+    spec = build_filter_spec(
+        function_pattern=function_pattern,
+        exclude_functions=exclude_functions,
+        limit=top_n,
+    )
+    agg = apply_filters(agg, spec)
+    title = (
+        f"Aggregate across {n_runs} run(s) · metric={metric} "
+        f"(%-normalized per run, then combined)"
+    )
+    if skipped:
+        title += f" · skipped: {', '.join(skipped[:5])}"
+    return format_filtered(agg, title, spec)
 
 
 @mcp.tool()
