@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import polars as pl
 from mcp.server.fastmcp import Context
 
@@ -188,9 +190,12 @@ async def devtools_aggregate(
     ctx: Context,
     run_ids: list[str] | None = None,
     tag: str | None = None,
+    tags: list[str] | None = None,
     metric: str = "self",
     function_pattern: str | None = None,
     exclude_functions: str | None = None,
+    stack_include: str | None = None,
+    stack_exclude: str | None = None,
     top_n: int = 25,
     min_runs: int = 1,
     workspace_id: str | None = None,
@@ -211,14 +216,32 @@ async def devtools_aggregate(
       top_run     — which run that was (where to go profile next)
       total_share — mean_pct * runs / n_runs: the suite-wide ranking key
 
+    `function_pattern`/`exclude_functions` filter the RESULT ROWS by name;
+    `stack_include`/`stack_exclude` filter the SAMPLES by call path. Reach for
+    the latter whenever a whole-process profile mixes phases — see below.
+
     Args:
         run_ids: Runs to aggregate. None = every stacks-capable run matching
-            `tag` (or all of them, if no tag).
+            `tag`/`tags` (or all of them, if neither is given).
         tag: Only aggregate runs carrying this tag (e.g. "tpch-sf10").
+        tags: Only aggregate runs carrying ALL of these tags. A campaign tags a
+            run several ways at once (by suite, by query, by sweep date), so the
+            useful selection is usually the intersection, not one label.
+            Combines with `tag`, which is kept for existing callers.
         metric: "self" (exclusive — where cycles burn) or "total"
             (inclusive — subtree cost, for finding expensive call paths).
         function_pattern: Regex to include only matching functions.
         exclude_functions: Regex to drop functions (e.g. framework frames).
+        stack_include: Regex matched against EVERY frame; keep only samples whose
+            stack contains a match. Narrows the whole aggregate to one
+            subsystem's call paths.
+        stack_exclude: Regex matched against EVERY frame; drop a sample whole if
+            any frame matches. This is the filter a mixed-phase profile needs: a
+            benchmark that spends 34% of samples loading tables ranks memmove #1
+            until you drop every sample under the loader, because a leaf-name
+            filter would delete the memmove that matters too. Applied BEFORE
+            per-run normalization, so the surviving samples renormalize to 100%
+            and shares describe the filtered universe, not a 66% remainder.
         top_n: Rows to return.
         min_runs: Only report functions appearing in at least this many runs
             (raise it to isolate the genuinely cross-cutting costs).
@@ -235,17 +258,26 @@ async def devtools_aggregate(
     else:
         candidates = [r["run_id"] for r in ws.list_runs()]
 
+    from devtools_mcp.flamegraph.sample_filter import StackFilter, filter_samples
     from devtools_mcp.flamegraph.tree import function_frame
+
+    required_tags = list(tags or [])
+    if tag is not None:
+        required_tags.append(tag)
 
     frames: list[tuple[str, object]] = []
     skipped: list[str] = []
+    # Each run is stack-filtered on its own, then %-normalized; the per-run cuts
+    # accumulate into one header line so the reader sees how much was dropped.
+    cut = StackFilter()
     for rid in candidates:
         try:
             run = ws.get_run(rid)
         except (KeyError, ValueError):
             skipped.append(f"{rid[:8]}(missing)")
             continue
-        if tag is not None and tag not in (run.tags or []):
+        run_tags = run.tags or []
+        if any(t not in run_tags for t in required_tags):
             continue
         try:
             backend = get_backend(run.suite)
@@ -257,13 +289,23 @@ async def devtools_aggregate(
         if not samples:
             skipped.append(f"{rid[:8]}(no stacks)")
             continue
+        try:
+            samples, run_cut = filter_samples(samples, stack_include, stack_exclude)
+        except re.error as exc:
+            return f"Invalid stack filter regex: {exc}"
+        cut = cut + run_cut
+        if not samples:
+            skipped.append(f"{rid[:8]}(all samples stack-filtered)")
+            continue
         label = run.label or f"{run.suite}:{run.tool}"
         frames.append((f"{label} [{rid[:8]}]", function_frame(samples)))
 
     if not frames:
         return (
             "No stacks-capable runs matched. "
-            f"(candidates={len(candidates)}, tag={tag!r})"
+            f"(candidates={len(candidates)}, tags={required_tags!r}"
+            + (f", stack filter dropped {cut.dropped_weight:,} samples" if cut.active else "")
+            + ")"
         )
 
     col = "self_pct" if metric == "self" else "total_pct"
@@ -298,6 +340,8 @@ async def devtools_aggregate(
         f"Aggregate across {n_runs} run(s) · metric={metric} "
         f"(%-normalized per run, then combined)"
     )
+    if cut.active:
+        title += f" · {cut.describe()}"
     if skipped:
         title += f" · skipped: {', '.join(skipped[:5])}"
     return format_filtered(agg, title, spec)
@@ -310,6 +354,8 @@ async def devtools_compare(
     run_id_b: str,
     function_pattern: str | None = None,
     exclude_functions: str | None = None,
+    stack_include: str | None = None,
+    stack_exclude: str | None = None,
     min_delta: int | None = None,
     sort_by: str | None = None,
     offset: int = 0,
@@ -323,6 +369,16 @@ async def devtools_compare(
         run_id_b: Comparison run
         function_pattern: Regex to include only matching functions
         exclude_functions: Regex to exclude functions
+        stack_include: Regex matched against EVERY frame of a sample; keep only
+            samples whose stack contains a match (stack-based suites only).
+            Compares one subsystem's call paths instead of two whole processes.
+        stack_exclude: Regex matched against EVERY frame; drop a sample whole if
+            any frame matches (stack-based suites only). Needed when the two runs
+            share a phase you are not comparing — a setup/load phase that differs
+            in length between A and B otherwise shows up as a fake regression in
+            every function it touches. Applied before %-normalization, so both
+            sides renormalize to their own filtered universe and the deltas stay
+            comparable.
         min_delta: Minimum absolute delta to include
         sort_by: Column to sort by
         offset: Skip first N rows
@@ -378,6 +434,7 @@ async def devtools_compare(
     except KeyError:
         backend = None
     if backend is not None and backend.stacks is not None:
+        from devtools_mcp.flamegraph.sample_filter import filter_samples
         from devtools_mcp.flamegraph.tree import function_frame
 
         samples_a = backend.stacks(run_a)
@@ -386,6 +443,17 @@ async def devtools_compare(
             return (
                 f"One of the runs has no stack samples "
                 f"(A: {len(samples_a or [])}, B: {len(samples_b or [])})."
+            )
+        try:
+            samples_a, cut_a = filter_samples(samples_a, stack_include, stack_exclude)
+            samples_b, cut_b = filter_samples(samples_b, stack_include, stack_exclude)
+        except re.error as exc:
+            return f"Invalid stack filter regex: {exc}"
+        if not samples_a or not samples_b:
+            return (
+                "The stack filter removed every sample from one of the runs "
+                f"(A kept {len(samples_a)}, B kept {len(samples_b)}) — "
+                "nothing left to compare."
             )
         fa = function_frame(samples_a).rename(
             {"self": "self_a", "total": "total_a",
@@ -425,6 +493,8 @@ async def devtools_compare(
             f"Comparison: {run_a.suite}:{run_a.tool} (A → B) · "
             f"{n_a:,} → {n_b:,} samples · %-columns normalized per run"
         )
+        if cut_a.active:
+            title += f" · {(cut_a + cut_b).describe()}"
         return format_filtered(df, title, spec)
 
     return f"Comparison not yet implemented for suite '{run_a.suite}'"

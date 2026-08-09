@@ -15,10 +15,11 @@ same run_id.
 from __future__ import annotations
 
 import json
+import re
 
 from mcp.server.fastmcp import Context
 
-from devtools_mcp.flamegraph import build_call_tree, render_text_tree
+from devtools_mcp.flamegraph import build_call_tree, filter_samples, render_text_tree
 from devtools_mcp.flamegraph.fold import emit_folded, parse_folded
 from devtools_mcp.flamegraph.render_text import top_table
 from devtools_mcp.registry import get_backend
@@ -35,6 +36,8 @@ async def devtools_flamegraph(
     min_pct: float = 0.5,
     max_depth: int = 32,
     top_n: int = 15,
+    stack_include: str | None = None,
+    stack_exclude: str | None = None,
     workspace_id: str | None = None,
 ) -> str:
     """Render a sampling run as a flame graph.
@@ -50,6 +53,16 @@ async def devtools_flamegraph(
         max_depth: (text only) Max stack depth to show in the text tree
             (default 32).
         top_n: (text only) Rows in the hottest-functions table (default 15).
+        stack_include: Regex matched against EVERY frame of a sample; keep only
+            samples whose stack contains a match — zoom the whole graph onto one
+            subsystem's call paths without re-running the profiler.
+        stack_exclude: Regex matched against EVERY frame; drop a sample whole if
+            any frame matches. The filter a mixed-phase capture needs: a
+            whole-process profile that includes a setup/load phase attributes its
+            cost to shared leaves (memmove, memcpy, malloc), so excluding the
+            phase by CALL PATH is the only way to see where execution time goes.
+            Applied before the tree is built, so every % in the output is a share
+            of the kept samples, not of the unfiltered run.
         workspace_id: Workspace containing the run.
     """
     if fmt not in ("text", "data"):
@@ -72,6 +85,16 @@ async def devtools_flamegraph(
     if not samples:
         return f"No stack samples in run `{run_id}` ({run.suite}:{run.tool})."
 
+    try:
+        samples, cut = filter_samples(samples, stack_include, stack_exclude)
+    except re.error as exc:
+        return f"Invalid stack filter regex: {exc}"
+    if not samples:
+        return (
+            f"The stack filter removed all {cut.dropped_weight:,} samples of run "
+            f"`{run_id}` — nothing to render. Loosen stack_include/stack_exclude."
+        )
+
     assert len(samples) > 0, "stacks() returned empty list after non-empty check"
 
     if fmt == "data":
@@ -89,7 +112,11 @@ async def devtools_flamegraph(
             if total > _MAX_DATA_STACKS
             else ""
         )
-        header = f"Folded stack data — {run.suite}:{run.tool} · {len(payload):,} stacks{note} · run `{run_id}`\n\n"
+        filtered = f" · {cut.describe()}" if cut.active else ""
+        header = (
+            f"Folded stack data — {run.suite}:{run.tool} · {len(payload):,} stacks"
+            f"{note}{filtered} · run `{run_id}`\n\n"
+        )
         return header + json.dumps(payload)
 
     # fmt == "text"
@@ -98,6 +125,10 @@ async def devtools_flamegraph(
 
     parts = [
         f"**Flame graph — {run.suite}:{run.tool}** · {total:,} samples · run `{run_id}`",
+    ]
+    if cut.active:
+        parts.append(f"_{cut.describe()}_")
+    parts += [
         "",
         f"**Hottest functions (top {top_n}):**",
         top_table(tree, top_n),
