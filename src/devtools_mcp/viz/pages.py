@@ -12,7 +12,7 @@ modules from ``_VIZ_PAGE_MODULES`` and then the ``devtools_mcp.viz_pages``
 entry-point group, exactly like ``load_backends`` handles ``devtools_mcp.backends``.
 A plugin's entry point points at a module that calls :func:`register_page` on
 import. A version-incompatible plugin is skipped-with-warning (into
-``_FAILED_VIZ_PAGES``) rather than crashing — the same degrade-never-crash
+``_FAILED_VIZ_PAGES``) rather than crashing, the same degrade-never-crash
 contract the backend/tool loaders honor.
 
 Handlers stay decoupled from the HTTP layer: a GET/POST handler returns either an
@@ -32,7 +32,7 @@ from devtools_mcp.registry import _attr_incompat_reason, host_incompat_reason
 
 MAX_VIZ_PAGES: int = 64
 
-# Path prefixes owned by the built-in viz routes — a registered page may not
+# Path prefixes owned by the built-in viz routes, a registered page may not
 # claim one of these (it would shadow a core route). Keep in sync with
 # viz/server.py's do_GET/do_POST first-segment branches.
 _BUILTIN_PREFIXES: frozenset[str] = frozenset(
@@ -60,10 +60,10 @@ _BUILTIN_PREFIXES: frozenset[str] = frozenset(
 class VizResponse:
     """A registered handler's reply, translated to HTTP by the viz server.
 
-    body     — response payload (utf-8) written when there is no redirect
-    status   — HTTP status code
-    content_type — Content-Type header for a body reply
-    location — when set, the server sends a 303 redirect here (body ignored)
+    body: response payload (utf-8) written when there is no redirect
+    status: HTTP status code
+    content_type, Content-Type header for a body reply
+    location, when set, the server sends a 303 redirect here (body ignored)
     """
 
     body: str = ""
@@ -89,13 +89,13 @@ PostHandler = Callable[[list[str], str], "VizResponse | str | None"]
 class VizPage:
     """A console page contributed by a plugin (or an in-tree module).
 
-    name    — unique registry key
-    prefix  — first path segment the page owns (e.g. "recipes" for /recipes/*)
-    label   — tab label shown in the nav
-    render  — GET at exactly /{prefix} (no trailing segments) -> HTML str
-    get     — GET at /{prefix}/<rest...>; None means "no subpaths"
-    post    — POST at /{prefix}/<rest...>; None means "read-only page"
-    href    — tab link target; defaults to /{prefix}
+    name: unique registry key
+    prefix: first path segment the page owns (e.g. "recipes" for /recipes/*)
+    label: tab label shown in the nav
+    render: GET at exactly /{prefix} (no trailing segments) -> HTML str
+    get: GET at /{prefix}/<rest...>; None means "no subpaths"
+    post: POST at /{prefix}/<rest...>; None means "read-only page"
+    href: tab link target; defaults to /{prefix}
     """
 
     name: str
@@ -145,7 +145,7 @@ def get_page(prefix: str) -> VizPage | None:
 
 
 def registered_tabs() -> list[tuple[str, str, str]]:
-    """(active-key, href, label) tuples for every registered page — for the nav."""
+    """(active-key, href, label) tuples for every registered page, for the nav."""
     return [page.tab() for page in _PAGES.values()]
 
 
@@ -168,7 +168,7 @@ def load_viz_pages() -> None:
     for module_name in _VIZ_PAGE_MODULES:
         try:
             importlib.import_module(module_name)
-        except Exception as exc:  # noqa: BLE001 — degrade, don't die
+        except Exception as exc:  # noqa: BLE001  # degrade, don't die
             _FAILED_VIZ_PAGES[module_name] = f"{type(exc).__name__}: {exc}"
     for ep in importlib.metadata.entry_points(group="devtools_mcp.viz_pages"):
         key = f"viz:{ep.name}"

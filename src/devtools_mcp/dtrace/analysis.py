@@ -1,4 +1,4 @@
-"""DTrace analysis — convert results to Polars DataFrames."""
+"""DTrace analysis, convert results to Polars DataFrames."""
 
 from __future__ import annotations
 

@@ -20,8 +20,8 @@ class CallNode:
     """One frame in the call tree."""
 
     name: str
-    total_weight: int = 0  # inclusive — this frame and everything it called
-    self_weight: int = 0  # exclusive — samples that stopped here
+    total_weight: int = 0  # inclusive. This frame and everything it called
+    self_weight: int = 0  # exclusive, samples that stopped here
     children: dict[str, CallNode] = field(default_factory=dict)
 
     def child(self, name: str) -> CallNode:
@@ -77,7 +77,7 @@ def function_stats(root: CallNode) -> dict[str, tuple[int, int]]:
     or indirect recursion is not double-counted.
     """
     stats: dict[str, list[int]] = {}
-    # (node, ancestor_names) — explicit stack, bounded by tree depth.
+    # (node, ancestor_names), explicit stack, bounded by tree depth.
     work: list[tuple[CallNode, frozenset[str]]] = [(root, frozenset())]
     while work:
         node, ancestors = work.pop()
@@ -121,7 +121,7 @@ def _merge_into(dst: CallNode, src: CallNode) -> None:
 def focus(root: CallNode, name: str) -> CallNode | None:
     """Re-root the tree at `name`: merge every top-most subtree with that frame.
 
-    Powers click-to-zoom — clicking a frame shows only what ran beneath it.
+    Powers click-to-zoom, clicking a frame shows only what ran beneath it.
     Returns None if the frame isn't present.
     """
     focused = CallNode(name=name)
@@ -133,7 +133,7 @@ def focus(root: CallNode, name: str) -> CallNode | None:
         if node.name == name and node is not root:
             found = True
             _merge_into(focused, node)
-            continue  # don't descend — its subtree is already merged
+            continue  # don't descend, its subtree is already merged
         stack.extend(node.children.values())
     return focused if found else None
 

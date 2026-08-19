@@ -1,4 +1,4 @@
-"""Threaded stdlib HTTP server — visualization terminal over workspace + tracker."""
+"""Threaded stdlib HTTP server, visualization terminal over workspace + tracker."""
 
 from __future__ import annotations
 
@@ -191,8 +191,8 @@ class _Handler(BaseHTTPRequestHandler):
         """Reject cross-origin / rebinding / untokened writes.
 
         The dashboard's own forms and localhost tools pass (matching Host, same or
-        absent Origin); a malicious web page cannot (its Origin — or, under DNS
-        rebinding, its Host — is not in the allowlist). When a token is configured,
+        absent Origin); a malicious web page cannot (its Origin, or, under DNS
+        rebinding, its Host, is not in the allowlist). When a token is configured,
         a cross-origin caller may instead present it (X-Devtools-Token or ?token=).
         """
         allowed = getattr(self.server, "allowed_hosts", set())  # type: ignore[attr-defined]
@@ -526,7 +526,7 @@ class _Handler(BaseHTTPRequestHandler):
         self._send(render.graph_page(svg, focus, len(placement), len(edges)))
 
     def _post_collab_touch(self, payload: dict) -> None:
-        """Ingest a file-touch report from an agent hook (lenient by design —
+        """Ingest a file-touch report from an agent hook (lenient by design,
         the hook path must never break editing, so bad optional fields are
         dropped rather than rejected; only session_id/files are mandatory)."""
         from devtools_mcp.tracker import activity
@@ -838,7 +838,7 @@ class _Handler(BaseHTTPRequestHandler):
 
         if not self._guard_state_change():
             return
-        # The nonce must match one this dashboard issued on the auth page — a
+        # The nonce must match one this dashboard issued on the auth page, a
         # forged/replayed callback (img-src, stale link) is rejected.
         if not _consume_station_nonce(self.server, (query.get("nonce") or [""])[0]):  # type: ignore[arg-type]
             msg = "<p>⛔ Invalid or expired sign-in link. Reopen /station/auth.</p>"
@@ -857,7 +857,7 @@ class _Handler(BaseHTTPRequestHandler):
             render.page(
                 "station connected",
                 "<h2>✅ Connected</h2><p>The station API key is stored locally. "
-                "You can close this tab and tell your agent to retry — station_sync, "
+                "You can close this tab and tell your agent to retry, station_sync, "
                 "station_link and station_session will pick the key up automatically.</p>",
             )
         )

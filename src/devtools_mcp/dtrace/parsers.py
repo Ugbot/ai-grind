@@ -163,7 +163,7 @@ def _parse_stack(lines: list[str], start: int) -> tuple[DTraceStackTrace | None,
         stripped = line.strip()
 
         if not stripped:
-            # Blank line — next non-blank might be the count
+            # Blank line, next non-blank might be the count
             i += 1
             if i < len(lines):
                 count_match = re.match(r"\s*(\d+)\s*$", lines[i])

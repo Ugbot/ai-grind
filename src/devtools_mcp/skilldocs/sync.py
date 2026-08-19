@@ -1,9 +1,9 @@
 """Peer sync for live skills over the dashboard's /api/skilldoc/ endpoints.
 
 Two-step exchange per skill, both directions in one call:
-  1. POST /api/skilldoc/exchange {name, sv} — send my state vector, receive
+  1. POST /api/skilldoc/exchange {name, sv}, send my state vector, receive
      the peer's diff (everything I'm missing) plus the peer's state vector.
-  2. POST /api/skilldoc/push {name, update} — send the diff the peer is
+  2. POST /api/skilldoc/push {name, update}, send the diff the peer is
      missing, computed against the state vector from step 1.
 
 CRDT merge makes the whole thing idempotent and order-independent; syncing

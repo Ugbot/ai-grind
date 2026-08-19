@@ -2,7 +2,7 @@
 
 The engine owns what domains must not: the single-flight lock, watermark
 persistence, failure counting with auto-pause, and the bounded sync log.
-Stateless re-diff means there is no offline queue anywhere — a failed run
+Stateless re-diff means there is no offline queue anywhere, a failed run
 advances nothing and the next run recomputes from durable state.
 """
 
@@ -105,7 +105,7 @@ def run_sync(
     """
     assert db.conn is not None, "run_sync on closed tracker db"
     if not _SYNC_LOCK.acquire(blocking=False):
-        raise TrackerError("a station sync is already running — try again when it finishes")
+        raise TrackerError("a station sync is already running, try again when it finishes")
     try:
         return _run_sync_locked(db, cfg, domains, dry_run, client)
     finally:
@@ -122,9 +122,9 @@ def _run_sync_locked(
     project_key = cfg.project.local.strip().upper()
     row = project_link.get_project_link(db.conn, project_key)
     if row is None:
-        raise TrackerError(f"Project {project_key} is not linked — run station_link action='link' first")
+        raise TrackerError(f"Project {project_key} is not linked. Run station_link action='link' first")
     if row["config_hash"] != cfg.config_hash():
-        raise TrackerError(f"station.toml changed since {project_key} was linked — re-run station_link action='link'")
+        raise TrackerError(f"station.toml changed since {project_key} was linked, re-run station_link action='link'")
     wanted = domains if domains is not None else cfg.enabled_domains()
     unknown = set(wanted) - set(DOMAIN_SYNCERS)
     if unknown:
@@ -135,7 +135,7 @@ def _run_sync_locked(
         _recover_pending(db, client, row, reports)
         for domain in wanted:  # bounded: <= 5 domains
             if not cfg.rule(domain).enabled:
-                reports.append({"domain": domain, "notes": ["disabled by config — skipped"]})
+                reports.append({"domain": domain, "notes": ["disabled by config, skipped"]})
                 continue
             reports.append(_run_domain(db, client, cfg, domain, row, dry_run))
     finally:
@@ -169,7 +169,7 @@ def _run_domain(
     if state["paused"]:
         return {
             "domain": domain,
-            "notes": [f"paused after repeated failures ({state['last_error']}) — station_link action='resume'"],
+            "notes": [f"paused after repeated failures ({state['last_error']}), station_link action='resume'"],
         }
     started_at = utc_now_iso()
     try:
@@ -177,7 +177,7 @@ def _run_domain(
     except (StationError, TrackerError) as exc:
         paused = _record_failure(db, rule_id, str(exc))
         _write_log(db, rule_id, started_at, {"errors": 1}, str(exc)[:500])
-        note = " — rule auto-paused" if paused else ""
+        note = ", rule auto-paused" if paused else ""
         return {"domain": domain, "errors": 1, "notes": [f"{exc}{note}"]}
     if not dry_run:
         old = state["last_push_hlc"]

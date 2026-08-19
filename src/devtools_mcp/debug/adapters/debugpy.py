@@ -1,7 +1,7 @@
 """debugpy adapter: Python debugging.
 
 Spawns `<python> -m debugpy.adapter` over stdio. The interpreter matters
-twice: it runs the adapter AND must be able to import debugpy — and for
+twice: it runs the adapter AND must be able to import debugpy, and for
 launch, debugpy injects itself into the same interpreter that runs the
 program. We therefore resolve the target project's interpreter (venv
 layouts, then the server's own) and require debugpy importable there.
@@ -156,7 +156,7 @@ def _register() -> None:
             sniff=sniff,
             install=_INSTALL,
             quirks=AdapterQuirks(supports_attach_pid=True, supports_attach_socket=True),
-            description="Python (debugpy) — launch scripts/modules, attach by PID or debugpy --listen port",
+            description="Python (debugpy), launch scripts/modules, attach by PID or debugpy --listen port",
         )
     )
 

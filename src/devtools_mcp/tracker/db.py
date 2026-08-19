@@ -24,7 +24,7 @@ BUSY_TIMEOUT_MS: int = 5000
 class TrackerError(Exception):
     """Runtime tracker error (bad input, policy violation, missing row).
 
-    These are expected conditions reported back to the caller — never a
+    These are expected conditions reported back to the caller. Never a
     programmer-error invariant (those are asserts).
     """
 

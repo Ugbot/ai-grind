@@ -1,1 +1,1 @@
-"""CDB backend — batch-mode Windows debugger (stacks / crash analysis)."""
+"""CDB backend, batch-mode Windows debugger (stacks / crash analysis)."""

@@ -13,7 +13,7 @@ from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
 
 
 async def detect() -> list[InstalledTool]:
-    """Detect JVM tooling — jcmd drives cpu(jfr)/threads/heap; alloc uses async-profiler."""
+    """Detect JVM tooling, jcmd drives cpu(jfr)/threads/heap; alloc uses async-profiler."""
     info = await check_jvm()
     jdk = bool(info.get("jcmd"))
     tools = {

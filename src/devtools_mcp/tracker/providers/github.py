@@ -1,6 +1,6 @@
 """GitHub issue provider over the REST v3 API.
 
-Auth: GITHUB_TOKEN, then GH_TOKEN, from the environment — or an explicit token.
+Auth: GITHUB_TOKEN, then GH_TOKEN, from the environment, or an explicit token.
 An injectable httpx.Client (e.g. with MockTransport) makes this testable
 without the network.
 """
@@ -22,10 +22,10 @@ TIMEOUT_SECONDS: float = 15.0
 
 _STATUS_HINTS: dict[int, str] = {
     401: "bad or expired token (check GITHUB_TOKEN)",
-    403: "forbidden — token lacks 'repo'/'issues' scope or rate limit hit",
+    403: "forbidden, token lacks 'repo'/'issues' scope or rate limit hit",
     404: "repo or issue not found (or token cannot see it)",
     410: "issues are disabled on this repository",
-    422: "validation failed — check title/labels",
+    422: "validation failed. Check title/labels",
 }
 
 

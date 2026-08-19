@@ -123,7 +123,7 @@ class TestV5Migration:
         conn.execute("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)")
         for version, statements in MIGRATIONS[:4]:
             if version == 3:
-                # insert before the v3 capture triggers exist — they call the
+                # insert before the v3 capture triggers exist. They call the
                 # Python-registered crdt_hlc(), absent on this raw connection
                 conn.execute(
                     "INSERT INTO projects (key, name, created_at) VALUES (?, ?, ?)",

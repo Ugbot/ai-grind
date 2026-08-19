@@ -3,7 +3,7 @@ and run the local-first sync (tasks, sessions, collab, skills, perf).
 
 Action-multiplexed like tracker_tools. Config rules live in per-repo
 .devtools-mcp/station.toml (see station.config); the lls_ API key is
-env-only. tracker_sync stays peer-CRDT-only — the platform speaks plain
+env-only. tracker_sync stays peer-CRDT-only, the platform speaks plain
 REST, which is this module's job.
 """
 
@@ -63,7 +63,7 @@ def _load_config(repo_root: str | None) -> StationConfig:
     cfg = load_station_config(start)
     if cfg is None:
         raise TrackerError(
-            f"No station config found — run station_link action='init' to create "
+            f"No station config found. Run station_link action='init' to create "
             f"{CONFIG_DIRNAME}/{CONFIG_FILENAME} in the repo"
         )
     return cfg
@@ -82,7 +82,7 @@ def _org_for_session(db: TrackerDB, cfg: StationConfig) -> str:
             return str(row["org_id"])
     if cfg.station.org:
         return cfg.station.org
-    raise TrackerError("No org resolved — set [station].org or run station_link action='link'")
+    raise TrackerError("No org resolved, set [station].org or run station_link action='link'")
 
 
 def _format_report(report: dict) -> str:
@@ -103,7 +103,7 @@ def _format_report(report: dict) -> str:
 def _auth_status_line() -> str:
     stored = credentials.load_credentials()
     if stored is None:
-        return "auth: ⛔ not authenticated — see station_link action='auth'"
+        return "auth: ⛔ not authenticated. See station_link action='auth'"
     return (
         f"auth: ✅ {stored.get('member') or 'signed in'} @ {stored.get('url', '?')} "
         f"(stored {str(stored.get('saved_at', ''))[:19]})"
@@ -121,7 +121,7 @@ def _link_status(db: TrackerDB, cfg: StationConfig | None) -> str:
         lines.append("config: none found")
     rows = project_link.list_project_links(db.conn)
     if not rows:
-        lines.append("linked projects: none — run station_link action='link'")
+        lines.append("linked projects: none. Run station_link action='link'")
         return "\n".join(lines)
     for row in rows:  # bounded at 100
         stale = ""
@@ -152,22 +152,22 @@ async def station_link(
     """Manage the link between local tracker projects and the llm-station platform.
 
     Actions:
-        auth    — how to authenticate + current auth state. If any station
+        auth: how to authenticate + current auth state. If any station
                   tool fails with "Not authenticated", run this and RELAY THE
                   INSTRUCTIONS TO THE USER: they open the local dashboard's
                   /station/auth page in a browser and sign in against the
                   platform (GitHub/Google); the key is stored locally.
-        init    — write a commented .devtools-mcp/station.toml template into the
+        init: write a commented .devtools-mcp/station.toml template into the
                   repo (repo_root or cwd). Edit it, then run action='link'.
-        link    — validate the config against the live platform (auth, org,
+        link: validate the config against the live platform (auth, org,
                   project, repo) and persist the link. Sync refuses to run
                   without this.
-        status  — auth state, config source, linked projects, per-rule sync
+        status: auth state, config source, linked projects, per-rule sync
                   state/errors.
-        resume  — un-pause a rule that auto-paused after repeated failures
+        resume: un-pause a rule that auto-paused after repeated failures
                   (domain required, e.g. domain='tasks').
-        unlink  — remove the link row (config file is left alone).
-        logout  — delete the locally stored credential.
+        unlink: remove the link row (config file is left alone).
+        logout: delete the locally stored credential.
 
     Key resolution order: env LLM_STATION_API_KEY, then the browser-auth
     credential store (~/.devtools-mcp/station-auth.json).
@@ -193,7 +193,7 @@ async def station_link(
             root = Path(repo_root).resolve() if repo_root else Path.cwd()
             dest = root / CONFIG_DIRNAME / CONFIG_FILENAME
             if dest.is_file():
-                return f"{dest} already exists — edit it, then run station_link action='link'"
+                return f"{dest} already exists. Edit it, then run station_link action='link'"
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(CONFIG_TEMPLATE, encoding="utf-8")
             return f"Wrote {dest}. Fill in [station]/[project], enable domains, then station_link action='link'."
@@ -218,7 +218,7 @@ async def station_link(
             cfg = _load_config(repo_root)
             rule_id = f"{cfg.project.local.strip().upper()}:{domain}"
             engine.resume_rule(db, rule_id)
-            return f"Rule `{rule_id}` resumed — next station_sync will retry."
+            return f"Rule `{rule_id}` resumed, next station_sync will retry."
         if action == "unlink":
             cfg = _load_config(repo_root)
             removed = project_link.unlink_project(db, cfg.project.local)
@@ -239,14 +239,14 @@ async def station_sync(
 
     domain: 'all' (every domain enabled in station.toml) or one of
     tasks/sessions/collab/skills/perf. dry_run=True prints the plan without
-    writing anywhere — use it after changing rules.
+    writing anywhere. Use it after changing rules.
 
     Local SQLite stays the source of authority: tasks push/pull with
     local-wins conflicts, sessions and claims push (claims become advisory
-    checkouts), skills and perf runs upload. Offline is a normal state —
+    checkouts), skills and perf runs upload. Offline is a normal state,
     the run fails fast and the next run re-diffs; nothing queues.
 
-    If this fails with "Not authenticated": relay the message to the user —
+    If this fails with "Not authenticated": relay the message to the user,
     they open the dashboard's /station/auth page in a browser and sign in
     (station_link action='auth' reprints the instructions).
     """
@@ -258,9 +258,9 @@ async def station_sync(
         reports = await _offload_with_db(ctx, lambda tdb: engine.run_sync(tdb, cfg, domains, dry_run))
     except TrackerError as exc:
         return f"station_sync failed: {exc}"
-    header = "**Station sync (dry run — nothing written)**" if dry_run else "**Station sync**"
+    header = "**Station sync (dry run. Nothing written)**" if dry_run else "**Station sync**"
     body = "\n".join(_format_report(report) for report in reports)
-    return f"{header}\n{body}" if body else f"{header}\nNo enabled domains — check station.toml."
+    return f"{header}\n{body}" if body else f"{header}\nNo enabled domains. Check station.toml."
 
 
 def _format_context(context: dict) -> str:
@@ -294,15 +294,15 @@ async def station_session(
     """Live coordination with the llm-station platform (online-only verbs).
 
     Actions:
-        start    — start a platform work session (optional task_key)
-        update   — session_id + summary and/or context_text
-        handoff  — context_text + next_steps: offer work to other members
-        inbox    — list pending handoffs addressed to this member
-        accept   — handoff_id: accept a pending handoff
-        decline  — handoff_id: decline a pending handoff
-        context  — the platform's devtools_context onboarding packet
+        start: start a platform work session (optional task_key)
+        update: session_id + summary and/or context_text
+        handoff: context_text + next_steps: offer work to other members
+        inbox: list pending handoffs addressed to this member
+        accept: handoff_id: accept a pending handoff
+        decline: handoff_id: decline a pending handoff
+        context: the platform's devtools_context onboarding packet
 
-    If this fails with "Not authenticated": relay the message to the user —
+    If this fails with "Not authenticated": relay the message to the user,
     they sign in via the dashboard's /station/auth page (see station_link
     action='auth').
     """

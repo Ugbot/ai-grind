@@ -125,7 +125,7 @@ class TestFormatCheck:
     def test_check_shows_capabilities_and_install_hint(self):
         load_backends()
         registry = ToolRegistry()
-        # One available tool from a real suite, plus nothing for the rest —
+        # One available tool from a real suite, plus nothing for the rest,
         # suites with install specs should be called out in the hint line.
         suite = list_backends()[0]
         registry.tools = {f"{suite}:x": InstalledTool(suite, "x", "/bin/x", "1.0")}

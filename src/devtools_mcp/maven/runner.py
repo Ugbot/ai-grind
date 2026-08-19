@@ -31,7 +31,7 @@ def resolve_maven(project_dir: str) -> str | None:
     """mvnw wrapper in the project, else mvn on PATH.
 
     Wrapper projects commit both mvnw and mvnw.cmd, so the POSIX script must come
-    first on non-Windows — otherwise the Windows .cmd is picked and fails to exec.
+    first on non-Windows, otherwise the Windows .cmd is picked and fails to exec.
     """
     wrappers = ("mvnw.cmd", "mvnw.bat", "mvnw") if os.name == "nt" else ("mvnw", "mvnw.cmd", "mvnw.bat")
     for w in wrappers:

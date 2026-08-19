@@ -303,7 +303,7 @@ class DapConnection:
         try:
             body = await self.on_reverse_request(command, request.get("arguments") or {})
             await self._respond(request, body, success=True)
-        except Exception as exc:  # noqa: BLE001 — report to adapter, don't die
+        except Exception as exc:  # noqa: BLE001  # report to adapter, don't die
             with contextlib.suppress(OSError, DapError):
                 await self._respond(request, None, success=False, message=str(exc))
 

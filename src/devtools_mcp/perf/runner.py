@@ -1,4 +1,4 @@
-"""perf execution — stat, record, report, annotate."""
+"""perf execution, stat, record, report, annotate."""
 
 from __future__ import annotations
 

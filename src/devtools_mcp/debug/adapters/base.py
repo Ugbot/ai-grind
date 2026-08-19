@@ -78,7 +78,7 @@ _FAILED_ADAPTER_PLUGINS: dict[str, str] = {}  # entry-point name -> one-line err
 def load_adapter_plugins() -> None:
     """Load out-of-tree debug adapters from the 'devtools_mcp.debug_adapters'
     entry-point group. A plugin exposes a module that calls register_adapter()
-    on import — exactly like the in-tree adapters. Mirrors the backend
+    on import, exactly like the in-tree adapters. Mirrors the backend
     registry's load_backends(): a broken plugin degrades to an entry in
     _FAILED_ADAPTER_PLUGINS, never crashes the server. Idempotent.
     """
@@ -89,7 +89,7 @@ def load_adapter_plugins() -> None:
             continue
         try:
             ep.load()
-        except Exception as exc:  # noqa: BLE001 — degrade to unavailable, don't die
+        except Exception as exc:  # noqa: BLE001  # degrade to unavailable, don't die
             _FAILED_ADAPTER_PLUGINS[ep.name] = f"{type(exc).__name__}: {exc}"
 
 

@@ -1,4 +1,4 @@
-"""RenderDoc summary formatters — bounded, with copy-pasteable next steps."""
+"""RenderDoc summary formatters. Bounded, with copy-pasteable next steps."""
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
 """End-to-end tests for the Claude Code collab hooks: run the real scripts as
-subprocesses feeding stdin JSON, against a live VizServer — no mocks."""
+subprocesses feeding stdin JSON, against a live VizServer. No mocks."""
 
 from __future__ import annotations
 

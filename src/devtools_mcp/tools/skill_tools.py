@@ -30,7 +30,7 @@ def _bounded(content: str) -> str:
     if len(content) <= GET_PREVIEW_MAX:
         return content
     omitted = len(content) - GET_PREVIEW_MAX
-    return content[:GET_PREVIEW_MAX] + f"\n\n… [{omitted} more chars — patch with surgical old/new strings]"
+    return content[:GET_PREVIEW_MAX] + f"\n\n… [{omitted} more chars, patch with surgical old/new strings]"
 
 
 @mcp.tool()
@@ -43,30 +43,30 @@ async def skill_live(
     new: str | None = None,
     url: str | None = None,
 ) -> str:
-    """Live skills: SKILL.md files that are CRDT documents — edit them here,
+    """Live skills: SKILL.md files that are CRDT documents, edit them here,
     sync them between machines, and every peer's skill file updates in place.
     Concurrent edits from different agents/machines merge at character level.
 
     Actions:
-        create  — name + content (full markdown; frontmatter must declare the
+        create: name + content (full markdown; frontmatter must declare the
                   same `name:` and a `description:`). Materializes immediately.
-        get     — name: current merged text (bounded preview)
-        list    — all live skills on this machine
-        append  — name + content: add to the end (changelog-style growth)
-        patch   — name + old + new: surgical find/replace; `old` must match
-                  exactly once. Prefer patch/append over rewriting — concurrent
+        get: name: current merged text (bounded preview)
+        list: all live skills on this machine
+        append: name + content: add to the end (changelog-style growth)
+        patch: name + old + new: surgical find/replace; `old` must match
+                  exactly once. Prefer patch/append over rewriting, concurrent
                   whole-document rewrites both survive a merge and duplicate.
-        sync    — url (a peer dashboard, e.g. http://other-box:8765): full
+        sync: url (a peer dashboard, e.g. http://other-box:8765): full
                   bidirectional exchange; both sides converge
-        publish — re-materialize every live skill to the skills dir
-        delete  — name: remove locally (log + file); peers keep their copy
-        route   — (re)build the `skill-router` live skill: an auto-generated index
+        publish, re-materialize every live skill to the skills dir
+        delete: name: remove locally (log + file); peers keep their copy
+        route: (re)build the `skill-router` live skill: an auto-generated index
                   of every skill, patched under the live-editable routing rules
-        mode    — content=low|high: set the active power mode (optional name for a
+        mode: content=low|high: set the active power mode (optional name for a
                   per-skill override); no content reports the current state. Flips
                   which variant of dynamic skills is materialized.
-        enable/disable — name: include/exclude a skill from materialization AND
-            the router index. Works for static skills too — disable a skill
+        enable/disable, name: include/exclude a skill from materialization AND
+            the router index. Works for static skills too, disable a skill
             that's irrelevant on this machine (e.g. build tools for a language
             you don't use) and the router stops advertising it; enable restores.
     Files land in ~/.claude/skills/<name>/SKILL.md (DEVTOOLS_MCP_LIVE_SKILLS_DIR
@@ -113,7 +113,7 @@ async def skill_live(
                 return f"Refused to sync: {exc}"
 
             def _do_sync() -> dict:
-                # Fresh independent store in the worker thread — sqlite is
+                # Fresh independent store in the worker thread, sqlite is
                 # thread-affine, so the shared AppContext connection must not be
                 # touched off the event loop; the blocking urllib per-doc runs here.
                 thread_store = SkillDocStore()
@@ -162,7 +162,7 @@ async def skill_live(
         )
     except (SkillDocError, SkillControlError) as exc:
         return f"Error: {exc}"
-    # store is owned by the AppContext (closed in cleanup_all) — do not close here.
+    # store is owned by the AppContext (closed in cleanup_all). Do not close here.
 
 
 def _mode_action(store: SkillDocStore, name: str | None, content: str | None) -> str:

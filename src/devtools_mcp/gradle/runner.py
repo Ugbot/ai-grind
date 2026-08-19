@@ -34,7 +34,7 @@ def resolve_gradle(project_dir: str) -> str | None:
     """gradlew wrapper in the project, else gradle on PATH.
 
     Standard wrapper projects commit both gradlew and gradlew.bat, so the POSIX
-    script must come first on non-Windows — otherwise the non-executable .bat is
+    script must come first on non-Windows, otherwise the non-executable .bat is
     picked and the run fails.
     """
     wrappers = ("gradlew.bat", "gradlew") if os.name == "nt" else ("gradlew", "gradlew.bat")
@@ -75,7 +75,7 @@ def _argv(tool: str, args: list[str] | None, extra: list[str] | None) -> list[st
         return ["tasks", "--all", _PLAIN]
     # deps/sync/audit default to a devtools-registered all-projects report task:
     # plain `dependencies` at a multi-module root only shows the (empty) root
-    # project, which would make the tree — and an audit over it — silently empty.
+    # project, which would make the tree, and an audit over it, silently empty.
     all_deps = ["devtoolsAllDeps", "--init-script", str(_INIT_DIR / "alldeps.init.gradle")]
     if tool in ("deps", "audit"):  # audit = deps tree, then OSV over the parsed rows
         return [*(args or all_deps), _PLAIN, *extra]
@@ -167,7 +167,7 @@ async def run_gradle(
     elif tool == "projects":
         modules = parse_gradle_projects(text)
     available = parse_gradle_tasks(text) if tool == "tasks" else []
-    # Only distrust stale reports when the build failed — otherwise a successful
+    # Only distrust stale reports when the build failed, otherwise a successful
     # rerun with UP-TO-DATE tests (gradle doesn't rewrite the XML) would wrongly
     # show zero tests. A failed compile, though, must not surface last run's passes.
     tests = (

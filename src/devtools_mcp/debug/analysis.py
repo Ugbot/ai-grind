@@ -52,7 +52,7 @@ def debug_frames_df(snapshot: DebugSnapshot) -> pl.DataFrame:
 
 
 def debug_variables_df(snapshot: DebugSnapshot) -> pl.DataFrame:
-    """Flattened variables (+ watches as scope='watch') — the diff/query surface."""
+    """Flattened variables (+ watches as scope='watch'), the diff/query surface."""
     rows = []
     for var in snapshot.variables:
         rows.append(
@@ -162,7 +162,7 @@ def debug_output_df(snapshot: DebugSnapshot) -> pl.DataFrame:
 
 
 # tool name (RunBase.tool) -> builder. "stop" snapshots default to the
-# variables frame — the most queried surface; other views have their own
+# variables frame, the most queried surface; other views have their own
 # inspect tools that store runs with the matching tool name.
 DF_BUILDERS = {
     "stop": debug_variables_df,

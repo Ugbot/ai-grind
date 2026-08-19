@@ -3,10 +3,10 @@
 A recipe is an ordered list of steps (shell commands) run one after another with
 stop-on-failure semantics; runs and step outcomes are cached, and a passed run
 is reused while the recipe's spec is unchanged. Domain-agnostic: build, test,
-setup, deploy — any sequence.
+setup, deploy, any sequence.
 
 Action-multiplexed like tracker_*(): one `recipe` tool, an `action` parameter
-per verb. Every response is bounded markdown — full tables live in the DB and
+per verb. Every response is bounded markdown, full tables live in the DB and
 are paged via the runs/steps actions.
 """
 
@@ -88,7 +88,7 @@ def _recipe_line(recipe) -> str:
 
 def _recipe_detail(db: RecipesDB, key: str) -> str:
     recipe = store.get_recipe(db.conn, key)
-    parts = [f"**{recipe.key}** — {recipe.name}", ""]
+    parts = [f"**{recipe.key}**: {recipe.name}", ""]
     parts.append(f"kind: {recipe.kind} | steps: {len(recipe.steps)} | spec_hash: `{recipe.spec_hash[:12]}`")
     if recipe.summary:
         parts += ["", recipe.summary]
@@ -108,11 +108,11 @@ def _recipe_detail(db: RecipesDB, key: str) -> str:
 def _run_summary(result: RunResult) -> str:
     """Bounded markdown summary of a RunResult."""
     if result.dry_run:
-        head = f"**Dry run — `{result.recipe_key}`** ({len(result.steps)} steps, nothing executed)"
+        head = f"**Dry run, `{result.recipe_key}`** ({len(result.steps)} steps, nothing executed)"
     elif result.cached:
-        head = f"**`{result.recipe_key}` — cached** (run #{result.run_id}, status **{result.status}**, not re-run)"
+        head = f"**`{result.recipe_key}`, cached** (run #{result.run_id}, status **{result.status}**, not re-run)"
     else:
-        head = f"**`{result.recipe_key}` — {result.status}** (run #{result.run_id}, exit {result.exit_code})"
+        head = f"**`{result.recipe_key}`, {result.status}** (run #{result.run_id}, exit {result.exit_code})"
     marks = {"passed": "[x]", "failed": "[!]", "skipped": "[-]", "pending": "[ ]", "running": "[>]"}
     lines = [head, ""]
     for step in result.steps[:STEP_LINE_MAX]:
@@ -154,21 +154,21 @@ async def recipe(
     A recipe is an ordered list of steps run one after another; the first
     non-zero step fails the run and the rest are skipped. A passed run is cached
     and reused while the recipe's spec is unchanged (pass force=True to re-run).
-    Domain-agnostic — build, test, setup, deploy, any sequence.
+    Domain-agnostic, build, test, setup, deploy, any sequence.
 
     Actions:
-        register — upsert one recipe. Either spec (a full JSON object with
+        register, upsert one recipe. Either spec (a full JSON object with
                    key/name/kind/summary/env_axes/steps) OR individual args:
                    key + steps (a JSON array of {label, command, cwd?, timeout?}),
                    plus optional name/kind/summary/env_axes (JSON object).
-        list     — all recipes (optional kind filter)
-        get      — key: recipe detail (steps, env, spec_hash, cache state)
-        run      — key: run the recipe. env (JSON object) adds per-run env vars;
+        list: all recipes (optional kind filter)
+        get: key: recipe detail (steps, env, spec_hash, cache state)
+        run: key: run the recipe. env (JSON object) adds per-run env vars;
                    dry_run reports the plan without executing; force ignores the
                    cache. Returns a bounded per-step summary + run id.
-        runs     — recipe run history (optional key filter)
-        steps    — run_id: the per-step outcomes of one run
-        seed     — specs: a JSON array of recipe specs (e.g. `ct seed` output);
+        runs: recipe run history (optional key filter)
+        steps: run_id: the per-step outcomes of one run
+        seed: specs: a JSON array of recipe specs (e.g. `ct seed` output);
                    registers them all.
     """
     db = _recipes(ctx)
@@ -176,7 +176,7 @@ async def recipe(
         if action == "register":
             built = _build_spec(spec, key, name, kind, summary, steps, env_axes, source)
             recipe_row = store.register_recipe(db, built)
-            return f"Registered {_recipe_line(recipe_row)} — spec_hash `{recipe_row.spec_hash[:12]}`"
+            return f"Registered {_recipe_line(recipe_row)}, spec_hash `{recipe_row.spec_hash[:12]}`"
         if action == "list":
             recipes = store.list_recipes(db.conn, kind)
             if not recipes:

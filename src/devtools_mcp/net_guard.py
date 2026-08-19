@@ -1,7 +1,7 @@
 """Guard model-supplied sync URLs against the worst SSRF targets.
 
 The peer-sync features (`skill_live` sync, `tracker_sync`) deliberately reach
-other machines — LAN hosts and localhost are legitimate peers — so this is a
+other machines, LAN hosts and localhost are legitimate peers, so this is a
 targeted guard, not a blanket private-IP block (which would disable the feature).
 It rejects the cloud-metadata / link-local range and other addresses that can
 never be a real peer, so a prompt-injected agent cannot point a sync at
@@ -36,7 +36,7 @@ def check_sync_url(url: str) -> None:
     assert isinstance(url, str), "url must be str"
     parsed = urlparse(url.strip())
     if parsed.scheme not in _ALLOWED_SCHEMES:
-        raise SsrfError(f"scheme {parsed.scheme or '(none)'!r} not allowed — use http or https")
+        raise SsrfError(f"scheme {parsed.scheme or '(none)'!r} not allowed. Use http or https")
     host = parsed.hostname
     if not host:
         raise SsrfError("URL has no host")

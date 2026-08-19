@@ -56,7 +56,7 @@ class BuildModule(BaseModel):
 
 
 class BuildTask(BaseModel):
-    """One build task — executed (`> Task`) or available (`gradle tasks`)."""
+    """One build task, executed (`> Task`) or available (`gradle tasks`)."""
 
     name: str
     outcome: str = ""  # EXECUTED | UP-TO-DATE | FAILED | NO-SOURCE | ...

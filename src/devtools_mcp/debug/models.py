@@ -1,4 +1,4 @@
-"""Models for the unified debug layer — protocol-agnostic.
+"""Models for the unified debug layer, protocol-agnostic.
 
 Nothing in here mentions DAP: the same models are populated by DapSession
 today and by non-DAP implementations (SAP ADT) later.
@@ -117,7 +117,7 @@ class ThreadInfo(BaseModel):
 
 class Variable(BaseModel):
     """One flattened variable node. `path` is the dotted path from the scope
-    root (e.g. 'config.retries') — the join key for diffing and querying."""
+    root (e.g. 'config.retries'), the join key for diffing and querying."""
 
     path: str
     name: str
@@ -272,5 +272,5 @@ class DebugSnapshot(RunBase):
     exception: ExceptionInfo | None = None
     raw_output: str = ""  # recent debuggee output tail
     # Session-summary runs (tool="session") aggregate one root-first stack
-    # per stop — the input for "where did this session stop" flame graphs.
+    # per stop, the input for "where did this session stop" flame graphs.
     session_stacks: list[StackSample] = Field(default_factory=list)

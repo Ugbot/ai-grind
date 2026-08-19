@@ -1,4 +1,4 @@
-"""Polars frame builders over recipes SQL — the bounded-query layer.
+"""Polars frame builders over recipes SQL, the bounded-query layer.
 
 Mirrors tracker/frames.py: tools never dump raw rows; they build a frame here,
 filter/slice it, and hand it to the shared formatters. Frames are built fresh

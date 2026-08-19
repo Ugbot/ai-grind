@@ -2,7 +2,7 @@
 
 `npm ls --json`, `pnpm list --json`, `yarn list --json` (NDJSON), the audit
 formats (npm v6 advisories + v7 vulnerabilities, yarn NDJSON), `npm outdated
---json`, and package.json scripts — all normalized onto the shared models.
+--json`, and package.json scripts, all normalized onto the shared models.
 """
 
 from __future__ import annotations
@@ -105,7 +105,7 @@ def parse_yarn_list(text: str) -> list[Dependency]:
 
 
 def parse_npm_audit(text: str) -> list[Vulnerability]:
-    """Parse `npm audit --json` — both v7 `vulnerabilities` and v6 `advisories`."""
+    """Parse `npm audit --json`. Both v7 `vulnerabilities` and v6 `advisories`."""
     try:
         data = json.loads(text)
     except (json.JSONDecodeError, TypeError):

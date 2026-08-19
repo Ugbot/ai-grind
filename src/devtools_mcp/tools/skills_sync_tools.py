@@ -1,6 +1,6 @@
 """skills_sync: drive the static skills library (harvest.py / sync.py) from MCP.
 
-Distinct from skill_live (CRDT live skills): this manages the *static* library —
+Distinct from skill_live (CRDT live skills): this manages the *static* library,
 harvested catalog/ + hand-written authored/ flattened into loadable mirrors
 (plugin bundle, loadable/, .agents/, project/global .claude dirs).
 """
@@ -43,7 +43,7 @@ def library_status(root: pathlib.Path) -> str:
         counts = ", ".join(f"{k}={v}" for k, v in sorted(by_type.items()))
         parts.append(f"**Harvested (MANIFEST.json):** {len(items)} items ({counts})")
     else:
-        parts.append("**Harvested:** no MANIFEST.json — run action='harvest' first")
+        parts.append("**Harvested:** no MANIFEST.json: run action='harvest' first")
     authored = sorted((root / "authored" / "skills").rglob("SKILL.md"))[:_MAX_AUTHORED_SCAN]
     parts.append(f"**Authored:** {len(authored)} skills under authored/skills/")
     parts.append("")
@@ -59,7 +59,7 @@ def library_status(root: pathlib.Path) -> str:
         skills_dir = base / "skills"
         count = len(list(skills_dir.iterdir())) if skills_dir.is_dir() else 0
         state = f"{count} skills" if count else "absent"
-        parts.append(f"- {name}: `{base}` — {state}")
+        parts.append(f"- {name}: `{base}`, {state}")
     parts.append("")
     parts.append("Sync with action='sync', target='plugin'|'local'|'agents'|'project'|'global'|'all'.")
     return "\n".join(parts)
@@ -77,7 +77,7 @@ def rebuild_router_quiet() -> str:
             return f"\n\n_Rebuilt {router.ROUTER_NAME} index._"
         finally:
             store.close()
-    except Exception as exc:  # noqa: BLE001 — advisory, must not fail the sync
+    except Exception as exc:  # noqa: BLE001  # advisory, must not fail the sync
         return f"\n\n_Router rebuild skipped: {exc}._"
 
 
@@ -120,16 +120,16 @@ async def skills_sync(
     Claude Code (and other clients) load.
 
     Actions:
-        status   — library location, harvested/authored counts, mirror freshness
-        discover — scan every project .claude/{skills,commands,agents} dir
+        status: library location, harvested/authored counts, mirror freshness
+        discover, scan every project .claude/{skills,commands,agents} dir
                    (roots derived from sources.toml + ~/.claude +
                    $DEVTOOLS_MCP_SKILL_SCAN_ROOTS) for assets not yet in the
                    library; reports candidates and malformed entries
-        adopt    — src (path to a discovered asset) + category (+ note):
+        adopt: src (path to a discovered asset) + category (+ note):
                    validate, append an [[item]] to sources.toml, re-harvest
-        harvest  — re-copy upstream assets from sources.toml into catalog/
+        harvest: re-copy upstream assets from sources.toml into catalog/
                    (refreshes MANIFEST.json; run after editing sources.toml)
-        sync     — flatten catalog/ + authored/ into a mirror. target one of:
+        sync: flatten catalog/ + authored/ into a mirror. target one of:
                    local (skills/loadable), plugin (committed plugin bundle),
                    agents (.agents), project (<repo>/.claude), global (~/.claude),
                    or 'all' (= the derived mirrors: local+plugin+agents).
@@ -139,7 +139,7 @@ async def skills_sync(
     wrapped at harvest; commands/agents are flat .md files. After adding or
     editing: action='sync', target='all', then commit the plugin/ changes.
     New skills appear in sessions after a plugin reload. Live CRDT skills are
-    a separate system — see skill_live.
+    a separate system. See skill_live.
     """
     root = find_skills_root()
     if root is None:
@@ -165,7 +165,7 @@ async def skills_sync(
         status = "ok" if code == 0 else f"FAILED (exit {code})"
         return (
             f"Adopted `{src}` into sources.toml (category={category}).\n\n"
-            f"**harvest.py** — {status}\n```\n{tail}\n```\n\n"
+            f"**harvest.py**: {status}\n```\n{tail}\n```\n\n"
             "_Next: action='sync', target='all', then commit sources.toml + catalog/ + plugin/._"
         )
 
@@ -173,7 +173,7 @@ async def skills_sync(
         code, tail = await run_script(root, "harvest.py", [])
         status = "ok" if code == 0 else f"FAILED (exit {code})"
         note = rebuild_router_quiet() if code == 0 else ""
-        return f"**harvest.py** — {status}\n```\n{tail}\n```{note}"
+        return f"**harvest.py**: {status}\n```\n{tail}\n```{note}"
 
     if action == "sync":
         if not target:
@@ -187,11 +187,11 @@ async def skills_sync(
         for t in targets:
             code, tail = await run_script(root, "sync.py", ["--target", t])
             status = "ok" if code == 0 else f"FAILED (exit {code})"
-            parts.append(f"**sync --target {t}** — {status}\n```\n{tail}\n```")
+            parts.append(f"**sync --target {t}**: {status}\n```\n{tail}\n```")
             if code != 0:
                 break
         if target == "all" and all(p.count("FAILED") == 0 for p in parts):
-            parts.append("_plugin/ is committed output — review `git diff plugin/` and commit._")
+            parts.append("_plugin/ is committed output, review `git diff plugin/` and commit._")
         return "\n\n".join(parts)
 
     return f"Unknown action {action!r}: one of status, discover, adopt, harvest, sync"

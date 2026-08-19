@@ -224,7 +224,7 @@ class DapSession(DebugSession):
             all_threads_stopped=bool(body.get("allThreadsStopped", True)),
         )
         self.last_stop = stop
-        # Frame/thread selections are handles into the previous stop — stale now.
+        # Frame/thread selections are handles into the previous stop, stale now.
         self.selected_thread_id = None
         self.selected_frame_id = None
         if self.node is not None:
@@ -235,7 +235,7 @@ class DapSession(DebugSession):
             from devtools_mcp.debug.snapshot import StopProcessor
 
             await StopProcessor().process(self, stop)
-        except Exception as exc:  # noqa: BLE001 — a failed capture must not wedge the session
+        except Exception as exc:  # noqa: BLE001  # a failed capture must not wedge the session
             self.append_output(f"[snapshot capture failed: {exc}]")
         await self.set_state(SessionState.stopped)
         if self.node is not None:
@@ -402,7 +402,7 @@ class DapSession(DebugSession):
 
     def _require_conn(self) -> DapConnection:
         if self.conn is None:
-            raise DapError("session not started — call launch or attach first")
+            raise DapError("session not started. Call launch or attach first")
         return self.conn
 
     def _default_thread(self) -> int | None:
@@ -439,7 +439,7 @@ class DapSession(DebugSession):
             raise UnsupportedCapability(f"adapter {self.adapter.name} does not support instruction stepping")
         tid = thread_id if thread_id is not None else self._default_thread()
         if tid is None:
-            raise DapError("no stopped thread to step — is the session stopped?")
+            raise DapError("no stopped thread to step, is the session stopped?")
         arguments: dict[str, object] = {"threadId": tid}
         if granularity == "instruction":
             arguments["granularity"] = "instruction"

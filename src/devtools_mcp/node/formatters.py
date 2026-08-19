@@ -1,4 +1,4 @@
-"""Node summary formatters — bounded."""
+"""Node summary formatters. Bounded."""
 
 from __future__ import annotations
 

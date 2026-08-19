@@ -104,7 +104,7 @@ def query_osv(
 
     hits: list[tuple[str, str, str]] = []  # (name, version, advisory id)
     details: dict[str, dict] = {}
-    # The batch phase is the one that must fully succeed — a failure here means we
+    # The batch phase is the one that must fully succeed, a failure here means we
     # cannot know which packages are affected, so it is fatal. Detail fetches below
     # only enrich already-known hits, so a flaky one degrades that row to id-only
     # rather than discarding the whole audit.

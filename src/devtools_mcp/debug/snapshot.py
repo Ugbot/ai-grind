@@ -2,7 +2,7 @@
 
 On every stop the server does the full state walk (threads → stack →
 scopes → variables → watches), diffs against the previous stop, and
-stores the snapshot as a queryable run — so the model never issues
+stores the snapshot as a queryable run, so the model never issues
 threads/stackTrace/scopes/variables calls itself.
 """
 
@@ -49,7 +49,7 @@ async def expand_variables(
         ref, prefix, depth = queue.popleft()
         try:
             children = await session.variables(ref, count=MAX_CHILDREN_PER_CONTAINER)
-        except Exception:  # noqa: BLE001 — a bad container must not sink the snapshot
+        except Exception:  # noqa: BLE001  # a bad container must not sink the snapshot
             continue
         for child in children:
             if len(collected) >= max_nodes:
@@ -134,7 +134,7 @@ class StopProcessor:
             except Exception:  # noqa: BLE001
                 thread.frames = []
             thread.stop_reason = stop.reason if is_stopped_thread else ""
-        # Stopped thread first — formatters and df builders rely on it.
+        # Stopped thread first, formatters and df builders rely on it.
         threads.sort(key=lambda t: t.thread_id != stopped_tid)
         snapshot.threads = threads
 
@@ -163,7 +163,7 @@ class StopProcessor:
                 snapshot.variables.extend(variables)
                 budget -= len(variables)
 
-        # Watches — evaluated server-side, errors captured not raised.
+        # Watches, evaluated server-side, errors captured not raised.
         frame_id = top_frame.id if top_frame is not None else None
         for expression in session.watches:
             try:
@@ -193,7 +193,7 @@ class StopProcessor:
         if sink is not None:
             try:
                 sink(snapshot)
-            except Exception as exc:  # noqa: BLE001 — storage failure must not wedge the session
+            except Exception as exc:  # noqa: BLE001  # storage failure must not wedge the session
                 session.append_output(f"[snapshot store failed: {exc}]")
         return snapshot
 
@@ -204,7 +204,7 @@ class StopProcessor:
             return info
         try:
             body = await conn.request("exceptionInfo", {"threadId": thread_id})
-        except Exception:  # noqa: BLE001 — optional request, many adapters lack it
+        except Exception:  # noqa: BLE001  # optional request, many adapters lack it
             return info
         info.exception_id = body.get("exceptionId", "")
         info.description = body.get("description", "") or info.description

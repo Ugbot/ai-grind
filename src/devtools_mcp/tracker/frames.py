@@ -1,4 +1,4 @@
-"""Polars frame builders over tracker SQL — the bounded-query layer.
+"""Polars frame builders over tracker SQL, the bounded-query layer.
 
 Mirrors the no-token-flood contract of the profiling tools: tools never dump
 raw rows; they build a frame here, filter/slice it, and hand it to the shared

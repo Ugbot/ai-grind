@@ -151,7 +151,7 @@ _COMMIT_PAYLOAD = (
 )
 
 # (table, pk expr over NEW, pk expr over OLD, payload expr, has UPDATE trigger,
-#  extra WHEN for DELETE — guards cascades where the parent row is already gone)
+#  extra WHEN for DELETE, guards cascades where the parent row is already gone)
 _CAPTURE_SPECS: tuple[tuple[str, str, str, str, bool, str], ...] = (
     ("projects", "NEW.key", "OLD.key", _PROJECT_PAYLOAD, True, ""),
     ("tasks", "NEW.uid", "OLD.uid", _TASK_PAYLOAD, True, ""),
@@ -221,7 +221,7 @@ def _capture_triggers() -> tuple[str, ...]:
     return tuple(ddl)
 
 
-# v3: CRDT collaboration layer — global row identities (uid), the replica's
+# v3: CRDT collaboration layer, global row identities (uid), the replica's
 # site id + clock state, the op-log every mutation is captured into (via the
 # triggers above), and per-peer sync watermarks. See tracker/crdt.py.
 MIGRATION_V3: tuple[str, ...] = (
@@ -269,7 +269,7 @@ MIGRATION_V3: tuple[str, ...] = (
     *_capture_triggers(),
 )
 
-# v2: explicit task dependencies — `task_id` cannot start until `depends_on_id`
+# v2: explicit task dependencies, `task_id` cannot start until `depends_on_id`
 # is done/cancelled. Edges feed the resolver (deps.py).
 MIGRATION_V2: tuple[str, ...] = (
     """
@@ -295,7 +295,7 @@ MIGRATION_V4: tuple[str, ...] = (
     "CREATE INDEX idx_tasks_project_kind ON tasks(project_id, kind)",
 )
 
-# v5: local agent collaboration — file-touch activity + advisory file claims.
+# v5: local agent collaboration, file-touch activity + advisory file claims.
 # Site-local like tag_rules/external_refs: deliberately NOT CRDT-synced (no
 # capture triggers, not in SYNC_TABLES). Claims are transient machine-local
 # leases; the upcoming team collab server supersedes them across machines.
@@ -334,7 +334,7 @@ MIGRATION_V5: tuple[str, ...] = (
     "CREATE INDEX idx_claims_session ON file_claims(session_id, released_at)",
 )
 
-# v6: station sync — local-first bridge to an llm-station-remote platform.
+# v6: station sync, local-first bridge to an llm-station-remote platform.
 # Site-local like v5 (no capture triggers, not in SYNC_TABLES): links and
 # watermarks describe *this* replica's relationship to the platform.
 # See src/devtools_mcp/station/.
@@ -356,7 +356,7 @@ MIGRATION_V6: tuple[str, ...] = (
     )
     """,
     # Row-level identity map: local uid/key/name <-> platform UUID. Human
-    # keys are never identity — this table is the only join. remote_id is
+    # keys are never identity. This table is the only join. remote_id is
     # 'pending:<uuid>' between intent-commit and create-POST resolution.
     """
     CREATE TABLE station_links (

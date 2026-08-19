@@ -187,7 +187,7 @@ _INSTALL = InstallSpec(
             InstallStep(
                 kind="brew",
                 argv=["brew", "install", "llvm"],
-                description="Homebrew LLVM (lldb-dap lives in $(brew --prefix llvm)/bin — add it to PATH)",
+                description="Homebrew LLVM (lldb-dap lives in $(brew --prefix llvm)/bin, add it to PATH)",
             ),
         ],
         "linux": [

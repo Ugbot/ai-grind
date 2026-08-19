@@ -51,7 +51,7 @@ def assemble(
     """Assemble a normalized BuildResult for a JS package-manager run.
 
     `success` overrides the default rc==0 for informational tools (audit and
-    outdated exit non-zero when they find something — that is not a failure).
+    outdated exit non-zero when they find something. That is not a failure).
     """
     assert isinstance(suite, str) and suite, "suite required"
     assert isinstance(tool, str) and tool, "tool required"
@@ -77,7 +77,7 @@ class JsPackageManager:
     """One JS package manager's config; the runner logic is shared (run_pm).
 
     npm/pnpm/yarn differ only in the binary, version banner, argv per verb, and
-    which parser reads deps/outdated/audit output — so those are data here and
+    which parser reads deps/outdated/audit output, so those are data here and
     the flow lives once in run_pm. `tasks` is handled uniformly from package.json.
     """
 
@@ -141,7 +141,7 @@ async def run_pm(
     raw_path = write_raw(f"devtools-{pm.suite}-", raw)
     deps = pm.dep_parser(ptext) if tool == "deps" else (pm.outdated_parser(ptext) if tool == "outdated" else [])
     vulns = pm.audit_parser(ptext) if tool == "audit" else []
-    # audit/outdated exit non-zero when they find things — findings are not failure.
+    # audit/outdated exit non-zero when they find things, findings are not failure.
     success = (rc == 0 or bool(deps) or bool(vulns)) if tool in pm.informational else None
     result = assemble(
         pm.suite,

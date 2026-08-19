@@ -5,7 +5,7 @@ The local-first model, v1:
 - Every replica (site) has a random `site_id` and a hybrid logical clock (HLC).
 - SQLite triggers (schema v3) capture every mutation of the synced tables into
   `crdt_ops` as a row-level op: (hlc, site_id, tbl, pk, upsert|delete, payload).
-  Payloads are **site-independent** — rows are keyed by `uid` (random 128-bit)
+  Payloads are **site-independent**: rows are keyed by `uid` (random 128-bit)
   and references use uids / natural keys, never local rowids.
 - Merge is last-writer-wins per row, ordered by HLC (which is lexicographically
   sortable and globally unique via the site suffix). Ops are stored verbatim so
@@ -46,7 +46,7 @@ MAX_MERGE_PASSES: int = 10
 class HLC:
     """Hybrid logical clock issuing lexicographically sortable, unique stamps.
 
-    Format: `{unix_ms:013d}-{counter:05d}-{site8}` — physical time first, a
+    Format: `{unix_ms:013d}-{counter:05d}-{site8}`, physical time first, a
     counter for same-millisecond ordering, the site id for global uniqueness.
     """
 
@@ -141,7 +141,7 @@ def merge_ops(db: TrackerDB, ops: list[dict]) -> dict[str, int]:
     the duration so merged rows don't echo as new local ops.
 
     Ops whose referent (project/parent) hasn't landed yet are deferred to a
-    persistent backlog and retried on every subsequent merge — so a child that
+    persistent backlog and retried on every subsequent merge, so a child that
     arrives in an earlier batch than its parent still converges once the parent
     shows up in a later batch, not only within a single batch's passes.
     """
@@ -305,10 +305,10 @@ def _apply_task(conn: sqlite3.Connection, op: dict, payload: dict | None) -> boo
     assert payload is not None, "task upsert without payload"
     project = conn.execute("SELECT id FROM projects WHERE key = ?", (payload["project"],)).fetchone()
     if project is None:
-        return False  # project op not applied yet — defer
+        return False  # project op not applied yet, defer
     parent_id = _task_id_by_uid(conn, payload.get("parent_uid"))
     if payload.get("parent_uid") and parent_id is None:
-        return False  # parent not landed yet — defer
+        return False  # parent not landed yet, defer
     key = _resolve_key_collision(conn, payload["uid"], payload["key"], project[0])
     conn.execute(
         "INSERT INTO tasks (uid, project_id, key, parent_id, depth, kind, title, description, "

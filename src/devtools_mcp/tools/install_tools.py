@@ -23,7 +23,7 @@ async def devtools_install(ctx: Context, suite: str, tool: str = "", execute: bo
 
     Default is a dry-run plan: the exact per-OS commands (winget/apt/pip/
     download) to run in your own shell. execute=True runs them from the server
-    process — only allowed when DEVTOOLS_MCP_ALLOW_INSTALL=1 — then re-detects
+    process, only allowed when DEVTOOLS_MCP_ALLOW_INSTALL=1, then re-detects
     the suite and reports the availability delta.
 
     Args:
@@ -48,9 +48,7 @@ async def devtools_install(ctx: Context, suite: str, tool: str = "", execute: bo
     if spec is None:
         if backend.tool_installs:
             per_tool = sorted(backend.tool_installs)
-            return (
-                f"Suite '{suite}' installs per tool — pass tool=. " f"Tools with install specs: {', '.join(per_tool)}"
-            )
+            return f"Suite '{suite}' installs per tool. Pass tool=. " f"Tools with install specs: {', '.join(per_tool)}"
         return (
             f"Suite '{suite}' declares no install spec. "
             f"Suites with install specs: {', '.join(_suites_with_specs()) or 'none'}"
@@ -69,11 +67,11 @@ async def devtools_install(ctx: Context, suite: str, tool: str = "", execute: bo
         )
 
     results = await run_steps(steps, timeout=timeout)
-    parts = [f"**Install '{suite}'** — {len(results)}/{len(steps)} step(s) attempted:", ""]
+    parts = [f"**Install '{suite}'**: {len(results)}/{len(steps)} step(s) attempted:", ""]
     for step, code, output in results:
         status = "ok" if code == 0 else f"FAILED (exit {code})"
         command = f"download {step.argv[0]}" if step.kind == "download" else " ".join(step.argv)
-        parts.append(f"- `{command}` — {status}")
+        parts.append(f"- `{command}`, {status}")
         if code != 0:
             parts.append(f"```\n{output}\n```")
             if step.elevation:

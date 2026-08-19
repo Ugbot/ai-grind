@@ -2,21 +2,21 @@
 
 A standalone DAP server over stdio, spawned as `kotlin-debug-adapter`
 (a JVM launcher script from the Gradle distribution zip or Homebrew).
-It debugs a main class of a *built* Gradle/Maven project — it resolves the
+It debugs a main class of a *built* Gradle/Maven project. It resolves the
 classpath from the project's build output (build/classes/kotlin/main or
 target/classes/kotlin/main), so the project must be compiled first
 (`./gradlew build` / `mvn compile`). Attach connects to any JVM started
 with -agentlib:jdwp (which also covers Java/Scala processes).
 
 Verified against the adapter source (KotlinDebugAdapter.kt): launch reads
-exactly `projectRoot`, `mainClass`, `vmArguments` (a single string) — there
+exactly `projectRoot`, `mainClass`, `vmArguments` (a single string). There
 is NO program-arguments field; attach reads `projectRoot`, `hostName`,
 `port`, `timeout`. The binary has no --version flag (the launcher starts the
 DAP server immediately), so we derive the version from the distribution's
 lib/adapter-<version>.jar.
 
 Live-tested quirks (adapter 0.4.4, JDK 25, Gradle 9.6): setBreakpoints
-requires `source.name` alongside `source.path` — omitting it NPEs inside the
+requires `source.name` alongside `source.path`, omitting it NPEs inside the
 adapter (DAPConverter.toInternalSource) and fails the request. It also emits
 the `initialized` event twice and may duplicate `stopped` events.
 """
@@ -144,14 +144,14 @@ def launch_template(config: LaunchConfig) -> dict:
     main_class = str(config.extra.get("main_class", ""))
     if not main_class:
         raise ValueError(
-            "kotlin launch needs extra={'main_class': 'com.example.MainKt'} — kotlin-debug-adapter "
+            "kotlin launch needs extra={'main_class': 'com.example.MainKt'}, kotlin-debug-adapter "
             "runs a JVM main class resolved from the built project, not a source file. "
             f"Also note {_COMPILE_HINT}."
         )
     if config.args:
         raise ValueError(
             "kotlin-debug-adapter does not support program arguments (its launch request has no such "
-            "field — only projectRoot/mainClass/vmArguments). Pass JVM options via "
+            "field, only projectRoot/mainClass/vmArguments). Pass JVM options via "
             "extra={'vm_arguments': '...'}, or start the JVM yourself with -agentlib:jdwp and attach."
         )
     if config.env:
@@ -166,7 +166,7 @@ def launch_template(config: LaunchConfig) -> dict:
     if not project_root:
         raise ValueError(
             "kotlin launch needs a project root: pass cwd= or extra={'project_root': ...} "
-            "(or program= somewhere inside the project). Must be the Gradle/Maven project root — "
+            "(or program= somewhere inside the project). Must be the Gradle/Maven project root, "
             f"the adapter resolves the classpath from the build output, so {_COMPILE_HINT}."
         )
     args: dict[str, object] = {
@@ -185,14 +185,14 @@ def launch_template(config: LaunchConfig) -> dict:
 def attach_template(config: AttachConfig) -> dict:
     if config.port is None:
         raise ValueError(
-            "kotlin attach needs port= — the JDWP port of a JVM started with "
+            "kotlin attach needs port=, the JDWP port of a JVM started with "
             "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
         )
     project_root = _resolve_project_root(str(config.extra.get("project_root", "")), config.program)
     if not project_root:
         raise ValueError(
             "kotlin attach needs extra={'project_root': ...} (or program= somewhere inside the "
-            "project) — the adapter resolves sources from the Gradle/Maven project root, and "
+            "project), the adapter resolves sources from the Gradle/Maven project root, and "
             f"{_COMPILE_HINT}."
         )
     timeout_ms = int(config.extra.get("timeout_ms", _DEFAULT_ATTACH_TIMEOUT_MS))  # type: ignore[call-overload]
@@ -213,7 +213,7 @@ async def detect() -> InstalledTool:
     version = ""
     if binary:
         version = _dist_version(binary)
-        version += f" (java {java})" if java else " (java not found — JDK required)"
+        version += f" (java {java})" if java else " (java not found, JDK required)"
     return InstalledTool(
         suite="debug",
         name="kotlin-debug-adapter",
@@ -274,7 +274,7 @@ _INSTALL = InstallSpec(
     },
     note=(
         "Requires a JDK 11+ on PATH. The target project must be built before launch "
-        "(./gradlew build or mvn compile) — the adapter resolves the classpath from the build "
+        "(./gradlew build or mvn compile), the adapter resolves the classpath from the build "
         "output. Attach works against any JVM started with -agentlib:jdwp (also Java/Scala)."
     ),
     url="https://github.com/fwcd/kotlin-debug-adapter",
@@ -294,7 +294,7 @@ def _register() -> None:
             install=_INSTALL,
             quirks=AdapterQuirks(supports_attach_socket=True),
             description=(
-                "Kotlin/JVM via kotlin-debug-adapter — launch mainClass from a built Gradle/Maven "
+                "Kotlin/JVM via kotlin-debug-adapter, launch mainClass from a built Gradle/Maven "
                 "project, or attach to a JDWP port"
             ),
         )

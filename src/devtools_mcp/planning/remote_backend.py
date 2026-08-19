@@ -1,6 +1,6 @@
 """External/platform planner backend: delegates to a URL (or the platform) that
 speaks the same `{goal, world, mode, layered} -> {steps, layers}` contract. Kept
-severable — any failure degrades to a reportable PlanResult, never a crash."""
+severable, any failure degrades to a reportable PlanResult, never a crash."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ class RemotePlanner:
         try:
             with StationClient(str(creds["url"]), api_key, str(creds["org_id"])) as client:
                 data = client.plan(goal=goal, world=world, mode=mode, layered=layered)
-        except Exception as exc:  # noqa: BLE001 — degrade to a report, never crash the tool
+        except Exception as exc:  # noqa: BLE001  # degrade to a report, never crash the tool
             return PlanResult(
                 False, "platform", message=f"platform planner unavailable ({exc}); set DEVTOOLS_MCP_PLANNER=local"
             )
