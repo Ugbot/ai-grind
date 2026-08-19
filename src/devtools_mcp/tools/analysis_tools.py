@@ -253,10 +253,7 @@ async def devtools_aggregate(
     app = get_app_ctx(ctx)
     ws = app.get_workspace(workspace_id)
 
-    if run_ids:
-        candidates = list(run_ids)
-    else:
-        candidates = [r["run_id"] for r in ws.list_runs()]
+    candidates = list(run_ids) if run_ids else [r["run_id"] for r in ws.list_runs()]
 
     from devtools_mcp.flamegraph.sample_filter import StackFilter, filter_samples
     from devtools_mcp.flamegraph.tree import function_frame

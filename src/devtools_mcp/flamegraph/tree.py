@@ -138,7 +138,7 @@ def focus(root: CallNode, name: str) -> CallNode | None:
     return focused if found else None
 
 
-def function_frame(samples: list) -> "object":
+def function_frame(samples: list) -> object:
     """Per-function DataFrame from stack samples: self/total counts + % share.
 
     The universal function-level view for any sampling backend that produces
