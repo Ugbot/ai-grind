@@ -1,7 +1,7 @@
 ---
 name: devtools-visualizer
 description: >
-  Use the devtools-mcp browser visualization terminal — a local web UI for every
+  Use the devtools-mcp browser visualization terminal, a local web UI for every
   profiling/debugging run. Use when you want to SEE the data a human can explore:
   interactive (click-to-zoom) flame graphs, the queryable data table per run, raw
   logs, and the tracker as card boards (projects, status columns, task detail),
@@ -25,27 +25,27 @@ devtools_dashboard(action="status")
 devtools_dashboard(action="stop")
 ```
 
-It binds to **localhost only** — nothing leaves the machine. Use `port=0` to grab
+It binds to localhost only, so nothing leaves the machine. Use `port=0` to grab
 any free port if 8765 is taken. The server reads the **live** workspace, so new
 runs appear on refresh; no restart needed.
 
 ## What you get
 
-- **`/` dashboard** — every run (run_id, suite:tool, target, time, exit) with
+- The `/` dashboard lists every run (run_id, suite:tool, target, time, exit) with
   links to each view. Runs that have stacks show a **flame** link.
-- **`/run/<id>`** — the bounded text summary, the full **queryable data table**
+- `/run/<id>` has the bounded text summary, the full queryable data table
   (the same DataFrame `devtools_analyze` filters), and links to flame/raw.
-- **`/flame/<id>`** — an **interactive flame graph**: width = inclusive time,
+- `/flame/<id>` is an interactive flame graph: width = inclusive time,
   depth grows downward, hover for name + %, and **click any frame to zoom** into
-  its subtree (it re-roots; use "reset" to go back). Server-rendered SVG — no JS
+  its subtree (it re-roots; use "reset" to go back). Server-rendered SVG, no JS
   framework, works offline.
-- **`/raw/<id>`** — raw tool output / logs (bounded).
-- **`/tracker`** — the project-management views, as proper cards: project
+- `/raw/<id>` has raw tool output and logs, bounded.
+- `/tracker` holds the project-management views as proper cards: project
   overview with status chips + progress bars, **`/tracker/<PROJ>`** a board
   (status columns of task cards + the "what needs to happen" plan with ready
   and blocked highlighted), **`/tracker/task/<KEY>`** full task detail
   (criteria checklist, commits, dependencies, children).
-- **`/api/crdt/*`** — the JSON sync API other tracker replicas pull from /
+- `/api/crdt/*` is the JSON sync API other tracker replicas pull from /
   push to (`tracker_sync` on another machine points here).
 
 ## Typical flow
@@ -65,7 +65,7 @@ Folded stacks are the universal currency.
 
 ## Notes
 
-- This is the seam for future **agentic/visual tooling** — the UI reads the live
+- This is the seam for future agentic and visual tooling. The UI reads the live
   AppContext, so new pages/controls can be added without touching the backends.
 - For interpreting what you see, read [[flamegraph-reading]]. For the overall
   tool workflow, [[devtools-mcp-usage]].

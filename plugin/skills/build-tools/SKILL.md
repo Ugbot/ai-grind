@@ -1,8 +1,8 @@
 ---
 name: build-tools
 description: >
-  Drive build systems and package managers — Maven, Gradle, npm, pnpm, yarn, and
-  Cargo — through the devtools-mcp backends without drowning in output. Use to
+  Drive build systems and package managers, Maven, Gradle, npm, pnpm, yarn, and
+  Cargo, through the devtools-mcp backends without drowning in output. Use to
   build/test a project, inspect its dependency tree and SUBDEPENDENCIES (versions,
   depth, conflicts), synchronize/resolve/install deps, run a security audit, find
   outdated packages, or list runnable tasks/scripts. One verb vocabulary across
@@ -11,7 +11,7 @@ description: >
 
 # Build systems & package managers (devtools-mcp)
 
-Six backends — `maven`, `gradle`, `npm`, `pnpm`, `yarn`, `cargo` — share **one
+Six backends, `maven`, `gradle`, `npm`, `pnpm`, `yarn`, and `cargo`, share **one
 verb vocabulary**, so the same `tool` means the same thing everywhere; only the
 backend implementation differs. `binary` = the **project directory** (with the
 `pom.xml` / `build.gradle` / `package.json` / `Cargo.toml`). Maven/Gradle prefer a
@@ -27,24 +27,24 @@ backend implementation differs. `binary` = the **project directory** (with the
 | `test` | run tests (→ JUnit/libtest) | `test` | `test` | `test` | `test` |
 | `audit` | security advisories | OSV.dev over dep tree¹ | OSV.dev over dep tree¹ | `audit --json` | `audit` |
 | `outdated` | newer versions available | `versions:…updates`² | `dependencyUpdates`³ | `outdated` | `outdated`⁴ |
-| `tasks` | runnable goals/tasks/scripts | — | `tasks --all` | package.json scripts | — |
-| `check` | verify without full package | `verify` | `check` | — | `check` |
+| `tasks` | runnable goals/tasks/scripts | n/a | `tasks --all` | package.json scripts | n/a |
+| `check` | verify without full package | `verify` | `check` | n/a | `check` |
 
 **JVM extras** (maven + gradle only):
 
 | tool | meaning | maven | gradle |
 |---|---|---|---|
-| `insight` | why is X here / who wins the version — needs `args=["<artifact>"]` | `dependency:tree -Dincludes=X` | `dependencyInsight --dependency X` — multi-module: `args=["X", ":module"]` |
+| `insight` | why is X here / who wins the version, needs `args=["<artifact>"]` | `dependency:tree -Dincludes=X` | `dependencyInsight --dependency X`, multi-module: `args=["X", ":module"]` |
 | `projects` | module / reactor listing → modules frame | reactor build order | `projects` |
 
 Gradle `deps`/`sync`/`audit` run a devtools-registered all-projects report task
 (via `--init-script`), so a multi-module root yields the **full tree of every
-module** — plain `gradle dependencies` at the root would be empty.
+module**. Plain `gradle dependencies` at the root would be empty.
 
-¹ audit parses the dep tree, then batch-queries OSV.dev — no plugin injection,
+¹ audit parses the dep tree, then batch-queries OSV.dev, so no plugin injection,
 works under Gradle dependency verification; needs network at audit time.
-² fully-qualified `versions-maven-plugin` goal — runs against any pom untouched.
-³ ben-manes versions plugin injected via a devtools-shipped `--init-script` —
+² fully-qualified `versions-maven-plugin` goal, which runs against any pom untouched.
+³ ben-manes versions plugin injected via a devtools-shipped `--init-script`,
 project files untouched; first run downloads the plugin (needs network).
 ⁴ needs `cargo install cargo-outdated`; yarn `outdated` is classic-only (berry
 lacks the command).
@@ -89,12 +89,12 @@ conflicts (`requested → resolved`).
 
 ## Notes
 
-- `audit`/`outdated` exit non-zero "by design" when they find something — the
+- `audit`/`outdated` exit non-zero "by design" when they find something, and the
   backends treat them as informational, not failures.
 - Multi-module / workspaces: pass `-pl :module` (Maven), `:module:task` (Gradle),
   or workspace flags via `extra_args`.
 - Per-tool detail + accumulated project quirks live in the **live skills**
   `gradle-commands`, `maven-commands`, `cargo-commands`, `npm-commands`,
-  `pnpm-commands`, `yarn-commands` — keep their verb tables in sync when verbs
+  `pnpm-commands`, `yarn-commands`. Keep their verb tables in sync when verbs
   change here.
 - Overall workflow + the no-token-flood principle: [[devtools-mcp-usage]].

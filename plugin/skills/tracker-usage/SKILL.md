@@ -1,7 +1,7 @@
 ---
 name: tracker-usage
 description: >
-  Track work in the devtools-mcp tracker — a persistent SQLite-backed mini-JIRA
+  Track work in the devtools-mcp tracker, a persistent SQLite-backed mini-JIRA
   driven entirely through MCP tools. Use when starting or organizing any
   multi-step coding effort: create a project, file tasks with PROJ-123 keys,
   move them through the status workflow, and query bounded views (table, tree,
@@ -14,7 +14,7 @@ description: >
 A persistent mini-JIRA inside the devtools-mcp server. State lives in one
 global SQLite database (`~/.devtools-mcp/tracker.db`, override with the
 `DEVTOOLS_MCP_TRACKER_DB` env var) and survives server restarts. Like the
-profiling tools, **responses are always bounded** — full data is queried in
+profiling tools, responses are always bounded. Full data is queried in
 pages via `tracker_query`, never dumped.
 
 ## The eleven tools
@@ -23,14 +23,14 @@ pages via `tracker_query`, never dumped.
 |---|---|---|
 | `tracker_project` | create, list, get, set_policy | Project namespaces for task keys |
 | `tracker_task` | create, get, update, move, breakdown | Tasks: CRUD + hierarchy |
-| `tracker_status` | — (`key`, `status`, `override`) | Status transitions + close gate |
+| `tracker_status` | n/a (`key`, `status`, `override`) | Status transitions plus close gate |
 | `tracker_criteria` | add, update, record, remove, list | Acceptance criteria ↔ tests |
 | `tracker_tag` | add, remove, rule_add, rule_list, rule_remove | Tags + auto-tag rules |
 | `tracker_commits` | link, scan | Commit-hash linking |
 | `tracker_deps` | add, remove, list, resolve | Dependencies + "what needs to happen" |
 | `tracker_issue` | create, sync, close | GitHub (et al.) issue bridge |
-| `tracker_files` | — (report touches, claim, check) | Local agent-collab: file touch log + advisory claims + contested-file checks |
-| `tracker_query` | — (`view=`) | Bounded reporting |
+| `tracker_files` | n/a (report touches, claim, check) | Local agent-collab: file touch log + advisory claims + contested-file checks |
+| `tracker_query` | n/a (`view=`) | Bounded reporting |
 | `tracker_sync` | status, sync | Local-first CRDT replication between machines |
 
 ## Bootstrap
@@ -46,16 +46,16 @@ tracker_task(action="create", project="GRIND", title="Ship the tracker", kind="e
 - Kinds: `epic / story / task / subtask / spike / test` (free-form strings are
   allowed; these get default behavior).
 - Statuses: `open → in_progress → blocked → done / cancelled` (any transition
-  is legal; closing to `done` runs the acceptance gate — see tracker-acceptance).
+  is legal; closing to `done` runs the acceptance gate, see tracker-acceptance).
 - Priority: 1 (highest) to 5.
 
 ## Descriptions for the dashboard
 
-Task **descriptions** are not optional fluff — they are what humans (and you on
+Task descriptions are not optional fluff. They are what humans (and you on
 refresh) see on kanban cards at `http://127.0.0.1:8765/tracker`. On every
 `tracker_task(action="create", …)` and meaningful `update`, include `description`:
 
-- What the task delivers (1–2 sentences)
+- What the task delivers (one or two sentences)
 - Constraints, files, or commands if relevant
 - How you'll know it's done (pointer to criteria)
 
@@ -65,14 +65,14 @@ Epics/stories should summarize scope; subtasks can be punch-card sized.
 
 `tracker_query(view=…)` is the only reporting surface. Views:
 
-- `tasks` — flat table; filter by `project`, `status`, `kind`, `tag`, `parent`
+- `tasks` is a flat table; filter by `project`, `status`, `kind`, `tag`, `parent`
   (key), `title_pattern` (regex). Page with `offset`/`limit` (max 200).
-- `tree` — indented hierarchy for a `project` (narrow with `parent`).
+- `tree` is an indented hierarchy for a `project` (narrow with `parent`).
   `[ ]` open, `[>]` in progress, `[!]` blocked, `[x]` done, `[-]` cancelled.
-- `rollup` — per project+kind status counts and criteria pass totals.
-- `criteria`, `commits`, `tags` — the supporting tables.
-- `deps` — dependency edges; `issues` — linked external issues (GitHub et al.).
-- `activity`, `claims` — local agent-collab: recent file touches and advisory
+- `rollup` gives per project and kind status counts, plus criteria pass totals.
+- `criteria`, `commits`, and `tags` are the supporting tables.
+- `deps` lists dependency edges; `issues` lists linked external issues (GitHub and others).
+- `activity` and `claims` cover local agent-collab: recent file touches and advisory
   file claims (see the `agent-collab` skill).
 
 `columns=["schema"]` lists a view's columns. `sort_by` + `sort_descending`
@@ -82,34 +82,34 @@ order any column.
 
 `tracker_deps(action="resolve", project="GRIND")` is the planner's view:
 
-- **Ready now** — open tasks with no unsatisfied dependencies and no open
+- Ready now: open tasks with no unsatisfied dependencies and no open
   subtasks; start anywhere in this list.
-- **Blocked** — each with the exact tasks it waits on.
-- **Order** — topological layers; everything in one layer can proceed in
+- Blocked: each with the exact tasks it waits on.
+- Order: topological layers; everything in one layer can proceed in
   parallel.
 
 Pass `key="GRIND-12"` instead to scope the plan to one goal: its open subtree
 plus everything it transitively depends on. Declare edges as you plan:
-`tracker_deps(action="add", key="GRIND-13", depends_on="GRIND-12")` — cycles
+`tracker_deps(action="add", key="GRIND-13", depends_on="GRIND-12")` adds an edge. Cycles
 are rejected, and closing a task reports which dependents just became
 unblocked.
 
 ## Seeing it and sharing it
 
 - **Cards in the browser**: `devtools_dashboard(action="start")`, then open
-  `/tracker` — project cards with progress bars, a per-project board (status
+  `/tracker` has project cards with progress bars, a per-project board (status
   columns + the "what needs to happen" plan), and task detail pages.
 - **Multiple machines**: the tracker is a CRDT replica. `tracker_sync(
   action="sync", url="http://other-box:8765")` exchanges ops with another
-  machine's dashboard and converges (LWW, idempotent, offline-friendly —
+  machine's dashboard and converges (LWW, idempotent, offline-friendly,
   concurrent PROJ-N allocations are re-keyed deterministically, nothing is
   lost). `tracker_sync(action="status")` shows this replica's site id and
   known peers.
 
 ## Daily loop
 
-1. `tracker_deps(action="resolve", project="GRIND")` — what's actionable now.
-2. `tracker_status(key="GRIND-7", status="in_progress")` — claim work.
+1. `tracker_deps(action="resolve", project="GRIND")` shows what's actionable now.
+2. `tracker_status(key="GRIND-7", status="in_progress")` claims work.
 3. Work; link commits (`tracker_commits(action="scan", repo=".")` picks up
    `GRIND-7` mentions in commit messages automatically).
 4. `tracker_criteria(action="record", criterion_id=…, result="pass")` after

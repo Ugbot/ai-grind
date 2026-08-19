@@ -15,7 +15,7 @@ PowerShell parses a command line before handing it to a native `.exe`. Most
 "it works in cmd/bash but not here" problems come from that parsing layer.
 Behavior below is the same in 5.1 and 7+ unless noted.
 
-## Run an exe whose path has spaces — the call operator `&`
+## Run an exe whose path has spaces, with the call operator `&`
 
 A bare quoted string is treated as data, not a command. Use `&` to invoke it.
 
@@ -25,7 +25,7 @@ $exe = "C:\tools\my tool.exe"
 & $exe --flag value
 ```
 
-## Stop PowerShell from parsing args — `--%`
+## Stop PowerShell from parsing args with `--%`
 
 The stop-parsing token `--%` passes everything after it verbatim (no variable
 expansion, no operator interpretation). Use it for args containing `-`, `--`,
@@ -36,7 +36,7 @@ git log --% --pretty=format:%H %an        # % and : reach git untouched
 npm run build --% -- --env=prod           # the -- and = pass through
 ```
 
-Caveat: inside `--%` you cannot use PowerShell variables — it's fully literal.
+Caveat: inside `--%` you cannot use PowerShell variables. It's fully literal.
 
 ## Arguments: splatting an array is the robust way
 
@@ -49,9 +49,9 @@ This avoids quoting headaches far better than building one big string.
 
 ## Exit codes: `$LASTEXITCODE` vs `$?`
 
-- `$LASTEXITCODE` — the **integer** exit code of the last *native exe*. This is
+- `$LASTEXITCODE` is the integer exit code of the last native exe. This is
   what you check for git/npm/docker/etc.
-- `$?` — a **boolean**: did the last *PowerShell* operation succeed? For native
+- `$?` is a boolean: did the last PowerShell operation succeed? For native
   exes it's just `$LASTEXITCODE -eq 0`, but it's also affected by cmdlet errors.
 
 ```powershell
@@ -71,8 +71,8 @@ PowerShell* wraps each stderr line in a `System.Management.Automation.ErrorRecor
 (a "NativeCommandError"). Side effects:
 
 - The wrapped lines look like PowerShell errors, not plain text.
-- `$?` becomes `$false` **even when the exe returned exit code 0** (many tools —
-  git, docker, msbuild — write progress to stderr normally).
+- `$?` becomes `$false` even when the exe returned exit code 0. Many tools,
+  git, docker, and msbuild, write progress to stderr normally.
 
 ```powershell
 # 5.1 — RISKY: a clean `git` run can look "failed"

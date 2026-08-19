@@ -5,13 +5,13 @@ description: >
   (batch-mode CDB). Use when a Windows .exe crashes, you have a .dmp file, or you
   need all-thread stacks / a crash bucket without a GUI debugger. Covers
   !analyze -v triage, ~*k thread stacks, register/locals inspection, installing
-  cdb, and symbol setup. Headless and scriptable — the Windows analog of the
+  cdb, and symbol setup. Headless and scriptable, the Windows analog of the
   LLDB debug tools.
 ---
 
 # Windows debugging with CDB (devtools-mcp `cdb:*`)
 
-The `cdb` backend runs **CDB** (the console Windows debugger) in **batch mode** —
+The `cdb` backend runs CDB, the console Windows debugger, in batch mode:
 a scripted `-c "...;q"` command sequence, captured and parsed into a structured
 snapshot. No interactive console, so it's safe to run headless. Three tools:
 
@@ -34,8 +34,8 @@ available and how to install it.
 devtools_run(suite="cdb", tool="analyze", binary="", extra_args=["--dump","C:/dumps/app.dmp"])
 ```
 
-The summary surfaces the key `!analyze -v` fields — `EXCEPTION_CODE`,
-`SYMBOL_NAME`, `MODULE_NAME`, `FAILURE_BUCKET_ID` — and the faulting thread's top
+The summary surfaces the key `!analyze -v` fields, namely `EXCEPTION_CODE`,
+`SYMBOL_NAME`, `MODULE_NAME`, and `FAILURE_BUCKET_ID`, plus the faulting thread's top
 frames. Then drill in:
 
 ```
@@ -65,7 +65,7 @@ offsets.
 
 - **`EXCEPTION_CODE` `c0000005`** = access violation (null/dangling pointer);
   `c00000fd` = stack overflow.
-- The **faulting thread** is the one whose top frame matches `SYMBOL_NAME` — its
+- The faulting thread is the one whose top frame matches `SYMBOL_NAME`, and its
   frames are shown first.
 - All-thread `stacks` + `devtools_flamegraph` makes a deadlock obvious: multiple
   threads parked in the same lock path.

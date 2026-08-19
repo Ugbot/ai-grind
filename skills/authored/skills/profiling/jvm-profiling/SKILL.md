@@ -1,7 +1,7 @@
 ---
 name: jvm-profiling
 description: >
-  CPU/allocation profile a running JVM via the devtools-mcp jvm backend — JFR
+  CPU and allocation profile a running JVM via the devtools-mcp jvm backend: JFR
   (Java Flight Recorder, built into the JDK) or async-profiler. Use when a Java
   process is slow or allocating heavily and you need hot methods + a flame graph.
   Covers attaching by PID, choosing JFR vs async-profiler, and reading the
@@ -40,7 +40,7 @@ Install from github.com/async-profiler/async-profiler, then set `$DEVTOOLS_ASPRO
 devtools_run(suite="jvm", tool="alloc", binary="<pid>", extra_args=["--duration","20"])
 ```
 
-It captures collapsed (folded) stacks directly — ideal flame-graph input.
+It captures collapsed (folded) stacks directly, which is ideal flame-graph input.
 
 ## Read it
 
@@ -55,16 +55,16 @@ The summary shows hottest methods (Exc% / Inc%) and the event breakdown. See
 
 ## Choosing JFR vs async-profiler
 
-- **JFR** — zero install, low overhead, also records GC/locks/IO events, safe in
+- JFR needs zero install, has low overhead, records GC, lock, and IO events too, and is safe in
   production. Java frames only by default.
-- **async-profiler** — lowest overhead, **native + Java** stacks (sees JIT, GC,
+- async-profiler has the lowest overhead and shows native plus Java stacks (it sees JIT, GC,
   and C/C++ frames), supports `alloc`/`lock`/`cache-misses` events. Needs the
   agent. Prefer it when the cost might be below the Java layer.
 
 ## Gotchas
 
 - Sampling needs the process to actually be *doing* the slow thing during the
-  window — reproduce the load while profiling.
+  window. Reproduce the load while profiling.
 - `-XX:+FlightRecorder` is unlocked by default on JDK 11+; on older JDKs add
   `-XX:+UnlockCommercialFeatures`.
 - Inlined hot methods may appear merged into callers; cross-check with the

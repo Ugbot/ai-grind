@@ -1,8 +1,8 @@
 {
   "counts": {
-    "skill": 70,
+    "skill": 102,
     "command": 15,
-    "agent": 3,
+    "agent": 6,
     "archive": 1
   },
   "items": [
@@ -27,7 +27,7 @@
       "type": "skill",
       "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-debug",
-      "dest": "catalog\\skills\\debug\\llm-station-debug\\SKILL.md",
+      "dest": "catalog\\skills\\_disabled\\llm-station-debug\\SKILL.md",
       "sha256": "a876aab2597b88089376c056f24c4914df54e8a6eb142cd3fb2ca2548add80c2"
     },
     {
@@ -39,19 +39,11 @@
       "sha256": "4e754a149e622702415352fcd119cefdafeb614fb69f1492c712b1f558a5227b"
     },
     {
-      "name": "perfview-etw-trace",
-      "type": "skill",
-      "category": "profiling",
-      "origin": "C:\\code\\marbledb\\.claude\\skills\\perfview-etw-trace.md",
-      "dest": "catalog\\skills\\profiling\\perfview-etw-trace\\SKILL.md",
-      "sha256": "cf23777458a2fee8c4e5cdfa6bc50eee97090737d0eeb18d0d6521d671d9677f"
-    },
-    {
       "name": "llm-station-analyze",
       "type": "skill",
       "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-analyze",
-      "dest": "catalog\\skills\\code-intel\\llm-station-analyze\\SKILL.md",
+      "dest": "catalog\\skills\\_disabled\\llm-station-analyze\\SKILL.md",
       "sha256": "73d802adb4a8137ff426279b5dab2f1236d90933c86c7cb5890cb74cdc8b2be1"
     },
     {
@@ -59,7 +51,7 @@
       "type": "skill",
       "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-search",
-      "dest": "catalog\\skills\\code-intel\\llm-station-search\\SKILL.md",
+      "dest": "catalog\\skills\\_disabled\\llm-station-search\\SKILL.md",
       "sha256": "19ab78ad8b2119dc4647a6a3dc17df2d98ae723e855e20f30fb99fadf199ab3b"
     },
     {
@@ -67,7 +59,7 @@
       "type": "skill",
       "category": "_disabled",
       "origin": "C:\\code\\llm-station\\.claude\\skills\\llm-station-patterns",
-      "dest": "catalog\\skills\\code-intel\\llm-station-patterns\\SKILL.md",
+      "dest": "catalog\\skills\\_disabled\\llm-station-patterns\\SKILL.md",
       "sha256": "0b98052a24a0a2e10ce6976941d59480bdbaabf1da8636d62c2de25e64a6e2e8"
     },
     {
@@ -375,14 +367,6 @@
       "sha256": "af5b873414a8b45b96b0d30d5297400f55eb3a56425161a088e470c14260a1e5"
     },
     {
-      "name": "planning-and-task-breakdown",
-      "type": "skill",
-      "category": "planning",
-      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\planning-and-task-breakdown",
-      "dest": "catalog\\skills\\planning\\planning-and-task-breakdown\\SKILL.md",
-      "sha256": "d87ff6bb23aa791f78a504d784e903bb13602975923f884af5d13d5b66b1651a"
-    },
-    {
       "name": "context-engineering",
       "type": "skill",
       "category": "build",
@@ -423,14 +407,6 @@
       "sha256": "9c284b1f06d617b289c0d250004af5cbaedd5135071e1b17c0211a0aa03a73a4"
     },
     {
-      "name": "code-review-and-quality",
-      "type": "skill",
-      "category": "review",
-      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\code-review-and-quality",
-      "dest": "catalog\\skills\\review\\code-review-and-quality\\SKILL.md",
-      "sha256": "bec431b759ff389e47b8d2c9d74e1981ff93cf5f3c36b4a3b6a71a75c250be2c"
-    },
-    {
       "name": "code-simplification",
       "type": "skill",
       "category": "review",
@@ -453,14 +429,6 @@
       "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\performance-optimization",
       "dest": "catalog\\skills\\review\\performance-optimization\\SKILL.md",
       "sha256": "c56f6059fed0b77c50c946e38275f04c8b297657f3742d5782ee564514ecc4dc"
-    },
-    {
-      "name": "browser-testing-with-devtools",
-      "type": "skill",
-      "category": "web",
-      "origin": "C:\\code\\vendor-skills\\agent-skills\\skills\\browser-testing-with-devtools",
-      "dest": "catalog\\skills\\web\\browser-testing-with-devtools\\SKILL.md",
-      "sha256": "4e3aacd6a380cd25bc6c2d67fdd1c926a9b22535b8a62109ecd33cefd909e3d9"
     },
     {
       "name": "documentation-and-adrs",
@@ -535,22 +503,6 @@
       "sha256": "bbd8d28bb655a52817cc129ce49f9e46fa7c6303f72ed5de95bfe914ef8e0ce8"
     },
     {
-      "name": "subagent-driven-development",
-      "type": "skill",
-      "category": "planning",
-      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\subagent-driven-development",
-      "dest": "catalog\\skills\\planning\\subagent-driven-development\\SKILL.md",
-      "sha256": "41ab239a6ad1c487cd839fdac972a8c9cf0f5e90efa59a63f963767864f0df4c"
-    },
-    {
-      "name": "dispatching-parallel-agents",
-      "type": "skill",
-      "category": "planning",
-      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\dispatching-parallel-agents",
-      "dest": "catalog\\skills\\planning\\dispatching-parallel-agents\\SKILL.md",
-      "sha256": "f0df13f584049059cc5619f90061405b89dcc6e28ab3f2a8517d27d99c7a46a6"
-    },
-    {
       "name": "systematic-debugging",
       "type": "skill",
       "category": "review",
@@ -565,14 +517,6 @@
       "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\verification-before-completion",
       "dest": "catalog\\skills\\review\\verification-before-completion\\SKILL.md",
       "sha256": "ea52d15aabaf72bc6b558efe2c126f161b53961090ddcd712000273bfe8c7b6c"
-    },
-    {
-      "name": "requesting-code-review",
-      "type": "skill",
-      "category": "review",
-      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\requesting-code-review",
-      "dest": "catalog\\skills\\review\\requesting-code-review\\SKILL.md",
-      "sha256": "1017ccdd5bc61fab67c654cf118cbdb520464b313073a0a6b9a6b9aa647a3ad6"
     },
     {
       "name": "receiving-code-review",
@@ -597,30 +541,6 @@
       "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\finishing-a-development-branch",
       "dest": "catalog\\skills\\ship\\finishing-a-development-branch\\SKILL.md",
       "sha256": "e6d4a812de900d33c6eacfb40747f99427f25c304a7b7099120f9373b115a47f"
-    },
-    {
-      "name": "writing-skills",
-      "type": "skill",
-      "category": "meta",
-      "origin": "C:\\code\\vendor-skills\\superpowers\\skills\\writing-skills",
-      "dest": "catalog\\skills\\meta\\writing-skills\\SKILL.md",
-      "sha256": "6b8d08fe863318be8480ae8428e169640309fa9208df84bb0510012764454146"
-    },
-    {
-      "name": "grill-with-docs",
-      "type": "skill",
-      "category": "planning",
-      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\engineering\\grill-with-docs",
-      "dest": "catalog\\skills\\planning\\grill-with-docs\\SKILL.md",
-      "sha256": "610d091047bcfb9db0f75c057d15538481a721111579fc5ec7f83ad9131a2165"
-    },
-    {
-      "name": "grilling",
-      "type": "skill",
-      "category": "planning",
-      "origin": "C:\\code\\vendor-skills\\mattpocock-skills\\skills\\productivity\\grilling",
-      "dest": "catalog\\skills\\planning\\grilling\\SKILL.md",
-      "sha256": "44331dda57f461db4fec3f2efb6ddabe7aaaa0a57ae0f88a883bc61aed8a0587"
     },
     {
       "name": "domain-modeling",
@@ -717,6 +637,366 @@
       "origin": "C:\\code\\vendor-skills\\anthropic-skills\\skills\\webapp-testing",
       "dest": "catalog\\skills\\web\\webapp-testing\\SKILL.md",
       "sha256": "51b7349e77ec63b7744a6f63647e7566a0b4d2e301121cc10e8c2113af6556a2"
+    },
+    {
+      "name": "unslop",
+      "type": "skill",
+      "category": "writing",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\unslop",
+      "dest": "catalog\\skills\\writing\\unslop\\SKILL.md",
+      "sha256": "181883e539caec8258ec9129e3ba5f133409144a2cbf2aa361158ab94cfc3441"
+    },
+    {
+      "name": "technical-writing",
+      "type": "skill",
+      "category": "writing",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\technical-writing",
+      "dest": "catalog\\skills\\writing\\technical-writing\\SKILL.md",
+      "sha256": "bd0cb21034f4fe6695cfdf8cd3561026eec943f0bb6e9300bc78a2b3340865a7"
+    },
+    {
+      "name": "deslop",
+      "type": "skill",
+      "category": "writing",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\cursor-team-kit\\skills\\deslop",
+      "dest": "catalog\\skills\\writing\\deslop\\SKILL.md",
+      "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810"
+    },
+    {
+      "name": "how",
+      "type": "skill",
+      "category": "understanding",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\how",
+      "dest": "catalog\\skills\\understanding\\how\\SKILL.md",
+      "sha256": "fe503e7a9b2a3a7ad2622a2de6124cb06c466922fb44bc61817b49b52042b885"
+    },
+    {
+      "name": "why",
+      "type": "skill",
+      "category": "understanding",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\why",
+      "dest": "catalog\\skills\\understanding\\why\\SKILL.md",
+      "sha256": "dc8f2d8a7dbef7d0467cca8e6d055a4dbde027db6e2cbbfb18aa9071d8f20b6c"
+    },
+    {
+      "name": "teach",
+      "type": "skill",
+      "category": "understanding",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\teach",
+      "dest": "catalog\\skills\\understanding\\teach\\SKILL.md",
+      "sha256": "0a5987b0588dc56e14bfd84d0300e2ab405abc7c5c2aa81e0d3d7c6b243db7a7"
+    },
+    {
+      "name": "recall",
+      "type": "skill",
+      "category": "understanding",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\recall",
+      "dest": "catalog\\skills\\understanding\\recall\\SKILL.md",
+      "sha256": "90d290daec500f548a167bbd20d69a3a248e345c546ca847ca12967d1c99cbf3"
+    },
+    {
+      "name": "architect",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\architect",
+      "dest": "catalog\\skills\\planning\\architect\\SKILL.md",
+      "sha256": "585d7a9e03c0cced84c80d4b60c09c8dc76010bb36c579f92d9e4deafec53df7"
+    },
+    {
+      "name": "arena",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\arena",
+      "dest": "catalog\\skills\\planning\\arena\\SKILL.md",
+      "sha256": "a2241e8500a44d9c16bd3260c8c70e28c4bb8a857c33061d42b267057e6f7093"
+    },
+    {
+      "name": "figure-it-out",
+      "type": "skill",
+      "category": "planning",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\figure-it-out",
+      "dest": "catalog\\skills\\planning\\figure-it-out\\SKILL.md",
+      "sha256": "548616d04909de854f36869af2af127ce321fc6aaf95ea5a626997709fd46a2a"
+    },
+    {
+      "name": "interrogate",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\interrogate",
+      "dest": "catalog\\skills\\review\\interrogate\\SKILL.md",
+      "sha256": "a009220dfe6869c8f7980a94fb1c9c7763a081a0b32fb6d0afb65b8ff1868146"
+    },
+    {
+      "name": "blast-radius",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\blast-radius",
+      "dest": "catalog\\skills\\review\\blast-radius\\SKILL.md",
+      "sha256": "b060df3ca85803eabbce9fab53f5cc024ca8d784bdde5513c1c1a784947523f8"
+    },
+    {
+      "name": "no-comments",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\no-comments",
+      "dest": "catalog\\skills\\review\\no-comments\\SKILL.md",
+      "sha256": "72d3b153712ab641875f1d7424de0f77375af1cec03707935f08fa7d8f17bbf3"
+    },
+    {
+      "name": "verify-this",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\cursor-team-kit\\skills\\verify-this",
+      "dest": "catalog\\skills\\review\\verify-this\\SKILL.md",
+      "sha256": "c1c7b27c1133085bd3409c601ea12b6e6f61b4b23debcd52bc248fc01907e7de"
+    },
+    {
+      "name": "thermo-nuclear-review",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\thermos\\skills\\thermo-nuclear-review",
+      "dest": "catalog\\skills\\review\\thermo-nuclear-review\\SKILL.md",
+      "sha256": "5091011c4490932d40658ae958fb55b9aaca8e2bba5196860295ab945180e434"
+    },
+    {
+      "name": "thermo-nuclear-code-quality-review",
+      "type": "skill",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\thermos\\skills\\thermo-nuclear-code-quality-review",
+      "dest": "catalog\\skills\\review\\thermo-nuclear-code-quality-review\\SKILL.md",
+      "sha256": "7faca08b51b643b2ddd0836f92af15574444024685dcc1e677dbbb39ae8c9e8f"
+    },
+    {
+      "name": "reflect",
+      "type": "skill",
+      "category": "meta",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\reflect",
+      "dest": "catalog\\skills\\meta\\reflect\\SKILL.md",
+      "sha256": "5485347991eb60ee226ca78c5972f9c694f6927cff3263b7f48b631ed7a9de56"
+    },
+    {
+      "name": "show-me-your-work",
+      "type": "skill",
+      "category": "meta",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\show-me-your-work",
+      "dest": "catalog\\skills\\meta\\show-me-your-work\\SKILL.md",
+      "sha256": "b99833c41a8781a6af191487f1af37711a3198b98f9373e3c02292b8a6e09aba"
+    },
+    {
+      "name": "automate-me",
+      "type": "skill",
+      "category": "meta",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\automate-me",
+      "dest": "catalog\\skills\\meta\\automate-me\\SKILL.md",
+      "sha256": "34e7eab6f495093d474817bc4c13f26bcf5fafa439f2761b8c1ec72b07487764"
+    },
+    {
+      "name": "create-verification-skill",
+      "type": "skill",
+      "category": "meta",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\create-verification-skill",
+      "dest": "catalog\\skills\\meta\\create-verification-skill\\SKILL.md",
+      "sha256": "644f2551403c1bca01a2855b34611b6e7be0ce0dc5b204514c376c0f6a6e6ac4"
+    },
+    {
+      "name": "maintain-verification-skill",
+      "type": "skill",
+      "category": "meta",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\maintain-verification-skill",
+      "dest": "catalog\\skills\\meta\\maintain-verification-skill\\SKILL.md",
+      "sha256": "515c0eaa054b3f6be1b1fb06f2c2f173c80fddb58bbcac57576f89c479bc68e8"
+    },
+    {
+      "name": "cli-for-agents",
+      "type": "skill",
+      "category": "build",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\cli-for-agent\\skills\\cli-for-agents",
+      "dest": "catalog\\skills\\build\\cli-for-agents\\SKILL.md",
+      "sha256": "1cddd028d24ece48cd538fc1d84e49f5922dc8d04ee88caf12666b0557575e09"
+    },
+    {
+      "name": "typescript-best-practices",
+      "type": "skill",
+      "category": "build",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\typescript-best-practices",
+      "dest": "catalog\\skills\\build\\typescript-best-practices\\SKILL.md",
+      "sha256": "e3e4152bc155e32cc8f08dd56c02de176f0363aba28a916e387fd4844c59b7e7"
+    },
+    {
+      "name": "control-cli",
+      "type": "skill",
+      "category": "build",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\cursor-team-kit\\skills\\control-cli",
+      "dest": "catalog\\skills\\build\\control-cli\\SKILL.md",
+      "sha256": "13ac93e595bbda2000849bdb815d5f2ca03f7c2ca63788c8335f9212b9b422a2"
+    },
+    {
+      "name": "loop-on-ci",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\cursor-team-kit\\skills\\loop-on-ci",
+      "dest": "catalog\\skills\\ship\\loop-on-ci\\SKILL.md",
+      "sha256": "66b85dbd2bc3700386283539292a55438652bbe227271fd90b73b74525b9b9de"
+    },
+    {
+      "name": "make-pr-easy-to-review",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\cursor-team-kit\\skills\\make-pr-easy-to-review",
+      "dest": "catalog\\skills\\ship\\make-pr-easy-to-review\\SKILL.md",
+      "sha256": "e8da0d4a85b7c04823698f539251617389f827fd9137100ef7eaea5dcc992fe7"
+    },
+    {
+      "name": "what-did-i-get-done",
+      "type": "skill",
+      "category": "ship",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\cursor-team-kit\\skills\\what-did-i-get-done",
+      "dest": "catalog\\skills\\ship\\what-did-i-get-done\\SKILL.md",
+      "sha256": "479813c9abaacb5b6b0531f1de7dc5eb2f3bd9673707a992d1073335836e82f8"
+    },
+    {
+      "name": "principle-boundary-discipline",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-boundary-discipline",
+      "dest": "catalog\\skills\\principles\\principle-boundary-discipline\\SKILL.md",
+      "sha256": "ab3c690ce361542ca00446b8406f5afd47776f544b8ce06a9ef2eaa2338bde6d"
+    },
+    {
+      "name": "principle-build-the-lever",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-build-the-lever",
+      "dest": "catalog\\skills\\principles\\principle-build-the-lever\\SKILL.md",
+      "sha256": "3a0b02b1b890538810f27d00c525b2e677bb5d931f602fd7a774d5cd13b61c93"
+    },
+    {
+      "name": "principle-encode-lessons-in-structure",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-encode-lessons-in-structure",
+      "dest": "catalog\\skills\\principles\\principle-encode-lessons-in-structure\\SKILL.md",
+      "sha256": "4acdb3f466efd0a433899aafce3e0f100566228b63ccff43f363a83e80624d81"
+    },
+    {
+      "name": "principle-experience-first",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-experience-first",
+      "dest": "catalog\\skills\\principles\\principle-experience-first\\SKILL.md",
+      "sha256": "f8d643ddf2f6aa91d9607d1bb340fd2baf227d702e9738848b85312a312bb971"
+    },
+    {
+      "name": "principle-foundational-thinking",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-foundational-thinking",
+      "dest": "catalog\\skills\\principles\\principle-foundational-thinking\\SKILL.md",
+      "sha256": "a522488c9d4481e8bfcbe35cbf3838169c8e3801ee0738ae2859067684144579"
+    },
+    {
+      "name": "principle-laziness-protocol",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-laziness-protocol",
+      "dest": "catalog\\skills\\principles\\principle-laziness-protocol\\SKILL.md",
+      "sha256": "8999fda9fde65fd905835c86e3bfc64190369a84bba30b1e93769f39ad6580fe"
+    },
+    {
+      "name": "principle-make-operations-idempotent",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-make-operations-idempotent",
+      "dest": "catalog\\skills\\principles\\principle-make-operations-idempotent\\SKILL.md",
+      "sha256": "540738217c3da7bf513b9886924ad6a2bc77e58be867f5bd2e1831c74bf2ce70"
+    },
+    {
+      "name": "principle-migrate-callers-then-delete-legacy-apis",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-migrate-callers-then-delete-legacy-apis",
+      "dest": "catalog\\skills\\principles\\principle-migrate-callers-then-delete-legacy-apis\\SKILL.md",
+      "sha256": "e29b6b6534a23dcaf8c7e16fc25d6484000d7b6e289c48eb0a32a97280633c5d"
+    },
+    {
+      "name": "principle-minimize-reader-load",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-minimize-reader-load",
+      "dest": "catalog\\skills\\principles\\principle-minimize-reader-load\\SKILL.md",
+      "sha256": "480f4ddec29e7e3058a8f17eb97c0cec4a2c8b4b33ba6401e960167c1fc95a81"
+    },
+    {
+      "name": "principle-never-block-on-the-human",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-never-block-on-the-human",
+      "dest": "catalog\\skills\\principles\\principle-never-block-on-the-human\\SKILL.md",
+      "sha256": "f656f3b7581df55e79f53cc47df93905c3a940b822c25071ba95f40e530d102a"
+    },
+    {
+      "name": "principle-outcome-oriented-execution",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-outcome-oriented-execution",
+      "dest": "catalog\\skills\\principles\\principle-outcome-oriented-execution\\SKILL.md",
+      "sha256": "beedcaed75572a6a1662d47f16da203c2bd2c9dbffbbd678d4ba187d67b7e670"
+    },
+    {
+      "name": "principle-redesign-from-first-principles",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-redesign-from-first-principles",
+      "dest": "catalog\\skills\\principles\\principle-redesign-from-first-principles\\SKILL.md",
+      "sha256": "9ae97b35d6338cc9e34c7023c995a39cb7afdaf4bfd41e1d3d665da04d7515d5"
+    },
+    {
+      "name": "principle-separate-before-serializing-shared-state",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-separate-before-serializing-shared-state",
+      "dest": "catalog\\skills\\principles\\principle-separate-before-serializing-shared-state\\SKILL.md",
+      "sha256": "5b14fd656441580061f760968c828f3f4ba034242d8fa06b544763efb25e89ee"
+    },
+    {
+      "name": "principle-subtract-before-you-add",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-subtract-before-you-add",
+      "dest": "catalog\\skills\\principles\\principle-subtract-before-you-add\\SKILL.md",
+      "sha256": "3999888dc21ced33b86054c2ffde1a3cb438e16bed1213f5dab2b5c000446292"
+    },
+    {
+      "name": "principle-type-system-discipline",
+      "type": "skill",
+      "category": "principles",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\skills\\principle-type-system-discipline",
+      "dest": "catalog\\skills\\principles\\principle-type-system-discipline\\SKILL.md",
+      "sha256": "662ed1ad53fb491e97b9c4eac7317fba8ec5ed722fec8d71beb94da0111619cf"
+    },
+    {
+      "name": "comment-sicko",
+      "type": "agent",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\pstack\\agents\\comment-sicko.md",
+      "dest": "catalog\\agents\\review\\comment-sicko.md",
+      "sha256": "c0fd0383008da45fc78cfac17b9007d62c42f87ad1c8d5c2fb658b1fd01f7c82"
+    },
+    {
+      "name": "thermo-nuclear-review-subagent",
+      "type": "agent",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\thermos\\agents\\thermo-nuclear-review-subagent.md",
+      "dest": "catalog\\agents\\review\\thermo-nuclear-review-subagent.md",
+      "sha256": "9dfa8ed88d1ea5d775edb5557b8a8ecfa9f2977b904c55c902b0ceb648b563d0"
+    },
+    {
+      "name": "thermo-nuclear-code-quality-review-subagent",
+      "type": "agent",
+      "category": "review",
+      "origin": "C:\\code\\vendor-skills\\cursor-plugins\\thermos\\agents\\thermo-nuclear-code-quality-review-subagent.md",
+      "dest": "catalog\\agents\\review\\thermo-nuclear-code-quality-review-subagent.md",
+      "sha256": "636800f1e5acf501f339779a8867b95d633396930b3356a2b0c9a0018343f02d"
     }
   ]
 }

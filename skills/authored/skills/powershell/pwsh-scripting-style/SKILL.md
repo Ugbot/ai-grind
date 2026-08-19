@@ -1,7 +1,7 @@
 ---
 name: pwsh-scripting-style
 description: >
-  Writing robust PowerShell scripts and functions — param blocks, [CmdletBinding()],
+  Writing robust PowerShell scripts and functions: param blocks, [CmdletBinding()],
   advanced functions, $PSScriptRoot, Set-StrictMode, comment-based help, modules,
   and Pester tests. Use when authoring a .ps1 script or reusable function, adding
   parameters/validation, making a script locate its own files, hardening against
@@ -51,11 +51,11 @@ param(
 )
 ```
 
-Validation attributes fail at bind time with clear messages — prefer them over
+Validation attributes fail at bind time with clear messages, so prefer them over
 hand-written `if` checks. Use `[switch]` for booleans (`-DryRun`, not
 `-DryRun $true`).
 
-## `Set-StrictMode` — catch typos and nulls
+## `Set-StrictMode` catches typos and nulls
 
 ```powershell
 Set-StrictMode -Version Latest
@@ -63,10 +63,10 @@ Set-StrictMode -Version Latest
 
 Turns these into errors: referencing an **undefined variable**, accessing a
 **non-existent property**, calling a function like a method. Use it in every
-non-trivial script. (Note: it makes some loose patterns fail — initialize
+non-trivial script. (Note: it makes some loose patterns fail, so initialize
 variables before use.)
 
-## Locate files relative to the script — `$PSScriptRoot`
+## Locate files relative to the script with `$PSScriptRoot`
 
 Never depend on the current directory. `$PSScriptRoot` is the folder containing the
 running script.
@@ -97,7 +97,7 @@ function Convert-Thing {
 ## Output discipline
 
 - **A function's output is whatever it leaves on the pipeline.** Don't `return`
-  strings you meant as messages — they become the function's data.
+  strings you meant as messages. They become the function's data.
 - Use the right stream for messages:
 
 ```powershell

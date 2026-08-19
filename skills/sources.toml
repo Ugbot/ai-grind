@@ -44,12 +44,6 @@ category = "profiling"
 note = "Inline-RDTSC micro-profiling of MarbleDB benchmarks"
 
 [[item]]
-src = "C:/code/marbledb/.claude/skills/perfview-etw-trace.md"
-type = "skill"
-category = "profiling"
-note = "PerfView ETW CPU/thread traces on Windows"
-
-[[item]]
 src = "C:/code/llm-station/.claude/skills/llm-station-analyze"
 type = "skill"
 category = "_disabled"
@@ -280,12 +274,6 @@ category = "planning"
 note = "spec-driven-development — addyosmani/agent-skills (MIT)"
 
 [[item]]
-src = "C:/code/vendor-skills/agent-skills/skills/planning-and-task-breakdown"
-type = "skill"
-category = "planning"
-note = "planning-and-task-breakdown — addyosmani/agent-skills (MIT)"
-
-[[item]]
 src = "C:/code/vendor-skills/agent-skills/skills/context-engineering"
 type = "skill"
 category = "build"
@@ -316,12 +304,6 @@ category = "build"
 note = "frontend-ui-engineering — addyosmani/agent-skills (MIT)"
 
 [[item]]
-src = "C:/code/vendor-skills/agent-skills/skills/code-review-and-quality"
-type = "skill"
-category = "review"
-note = "code-review-and-quality — addyosmani/agent-skills (MIT)"
-
-[[item]]
 src = "C:/code/vendor-skills/agent-skills/skills/code-simplification"
 type = "skill"
 category = "review"
@@ -338,12 +320,6 @@ src = "C:/code/vendor-skills/agent-skills/skills/performance-optimization"
 type = "skill"
 category = "review"
 note = "performance-optimization — addyosmani/agent-skills (MIT)"
-
-[[item]]
-src = "C:/code/vendor-skills/agent-skills/skills/browser-testing-with-devtools"
-type = "skill"
-category = "web"
-note = "browser-testing-with-devtools — addyosmani/agent-skills (MIT)"
 
 [[item]]
 src = "C:/code/vendor-skills/agent-skills/skills/documentation-and-adrs"
@@ -400,18 +376,6 @@ category = "planning"
 note = "executing-plans — obra/superpowers (MIT)"
 
 [[item]]
-src = "C:/code/vendor-skills/superpowers/skills/subagent-driven-development"
-type = "skill"
-category = "planning"
-note = "subagent-driven-development — obra/superpowers (MIT)"
-
-[[item]]
-src = "C:/code/vendor-skills/superpowers/skills/dispatching-parallel-agents"
-type = "skill"
-category = "planning"
-note = "dispatching-parallel-agents — obra/superpowers (MIT)"
-
-[[item]]
 src = "C:/code/vendor-skills/superpowers/skills/systematic-debugging"
 type = "skill"
 category = "review"
@@ -422,12 +386,6 @@ src = "C:/code/vendor-skills/superpowers/skills/verification-before-completion"
 type = "skill"
 category = "review"
 note = "verification-before-completion — obra/superpowers (MIT)"
-
-[[item]]
-src = "C:/code/vendor-skills/superpowers/skills/requesting-code-review"
-type = "skill"
-category = "review"
-note = "requesting-code-review — obra/superpowers (MIT)"
 
 [[item]]
 src = "C:/code/vendor-skills/superpowers/skills/receiving-code-review"
@@ -446,24 +404,6 @@ src = "C:/code/vendor-skills/superpowers/skills/finishing-a-development-branch"
 type = "skill"
 category = "ship"
 note = "finishing-a-development-branch — obra/superpowers (MIT)"
-
-[[item]]
-src = "C:/code/vendor-skills/superpowers/skills/writing-skills"
-type = "skill"
-category = "meta"
-note = "writing-skills — obra/superpowers (MIT)"
-
-[[item]]
-src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/grill-with-docs"
-type = "skill"
-category = "planning"
-note = "grill-with-docs — mattpocock/skills (MIT)"
-
-[[item]]
-src = "C:/code/vendor-skills/mattpocock-skills/skills/productivity/grilling"
-type = "skill"
-category = "planning"
-note = "grilling — mattpocock/skills (MIT)"
 
 [[item]]
 src = "C:/code/vendor-skills/mattpocock-skills/skills/engineering/domain-modeling"
@@ -536,3 +476,278 @@ src = "C:/code/vendor-skills/anthropic-skills/skills/webapp-testing"
 type = "skill"
 category = "web"
 note = "webapp-testing — anthropics/skills (Apache-2.0)"
+
+# ---- cursor/plugins harvest (see THIRD_PARTY_SKILLS.md) ----
+#
+# Clone: git clone https://github.com/cursor/plugins C:/code/vendor-skills/cursor-plugins
+# pstack (c) Lauren Tan; cursor-team-kit / thermos / cli-for-agent (c) Cursor. All MIT.
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/unslop"
+type = "skill"
+category = "writing"
+note = "unslop — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/technical-writing"
+type = "skill"
+category = "writing"
+note = "technical-writing — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/cursor-team-kit/skills/deslop"
+type = "skill"
+category = "writing"
+note = "deslop — cursor/plugins cursor-team-kit (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/how"
+type = "skill"
+category = "understanding"
+note = "how — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/why"
+type = "skill"
+category = "understanding"
+note = "why — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/teach"
+type = "skill"
+category = "understanding"
+note = "teach — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/recall"
+type = "skill"
+category = "understanding"
+note = "recall — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/architect"
+type = "skill"
+category = "planning"
+note = "architect — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/arena"
+type = "skill"
+category = "planning"
+note = "arena — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/figure-it-out"
+type = "skill"
+category = "planning"
+note = "figure-it-out — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/interrogate"
+type = "skill"
+category = "review"
+note = "interrogate — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/blast-radius"
+type = "skill"
+category = "review"
+note = "blast-radius — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/no-comments"
+type = "skill"
+category = "review"
+note = "no-comments — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/cursor-team-kit/skills/verify-this"
+type = "skill"
+category = "review"
+note = "verify-this — cursor/plugins cursor-team-kit (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/thermos/skills/thermo-nuclear-review"
+type = "skill"
+category = "review"
+note = "thermo-nuclear-review — cursor/plugins thermos (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/thermos/skills/thermo-nuclear-code-quality-review"
+type = "skill"
+category = "review"
+note = "thermo-nuclear-code-quality-review — cursor/plugins thermos (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/reflect"
+type = "skill"
+category = "meta"
+note = "reflect — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/show-me-your-work"
+type = "skill"
+category = "meta"
+note = "show-me-your-work — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/automate-me"
+type = "skill"
+category = "meta"
+note = "automate-me — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/create-verification-skill"
+type = "skill"
+category = "meta"
+note = "create-verification-skill — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/maintain-verification-skill"
+type = "skill"
+category = "meta"
+note = "maintain-verification-skill — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/cli-for-agent/skills/cli-for-agents"
+type = "skill"
+category = "build"
+note = "cli-for-agents — cursor/plugins cli-for-agent (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/typescript-best-practices"
+type = "skill"
+category = "build"
+note = "typescript-best-practices — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/cursor-team-kit/skills/control-cli"
+type = "skill"
+category = "build"
+note = "control-cli — cursor/plugins cursor-team-kit (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/cursor-team-kit/skills/loop-on-ci"
+type = "skill"
+category = "ship"
+note = "loop-on-ci — cursor/plugins cursor-team-kit (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/cursor-team-kit/skills/make-pr-easy-to-review"
+type = "skill"
+category = "ship"
+note = "make-pr-easy-to-review — cursor/plugins cursor-team-kit (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/cursor-team-kit/skills/what-did-i-get-done"
+type = "skill"
+category = "ship"
+note = "what-did-i-get-done — cursor/plugins cursor-team-kit (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-boundary-discipline"
+type = "skill"
+category = "principles"
+note = "principle-boundary-discipline — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-build-the-lever"
+type = "skill"
+category = "principles"
+note = "principle-build-the-lever — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-encode-lessons-in-structure"
+type = "skill"
+category = "principles"
+note = "principle-encode-lessons-in-structure — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-experience-first"
+type = "skill"
+category = "principles"
+note = "principle-experience-first — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-foundational-thinking"
+type = "skill"
+category = "principles"
+note = "principle-foundational-thinking — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-laziness-protocol"
+type = "skill"
+category = "principles"
+note = "principle-laziness-protocol — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-make-operations-idempotent"
+type = "skill"
+category = "principles"
+note = "principle-make-operations-idempotent — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-migrate-callers-then-delete-legacy-apis"
+type = "skill"
+category = "principles"
+note = "principle-migrate-callers-then-delete-legacy-apis — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-minimize-reader-load"
+type = "skill"
+category = "principles"
+note = "principle-minimize-reader-load — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-never-block-on-the-human"
+type = "skill"
+category = "principles"
+note = "principle-never-block-on-the-human — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-outcome-oriented-execution"
+type = "skill"
+category = "principles"
+note = "principle-outcome-oriented-execution — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-redesign-from-first-principles"
+type = "skill"
+category = "principles"
+note = "principle-redesign-from-first-principles — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-separate-before-serializing-shared-state"
+type = "skill"
+category = "principles"
+note = "principle-separate-before-serializing-shared-state — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-subtract-before-you-add"
+type = "skill"
+category = "principles"
+note = "principle-subtract-before-you-add — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/skills/principle-type-system-discipline"
+type = "skill"
+category = "principles"
+note = "principle-type-system-discipline — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/pstack/agents/comment-sicko.md"
+type = "agent"
+category = "review"
+note = "comment-sicko — cursor/plugins pstack (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/thermos/agents/thermo-nuclear-review-subagent.md"
+type = "agent"
+category = "review"
+note = "thermo-nuclear-review-subagent — cursor/plugins thermos (MIT)"
+
+[[item]]
+src = "C:/code/vendor-skills/cursor-plugins/thermos/agents/thermo-nuclear-code-quality-review-subagent.md"
+type = "agent"
+category = "review"
+note = "thermo-nuclear-code-quality-review-subagent — cursor/plugins thermos (MIT)"

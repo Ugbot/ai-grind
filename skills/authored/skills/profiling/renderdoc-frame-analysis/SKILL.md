@@ -4,7 +4,7 @@ description: >
   Capture and analyze GPU frames via the devtools-mcp renderdoc backend
   (RenderDoc). Use when a graphics app (D3D/Vulkan/OpenGL) renders slowly or
   wrongly and you need the per-drawcall event tree, GPU timings per draw, the
-  resource inventory, a frame thumbnail, or a GPU-time flame graph — captured
+  resource inventory, a frame thumbnail, or a GPU-time flame graph, captured
   headlessly, no RenderDoc GUI required. Covers the capture→analyze→counters
   workflow, the two capture modes, and the GPU/interactive-session prerequisite.
 ---
@@ -13,7 +13,7 @@ description: >
 
 The `renderdoc` backend drives **RenderDoc**: capture one frame of a running
 graphics app into an `.rdc`, then replay it headlessly for the action tree,
-GPU counter timings, and resources — all as bounded summaries + queryable
+GPU counter timings, and resources, all as bounded summaries plus queryable
 Polars frames. The GUI (`qrenderdoc`) is never opened; replay runs through
 `qrenderdoc --python` under the hood.
 
@@ -30,10 +30,10 @@ Non-default install location: set `$DEVTOOLS_RENDERDOCCMD` / `$DEVTOOLS_QRENDERD
 ## Prerequisites
 
 - **Replay needs a GPU + interactive session.** analyze/counters/resources fail
-  under session-0 services and headless containers — run the MCP server in your
+  under session-0 services and headless containers, so run the MCP server in your
   user session for this suite. `thumb` needs no GPU.
 - The capture and the installed RenderDoc should be the same version
-  (a mismatch fails with "capture unsupported — recapture").
+  (a mismatch fails with "capture unsupported, recapture").
 - UAC-elevated targets can't be injected.
 
 ## Capture
@@ -45,10 +45,10 @@ devtools_run(suite="renderdoc", tool="capture", binary="C:/path/app.exe", args=[
 Default mode **targetcontrol**: launches + injects the app, waits `--warmup`
 seconds (default 3), auto-triggers a capture of the next frame, and terminates
 the app. `extra_args`:
-- `--frame N` — queue an exact frame number instead of "next frame".
-- `--warmup S` / `--max-wait S` — steady-state delay / capture deadline.
-- `--out DIR` — where the `.rdc` lands (default temp dir).
-- `--mode launch-wait` — fallback: plain `renderdoccmd capture`; **you** trigger
+- `--frame N` queues an exact frame number instead of "next frame".
+- `--warmup S` and `--max-wait S` set the steady-state delay and the capture deadline.
+- `--out DIR` is where the `.rdc` lands (default temp dir).
+- `--mode launch-wait` is the fallback, plain `renderdoccmd capture`, where you trigger
   with F12/PrintScreen in-app (or the in-application RENDERDOC_API). Use for
   interactive sessions or when injection is blocked.
 
@@ -63,7 +63,7 @@ devtools_run(suite="renderdoc", tool="resources", binary="<file>.rdc")  # textur
 devtools_run(suite="renderdoc", tool="thumb",     binary="<file>.rdc")  # PNG of the frame
 ```
 
-- `counters` replays the frame per counter pass — **minutes on big captures**;
+- `counters` replays the frame per counter pass, which takes minutes on big captures;
   it defaults to a 600s timeout, raise `timeout` if needed. Extra counters:
   `extra_args=["--counter", "SamplesPassed"]`.
 - Huge frames: `--max-actions N` bounds the action walk (default 50k, summary
@@ -83,12 +83,12 @@ counters ran, else indices). `devtools_raw(run_id)` returns the full bridge JSON
 
 ## Gotchas
 
-- **No capture produced** (targetcontrol): app too slow to reach steady state —
-  raise `--warmup`; or it presents no frames (offscreen compute) — use the
+- No capture produced (targetcontrol): the app is too slow to reach steady state, so
+  raise `--warmup`; or it presents no frames (offscreen compute), so use the
   in-application API with `--mode launch-wait`.
 - **"replay needs a GPU + interactive session"**: the server is running as a
   service/session-0; restart it in your desktop session.
-- Marker regions (`PushMarker`) give the flame graph its structure — apps
+- Marker regions (`PushMarker`) give the flame graph its structure. Apps
   without debug markers produce a flat one-level graph.
 
 See [[flamegraph-reading]] for flame-graph interpretation and

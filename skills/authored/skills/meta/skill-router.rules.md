@@ -7,7 +7,7 @@ the right skill so you don't improvise what a skill already encodes.
 
 1. Read the task, then scan the index below for a skill whose description matches.
 2. Load the most specific matching skill. If several fit, prefer the narrowest.
-3. If nothing fits, proceed without a skill — do not force a poor match.
+3. If nothing fits, proceed without a skill. Do not force a poor match.
 4. For a multi-step goal (e.g. "ship this feature"), sequence skills: when a
    planner is configured it can compute the order (and, on premium, parallel
    layers); otherwise dispatch one skill at a time, finishing each before the next.
@@ -21,6 +21,6 @@ or the dashboard `GET /skills` panel.
 
 ## Notes
 
-- Rules above this line are **live-editable** — refine them as the team learns.
+- Rules above this line are live-editable. Refine them as the team learns.
 - The index below is **regenerated** by `skill_live action="route"` (and after a
   `skills_sync` sync/harvest). Don't hand-edit inside the INDEX markers.
