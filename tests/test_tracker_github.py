@@ -154,7 +154,7 @@ class TestIssueLifecycle:
         remote: dict = {"body": ""}
 
         def handler(request: httpx.Request) -> httpx.Response:
-            # Echo the created body back, as GitHub does — otherwise sync sees an
+            # Echo the created body back, as GitHub does, otherwise sync sees an
             # unmarked issue and self-heals, which is not what this test is about.
             if request.method in ("POST", "PATCH"):
                 remote["body"] = json.loads(request.content).get("body", remote["body"])

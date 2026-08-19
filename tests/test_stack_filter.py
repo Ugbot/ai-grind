@@ -2,7 +2,7 @@
 
 Row filters ask "is this function named X"; these filters ask "did this sample
 come through X". The distinction is the whole point, so the tests are about
-semantics — which samples survive, and what the survivors' percentages mean —
+semantics, which samples survive, and what the survivors' percentages mean,
 not about plumbing.
 
 The motivating case is a whole-process profile that mixes a setup phase with the
@@ -24,7 +24,7 @@ from devtools_mcp.models import StackSample
 
 
 def _mixed_phase_run() -> list[StackSample]:
-    """A profile that is 1/3 load phase, 2/3 execution — both ending in memmove.
+    """A profile that is 1/3 load phase, 2/3 execution. Both ending in memmove.
 
     memmove is 40 of 100 samples and would rank first raw, but 30 of those 40 are
     inside the loader. Under an execution-only view it must fall behind the real
@@ -41,7 +41,7 @@ def _mixed_phase_run() -> list[StackSample]:
 
 class TestStackContainment:
     def test_excludes_a_sample_whose_leaf_is_innocent(self):
-        # The dropped sample's LEAF is _platform_memmove — a name that appears in
+        # The dropped sample's LEAF is _platform_memmove, a name that appears in
         # kept samples too. Only the call path distinguishes them, which is
         # exactly what a row-level exclude_functions cannot express.
         kept, cut = filter_samples(_mixed_phase_run(), stack_exclude="load_parquet")
@@ -96,7 +96,7 @@ class TestStackContainment:
         assert cut.kept_weight == 100
 
     def test_invalid_regex_raises_rather_than_silently_passing_everything(self):
-        # Swallowing the error would present an UNfiltered profile as filtered —
+        # Swallowing the error would present an UNfiltered profile as filtered,
         # the worst possible failure mode for this tool.
         with pytest.raises(re.error):
             filter_samples(_mixed_phase_run(), stack_exclude="load_parquet(")
@@ -174,7 +174,7 @@ class TestMultiTagIntersection:
     """A campaign tags a run by suite, by query and by sweep date at once.
 
     Selecting the intersection is the common case, so `tags` must require ALL of
-    them — a run carrying only some of the labels is not the run you asked for.
+    them, a run carrying only some of the labels is not the run you asked for.
     """
 
     def _runs(self) -> list[tuple[str, list[str]]]:
@@ -207,7 +207,7 @@ class TestAggregateWithStackFilter:
     """End-to-end aggregate math on stack-filtered runs.
 
     Reproduces in miniature the campaign finding: raw, the shared leaf tops the
-    suite-wide ranking; execution-only, the real hotspot does — and every kept
+    suite-wide ranking; execution-only, the real hotspot does, and every kept
     run still normalizes to 100%.
     """
 

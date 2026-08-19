@@ -2,7 +2,7 @@
 tags, commits, external issues, bounded queries).
 
 Action-multiplexed like debug(): one tool per noun, an `action` parameter per
-verb. Every response is bounded markdown — full tables live in the DB and are
+verb. Every response is bounded markdown, full tables live in the DB and are
 paged via tracker_query.
 """
 
@@ -63,7 +63,7 @@ def _task_line(task) -> str:
 def _task_detail(db: TrackerDB, key: str) -> str:
     """Rich single-task view: fields + children + criteria + tags + commits + refs."""
     task = tasks_mod.get_task(db.conn, key)
-    parts = [f"**{task.key}** — {task.title}", ""]
+    parts = [f"**{task.key}**: {task.title}", ""]
     parent = ""
     if task.parent_id is not None:
         row = db.conn.execute("SELECT key FROM tasks WHERE id = ?", (task.parent_id,)).fetchone()
@@ -87,7 +87,7 @@ def _task_detail(db: TrackerDB, key: str) -> str:
         parts += ["", f"**Acceptance criteria ({len(criteria)}):**"]
         for criterion in criteria[:30]:
             mark = {"pass": "[x]", "fail": "[!]"}.get(criterion.last_result or "", "[ ]")
-            ref = f" — `{criterion.test_ref}`" if criterion.test_ref else " — *no test linked*"
+            ref = f", `{criterion.test_ref}`" if criterion.test_ref else ", *no test linked*"
             parts.append(f"- {mark} #{criterion.id} {criterion.text}{ref}")
     commit_rows = db.conn.execute(
         "SELECT commit_hash, message_snippet FROM task_commits WHERE task_id = ? " "ORDER BY id DESC LIMIT 10",
@@ -118,10 +118,10 @@ async def tracker_project(
     """Manage tracker projects (the namespaces for PROJ-123 task keys).
 
     Actions:
-        create     — key (2-10 chars, [A-Z][A-Z0-9]*) + name; optional close_policy
-        list       — all projects
-        get        — one project by key
-        set_policy — change close_policy ('advisory' warns on unmet acceptance
+        create: key (2-10 chars, [A-Z][A-Z0-9]*) + name; optional close_policy
+        list: all projects
+        get: one project by key
+        set_policy, change close_policy ('advisory' warns on unmet acceptance
                      criteria at close; 'strict' rejects unless override)
     """
     db = _tracker(ctx)
@@ -145,7 +145,7 @@ async def tracker_project(
             project = tasks_mod.get_project(db.conn, key)
             rollup = format_dataframe(frames.rollup_frame(db.conn, project.key), max_rows=20)
             return (
-                f"**{project.key}** {project.name} — {project.description or '(no description)'}\n"
+                f"**{project.key}** {project.name}: {project.description or '(no description)'}\n"
                 f"policy={project.close_policy} | created {project.created_at}\n\n{rollup}"
             )
         if action == "set_policy":
@@ -176,17 +176,17 @@ async def tracker_task(
     """Create, inspect, update, move, or break down tracker tasks.
 
     Actions:
-        create    — project + title; optional kind (epic/story/task/subtask/spike/test),
+        create: project + title; optional kind (epic/story/task/subtask/spike/test),
                     parent (task key), description, priority 1-5. Auto-applies tag rules.
-                    Always supply a short description — it appears on dashboard cards at
+                    Always supply a short description. It appears on dashboard cards at
                     http://127.0.0.1:8765/tracker (what/why, acceptance hints, links).
-        get       — key: rich detail (children, criteria, tags, commits, external refs)
-        update    — key + any of title/description/kind/priority (kind='task' is
+        get: key: rich detail (children, criteria, tags, commits, external refs)
+        update: key + any of title/description/kind/priority (kind='task' is
                     the parameter default and therefore ignored on update). Use
                     description for context the dashboard cards should show.
-        move      — key + parent (reparent) or to_root=True, and/or before (sibling
+        move: key + parent (reparent) or to_root=True, and/or before (sibling
                     key to reorder in front of). Hierarchy is bounded at 6 levels.
-        breakdown — key + subtasks (list of titles, max 20): punch-card decomposition;
+        breakdown, key + subtasks (list of titles, max 20): punch-card decomposition;
                     child kind defaults by parent kind (epic→story, story→task, task→subtask)
     """
     db = _tracker(ctx)
@@ -271,14 +271,14 @@ async def tracker_criteria(
     test_ref: str | None = None,
     result: str | None = None,
 ) -> str:
-    """Manage acceptance criteria on a task — outcomes that tests must verify.
+    """Manage acceptance criteria on a task, outcomes that tests must verify.
 
     Actions:
-        add    — key + text; optional test_ref ('tests/test_x.py::test_name')
-        update — criterion_id + text and/or test_ref
-        record — criterion_id + result ('pass'|'fail'); stamps last_run_at
-        remove — criterion_id
-        list   — key: all criteria on the task
+        add: key + text; optional test_ref ('tests/test_x.py::test_name')
+        update, criterion_id + text and/or test_ref
+        record, criterion_id + result ('pass'|'fail'); stamps last_run_at
+        remove, criterion_id
+        list: key: all criteria on the task
     """
     db = _tracker(ctx)
     try:
@@ -313,7 +313,7 @@ async def tracker_criteria(
             lines = []
             for criterion in items[:50]:
                 mark = {"pass": "[x]", "fail": "[!]"}.get(criterion.last_result or "", "[ ]")
-                ref = f" — `{criterion.test_ref}`" if criterion.test_ref else ""
+                ref = f", `{criterion.test_ref}`" if criterion.test_ref else ""
                 lines.append(f"- {mark} #{criterion.id} {criterion.text}{ref}")
             return f"**Criteria on `{task.key}` ({len(items)}):**\n" + "\n".join(lines)
         return f"Unknown action {action!r}. One of: add, update, record, remove, list"
@@ -336,13 +336,13 @@ async def tracker_tag(
     """Tag tasks and manage auto-tagging rules applied at task creation.
 
     Actions:
-        add         — key + tag: attach a tag to a task
-        remove      — key + tag: detach
-        rule_add    — tag + at least one of match_kind / match_regex (over
+        add: key + tag: attach a tag to a task
+        remove: key + tag: detach
+        rule_add: tag + at least one of match_kind / match_regex (over
                       title+description) / match_parent_kind; optional project
                       to scope the rule (else global)
-        rule_list   — rules (optionally scoped to project)
-        rule_remove — rule_id
+        rule_list: rules (optionally scoped to project)
+        rule_remove, rule_id
     """
     db = _tracker(ctx)
     try:
@@ -403,8 +403,8 @@ async def tracker_commits(
     """Link git commits to tasks.
 
     Actions:
-        link — key + repo (path) + commit (hash): manual link
-        scan — repo: scan `git log` for task keys (PROJ-123) in commit messages
+        link, key + repo (path) + commit (hash): manual link
+        scan, repo: scan `git log` for task keys (PROJ-123) in commit messages
                and auto-link them to existing tasks; idempotent on re-scan
     """
     db = _tracker(ctx)
@@ -425,7 +425,7 @@ async def tracker_commits(
                 return f"max_commits must be 1..{commits_mod.SCAN_MAX_COMMITS}, got {max_commits}"
             # `git log` is a blocking subprocess (up to GIT_TIMEOUT_SECONDS); run
             # it off the event loop so the server stays responsive during a scan.
-            # DB linking stays on the loop thread — the sqlite connection has
+            # DB linking stays on the loop thread, the sqlite connection has
             # thread affinity and link_entries is a single fast transaction.
             entries = await anyio.to_thread.run_sync(commits_mod._git_log, repo, max_commits)
             counters = commits_mod.link_entries(db, repo, entries)
@@ -444,8 +444,8 @@ def _format_plan(plan) -> str:
     assert plan.project_key, "plan missing project key"
     scope = f" (goal `{plan.goal_key.upper()}`)" if plan.goal_key else ""
     if plan.open_count == 0:
-        return f"**Execution plan — {plan.project_key}**{scope}: nothing open. All done."
-    parts = [f"**Execution plan — {plan.project_key}**{scope} — {plan.open_count} open tasks", ""]
+        return f"**Execution plan, {plan.project_key}**{scope}: nothing open. All done."
+    parts = [f"**Execution plan — {plan.project_key}**{scope}: {plan.open_count} open tasks", ""]
     if plan.ready:
         parts.append(f"**Ready now ({len(plan.ready)}):**")
         parts += [f"- {_task_line(task)}" for task in plan.ready[:30]]
@@ -488,10 +488,10 @@ async def tracker_deps(
     start. Edges are cycle-checked and stay within one project.
 
     Actions:
-        add     — key + depends_on: add an edge
-        remove  — key + depends_on: remove it
-        list    — key: what this task waits on, and what waits on it
-        resolve — project (and/or key as the goal): what needs to happen —
+        add: key + depends_on: add an edge
+        remove: key + depends_on: remove it
+        list: key: what this task waits on, and what waits on it
+        resolve, project (and/or key as the goal): what needs to happen,
                   ready-now tasks, blocked tasks with their blockers, and the
                   parallelizable execution order. With key, the plan is limited
                   to that task's subtree + transitive dependencies.
@@ -549,7 +549,7 @@ async def tracker_issue(
     """Bridge tracker tasks to external issue trackers (GitHub; GitLab planned).
 
     Auth: GITHUB_TOKEN or GH_TOKEN env var (classic or fine-grained with issue
-    write access). Note this is the *server's* environment — `gh auth` alone is
+    write access). Note this is the *server's* environment, `gh auth` alone is
     not picked up.
 
     Every issue body carries a machine-readable marker,
@@ -557,20 +557,20 @@ async def tracker_issue(
     tracker DB, a fresh CRDT replica, or an issue opened by hand.
 
     Actions:
-        create — key + repo ('owner/name'): create a remote issue from the task
+        create, key + repo ('owner/name'): create a remote issue from the task
                  (description + acceptance-criteria checklist + back-link), label
                  it with the task's tags, and store the external ref
-        adopt  — key + repo + ref_id: link an issue that already exists (opened
+        adopt: key + repo + ref_id: link an issue that already exists (opened
                  by hand or by another replica), stamping the marker into its
                  body if absent. Refuses an issue marked for a different task.
-        sync   — key: pull remote state, stamp last_synced, report drift between
+        sync: key: pull remote state, stamp last_synced, report drift between
                  local task status and remote open/closed state
-        close  — key: close the linked remote issue
+        close: key: close the linked remote issue
     """
     from devtools_mcp.tracker import issues as issues_mod
 
     try:
-        # GitHub calls are blocking HTTP + SQLite writes — run off the event loop.
+        # GitHub calls are blocking HTTP + SQLite writes. Run off the event loop.
         if action == "create":
             if not repo:
                 return "create needs repo ('owner/name')"
@@ -610,13 +610,13 @@ async def tracker_sync(
 
     Every replica keeps a CRDT op-log (hybrid logical clocks, last-writer-wins
     rows); merge is idempotent and converges regardless of sync order. A peer
-    is any machine running `devtools_dashboard` — its viz server exposes the
+    is any machine running `devtools_dashboard`, its viz server exposes the
     sync API at /api/crdt/.
 
     Actions:
-        status — this replica's site id, op count, watermark, known peers
-        sync   — url (e.g. 'http://other-box:8765'): full bidirectional
-                 exchange — pull the peer's ops, merge, push ours
+        status. This replica's site id, op count, watermark, known peers
+        sync: url (e.g. 'http://other-box:8765'): full bidirectional
+                 exchange, pull the peer's ops, merge, push ours
     """
     from devtools_mcp.tracker import crdt
     from devtools_mcp.tracker import sync as sync_mod
@@ -632,13 +632,13 @@ async def tracker_sync(
             station = (
                 "\n**Station:** "
                 + "; ".join(f"`{r['project_key']}` -> {r['remote_project_key']}" for r in station_rows)
-                + " (rule-driven platform sync — see station_sync)"
+                + " (rule-driven platform sync. See station_sync)"
                 if station_rows
                 else ""
             )
             return (
                 f"**Tracker replica** site `{info['site_id'][:12]}…`\n"
-                f"ops in log: {info['ops']} | watermark: `{info['latest_hlc'] or '—'}`\n"
+                f"ops in log: {info['ops']} | watermark: `{info['latest_hlc'] or ', '}`\n"
                 f"**Peers:**\n{peers}{station}"
             )
         if action == "sync":
@@ -666,7 +666,7 @@ def _collab_identity(agent: str | None) -> str:
     """Resolve this caller's collab identity: explicit param, env label, or pid.
 
     Hooks report the real Claude Code session_id; tool calls fall back to this
-    (documented limitation on a shared HTTP server — the team collab server
+    (documented limitation on a shared HTTP server, the team collab server
     will own identity properly)."""
     resolved = (agent or "").strip() or os.environ.get("DEVTOOLS_MCP_AGENT", "").strip() or f"pid-{os.getpid()}"
     assert resolved, "collab identity resolution produced empty id"
@@ -719,13 +719,13 @@ async def tracker_files(
     server is coming soon; this is its single-machine precursor).
 
     Actions:
-        touch     — repo + files (≤50): record activity; returns any conflicts
-        claim     — repo + file: advisory lease (ttl_minutes, renewable; touching
+        touch: repo + files (≤50): record activity; returns any conflicts
+        claim: repo + file: advisory lease (ttl_minutes, renewable; touching
                     the file heartbeats it). Fails if another session holds it.
-        release   — release own claims: repo + file for one, repo for all there,
+        release: release own claims: repo + file for one, repo for all there,
                     neither for everything
-        status    — sessions, active claims and recent touches (repo optional)
-        conflicts — repo + file: who else claimed/recently touched it
+        status: sessions, active claims and recent touches (repo optional)
+        conflicts, repo + file: who else claimed/recently touched it
     Set agent (or env DEVTOOLS_MCP_AGENT) to a stable label so humans can tell
     agents apart; task_key links activity to a tracker task.
     """
@@ -746,7 +746,7 @@ async def tracker_files(
             head = f"Recorded {written} touch(es) as **{who}**" + (f" on `{task_key}`" if task_key else "")
             if not found:
                 return head
-            return head + "\n\n**Heads up — others are here:**\n" + "\n".join(_conflict_lines(found))
+            return head + "\n\n**Heads up, others are here:**\n" + "\n".join(_conflict_lines(found))
         if action == "claim":
             if not file:
                 return "claim needs file (and repo when the path is relative)"
@@ -787,7 +787,7 @@ async def tracker_files(
             found = activity_mod.conflicts_for(db.conn, who, root, rel)
             remote_lines = _remote_checkout_lines(db, rel)
             if not found and not remote_lines:
-                return f"No one else is on `{rel}` — clear to edit."
+                return f"No one else is on `{rel}`, clear to edit."
             body = _conflict_lines(found) + remote_lines
             return f"**Conflicts on `{rel}`:**\n" + "\n".join(body)
         return f"Unknown action {action!r}. One of: touch, claim, release, status, conflicts"
@@ -814,16 +814,16 @@ async def tracker_query(
     """Query the tracker with bounded output (the no-token-flood contract).
 
     Views:
-        tasks    — task table (filters: project/status/kind/tag/parent/title_pattern)
-        tree     — indented hierarchy (project required; parent narrows to a subtree)
-        rollup   — per project+kind status counts and criteria pass totals
-        criteria — all criteria with task keys
-        commits  — all commit links
-        tags     — tag usage counts
-        deps     — dependency edges
-        issues   — external issue links
-        activity — file-touch log from local agent collaboration (tracker_files)
-        claims   — active advisory file claims (leases)
+        tasks: task table (filters: project/status/kind/tag/parent/title_pattern)
+        tree: indented hierarchy (project required; parent narrows to a subtree)
+        rollup: per project+kind status counts and criteria pass totals
+        criteria, all criteria with task keys
+        commits: all commit links
+        tags: tag usage counts
+        deps: dependency edges
+        issues: external issue links
+        activity, file-touch log from local agent collaboration (tracker_files)
+        claims: active advisory file claims (leases)
     Pass columns=["schema"] to list a view's columns. limit is capped at 200.
     """
     db = _tracker(ctx)
@@ -868,6 +868,6 @@ async def tracker_query(
         df = df.sort(sort_by, descending=sort_descending)
     total = len(df)
     df = df.slice(offset, limit)
-    title = f"Tracker {view}" + (f" — {project.upper()}" if project else "")
+    title = f"Tracker {view}" + (f", {project.upper()}" if project else "")
     suffix = f"\n\n*Rows {offset + 1}-{offset + len(df)} of {total}*" if total > len(df) else ""
     return format_dataframe(df, title=title, max_rows=limit) + suffix

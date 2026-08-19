@@ -40,7 +40,7 @@ async def run_dtrace(
     """Run a DTrace script or one-liner.
 
     `env`: extra environment for the PROFILED process. Merged over the
-    server's own environment (not replacing it — dtrace itself needs PATH and
+    server's own environment (not replacing it, dtrace itself needs PATH and
     sudo needs its own vars). Without this, profiling a binary whose behaviour
     is env-gated (feature flags, worker counts, kill switches) silently
     measures the default configuration instead of the one asked for.

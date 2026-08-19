@@ -2,7 +2,7 @@
 
 The remote issue body is generated from the task: description, the acceptance
 criteria as a checklist, and a back-reference footer. One external ref per
-(task, provider) — the external_refs primary key.
+(task, provider), the external_refs primary key.
 
 The footer carries a machine-readable marker as well as the human sentence:
 
@@ -99,7 +99,7 @@ def build_issue_footer(task_key: str, uid: str | None = None) -> str:
 def strip_issue_footer(body: str) -> str:
     """Remove any tracker footer/marker so a fresh one can replace it.
 
-    Used when upgrading a legacy key-only marker in place — without this the
+    Used when upgrading a legacy key-only marker in place, without this the
     replacement footer would stack on top of the old one.
     """
     return FOOTER_RE.sub("", MARKER_RE.sub("", body or "")).rstrip()

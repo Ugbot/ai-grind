@@ -292,7 +292,7 @@ async def _session_start(  # noqa: PLR0912  # launch/attach/plan routing is a fl
     return header + await _await_stop(manager, session_id, wait)
 
 
-async def _dap_action(  # noqa: PLR0911, PLR0912  # one flat verb table by design
+async def _dap_action(  # noqa: PLR0911  # pLR0912  # one flat verb table by design
     session: DebugSession,
     manager: DebugSessionManager,
     node: SessionNode,
@@ -455,7 +455,7 @@ async def _dap_action(  # noqa: PLR0911, PLR0912  # one flat verb table by desig
     return f"Unknown action: `{action}`. Valid: {valid}"
 
 
-async def _dap_inspect(  # noqa: PLR0911, PLR0912, PLR0915  # one flat inspect table by design
+async def _dap_inspect(  # noqa: PLR0911, PLR0912  # pLR0915  # one flat inspect table by design
     ctx: Context,
     session: DebugSession,
     session_id: str,

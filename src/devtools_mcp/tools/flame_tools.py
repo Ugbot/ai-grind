@@ -1,10 +1,10 @@
-"""Flame-graph tool: devtools_flamegraph — render any sampling run as a graph.
+"""Flame-graph tool: devtools_flamegraph, render any sampling run as a graph.
 
 Works on any stored run whose backend provides a `stacks` builder (dtrace
 profile, perf record, ETW cpu, JVM jfr/asprof, CDB stacks).
 
 Two output formats:
-- "text" (default): bounded ASCII flame-tree + hotspot table — what agents read.
+- "text" (default): bounded ASCII flame-tree + hotspot table, what agents read.
 - "data": folded stacks as JSON ({stack: str, count: int}[]) for GUI renderers
   (e.g. an ImPlot flame chart in the desktop GUI).
 
@@ -45,8 +45,8 @@ async def devtools_flamegraph(
     Args:
         run_id: A run from devtools_run with stacks (e.g. dtrace profile, perf
             record, etw cpu, jvm jfr/asprof, cdb stacks).
-        fmt: "text" (default) — ASCII flame tree + hotspot table for agent
-            consumption; "data" — folded stacks as JSON array of
+        fmt: "text" (default), ASCII flame tree + hotspot table for agent
+            consumption; "data", folded stacks as JSON array of
             {stack: string, count: int} for GUI/ImPlot rendering.
         min_pct: (text only) Prune tree branches below this % of total samples
             (default 0.5).
@@ -54,7 +54,7 @@ async def devtools_flamegraph(
             (default 32).
         top_n: (text only) Rows in the hottest-functions table (default 15).
         stack_include: Regex matched against EVERY frame of a sample; keep only
-            samples whose stack contains a match — zoom the whole graph onto one
+            samples whose stack contains a match, zoom the whole graph onto one
             subsystem's call paths without re-running the profiler.
         stack_exclude: Regex matched against EVERY frame; drop a sample whole if
             any frame matches. The filter a mixed-phase capture needs: a
@@ -77,7 +77,7 @@ async def devtools_flamegraph(
 
     if backend.stacks is None:
         return (
-            f"{run.suite}:{run.tool} does not produce stacks — no flame graph. "
+            f"{run.suite}:{run.tool} does not produce stacks. No flame graph. "
             "Stacks come from dtrace profile, perf record, etw cpu, jvm jfr/asprof, or cdb stacks."
         )
 
@@ -92,7 +92,7 @@ async def devtools_flamegraph(
     if not samples:
         return (
             f"The stack filter removed all {cut.dropped_weight:,} samples of run "
-            f"`{run_id}` — nothing to render. Loosen stack_include/stack_exclude."
+            f"`{run_id}`. Nothing to render. Loosen stack_include/stack_exclude."
         )
 
     assert len(samples) > 0, "stacks() returned empty list after non-empty check"
@@ -107,14 +107,14 @@ async def devtools_flamegraph(
         kept = normalised[:_MAX_DATA_STACKS]
         payload = [{"stack": ";".join(s.frames), "count": s.weight} for s in kept]
         note = (
-            f" (top {_MAX_DATA_STACKS:,} by weight; {total - _MAX_DATA_STACKS:,} lighter stacks omitted — "
+            f" (top {_MAX_DATA_STACKS:,} by weight; {total - _MAX_DATA_STACKS:,} lighter stacks omitted, "
             "open the dashboard for the full flame graph)"
             if total > _MAX_DATA_STACKS
             else ""
         )
         filtered = f" · {cut.describe()}" if cut.active else ""
         header = (
-            f"Folded stack data — {run.suite}:{run.tool} · {len(payload):,} stacks"
+            f"Folded stack data, {run.suite}:{run.tool} · {len(payload):,} stacks"
             f"{note}{filtered} · run `{run_id}`\n\n"
         )
         return header + json.dumps(payload)
@@ -124,7 +124,7 @@ async def devtools_flamegraph(
     total = tree.total_weight
 
     parts = [
-        f"**Flame graph — {run.suite}:{run.tool}** · {total:,} samples · run `{run_id}`",
+        f"**Flame graph, {run.suite}:{run.tool}** · {total:,} samples · run `{run_id}`",
     ]
     if cut.active:
         parts.append(f"_{cut.describe()}_")
