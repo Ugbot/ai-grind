@@ -5,7 +5,7 @@ are the in-memory shapes the runner returns. Validation constants (kinds,
 statuses) live here so the domain layer and the MCP tools share one vocabulary.
 
 Recipes use plain dataclasses (the spec's choice) rather than the tracker's
-pydantic models — the domain is small and the JSON spec is validated in store.py.
+pydantic models, the domain is small and the JSON spec is validated in store.py.
 """
 
 from __future__ import annotations

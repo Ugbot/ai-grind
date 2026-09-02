@@ -4,7 +4,7 @@ import time, mirroring how backends register in the tool registry."""
 from __future__ import annotations
 
 # Import order = registration order. A broken adapter module should never
-# take the others down — keep these imports side-effect-only registrations.
+# take the others down. Keep these imports side-effect-only registrations.
 from devtools_mcp.debug.adapters import debugpy as _debugpy  # noqa: F401,E402
 from devtools_mcp.debug.adapters import java_debug as _java_debug  # noqa: F401,E402
 from devtools_mcp.debug.adapters import js_debug as _js_debug  # noqa: F401,E402

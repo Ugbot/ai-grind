@@ -107,7 +107,7 @@ def test_rebuild_indexes_live_skills(tmp_path, monkeypatch):
 
 
 def test_disabled_skills_pruned_from_index(tmp_path, monkeypatch):
-    """Disabling a skill — static or live — removes it from the router index."""
+    """Disabling a skill, static or live, removes it from the router index."""
     from devtools_mcp.skilldocs.control import SkillControl
 
     root = _seed_library(tmp_path)

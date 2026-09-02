@@ -6,8 +6,8 @@ TCP connection per DAP session: the first connection is the root session;
 js-debug then issues startDebugging reverse requests, and every child session
 opens a NEW connection to the SAME port (the child configuration is passed
 through verbatim as its launch/attach arguments). The running server rides
-along in the config's `extra` dict — children reuse the parent's config
-object (see dap_session.spawn_child) — refcounted per open socket and
+along in the config's `extra` dict, children reuse the parent's config
+object (see dap_session.spawn_child), refcounted per open socket and
 terminated when the last socket closes.
 """
 
@@ -33,7 +33,7 @@ from devtools_mcp.registry import InstalledTool, InstallSpec, InstallStep
 PINNED_VERSION = "1.117.0"
 
 # install.py's run_steps/_download do NOT expand '~' (argv is exec'd directly,
-# dest goes straight to pathlib.Path) — expand here, at spec-build time.
+# dest goes straight to pathlib.Path), expand here, at spec-build time.
 _ROOT = os.path.expanduser(os.path.join("~", ".devtools-mcp", "adapters", "js-debug"))
 _TARBALL = os.path.join(_ROOT, "js-debug-dap.tar.gz")
 _RELEASE_URL = (
@@ -191,7 +191,7 @@ async def make_transport(config: LaunchConfig | AttachConfig) -> JsDebugSocketTr
     if not isinstance(server, JsDebugServer) or not server.alive():
         node = shutil.which("node")
         if not node:
-            raise RuntimeError("node not found on PATH — js-debug needs Node.js 18+ installed")
+            raise RuntimeError("node not found on PATH, js-debug needs Node.js 18+ installed")
         server_js = server_js_path()
         if not os.path.isfile(server_js):
             raise RuntimeError(
@@ -282,7 +282,7 @@ async def detect() -> InstalledTool:
     elif not node:
         path = f"node not on PATH (Node.js 18+ required); DAP server expected at {server_js}"
     else:
-        path = f"missing {server_js} — install via devtools_install(suite='debug', tool='js-debug')"
+        path = f"missing {server_js}, install via devtools_install(suite='debug', tool='js-debug')"
     return InstalledTool(
         suite="debug",
         name="js-debug",
@@ -354,7 +354,7 @@ def _register() -> None:
                 supports_attach_pid=True,
             ),
             description=(
-                "JavaScript/TypeScript (vscode-js-debug) — launch Node programs, "
+                "JavaScript/TypeScript (vscode-js-debug), launch Node programs, "
                 "attach to a --inspect port or PID; one child session per process"
             ),
         )

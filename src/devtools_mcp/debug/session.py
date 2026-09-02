@@ -1,12 +1,12 @@
 """DebugSession ABC, session tree, and DebugSessionManager.
 
 DebugSession is the one interface every debugger implementation provides.
-Nothing in it mentions DAP — DapSession is one implementation; a SAP ADT
+Nothing in it mentions DAP, DapSession is one implementation; a SAP ADT
 session implements the same surface without DAP anywhere.
 
 Sessions form a TREE because some implementations (js-debug) spawn one
-child session per real process. The manager keys trees by root id — the
-only id the tool layer exposes — and keeps a focus pointer on the most
+child session per real process. The manager keys trees by root id, the
+only id the tool layer exposes, and keeps a focus pointer on the most
 recently stopped descendant so callers never need to know children exist.
 """
 
@@ -225,8 +225,8 @@ class SessionNode:
 
 
 class DebugSessionManager:
-    """Owns every session tree. Keys trees by root session id — the only id
-    the tool layer sees — and keeps a per-tree focus pointer on the most
+    """Owns every session tree. Keys trees by root session id, the only id
+    the tool layer sees, and keeps a per-tree focus pointer on the most
     recently stopped node so verbs auto-target the right session."""
 
     def __init__(self) -> None:
@@ -278,7 +278,7 @@ class DebugSessionManager:
         return self._focus.get(session_id, root)
 
     def on_stopped(self, node: SessionNode) -> None:
-        """A node stopped — it becomes the tree's focus."""
+        """A node stopped. It becomes the tree's focus."""
         root = self._root_of(node)
         self._focus[root.node_id] = node
 
@@ -309,7 +309,7 @@ class DebugSessionManager:
     async def wait_for_stop(self, session_id: str, timeout: float) -> SessionNode | None:
         """Tree-aware wait: returns the stopped node, the root if the whole
         tree terminated, or None on timeout. Multi-session adapters
-        (js-debug) stop on CHILD sessions — never wait on one session's
+        (js-debug) stop on CHILD sessions. Never wait on one session's
         state directly."""
         cond = self._tree_conds.get(session_id)
         if cond is None:

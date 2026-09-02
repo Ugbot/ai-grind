@@ -2,7 +2,7 @@
 
 LLM Station builds the graph natively (MarbleDB) and emits `knowledge-graph.json`
 via its `graph_export` tool. This package only *reads* that export and renders a
-server-rendered SVG graph view for the dashboard — no parsing, no graph
+server-rendered SVG graph view for the dashboard. No parsing, no graph
 construction happens in Python (that is the native engine's job).
 """
 

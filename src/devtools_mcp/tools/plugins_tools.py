@@ -1,15 +1,15 @@
 """Plugins tool: an observable health surface over the plugin loaders.
 
-devtools-mcp discovers out-of-tree extensions through three entry-point groups —
+devtools-mcp discovers out-of-tree extensions through three entry-point groups,
 ``devtools_mcp.backends`` (tool suites), ``devtools_mcp.mcp_tools`` (MCP tools),
-and ``devtools_mcp.viz_pages`` (console pages) — plus their in-tree equivalents.
+and ``devtools_mcp.viz_pages`` (console pages), plus their in-tree equivalents.
 Each loader degrades-never-crashes: a broken or version-incompatible plugin is
 recorded in a ``_FAILED_*`` map instead of taking the server down. That makes
 failures SILENT unless something surfaces them. This tool is that surface.
 
 Action-multiplexed like tracker_*()/recipe():
-    plugins(action="list")   — bounded inventory of what loaded (+ failed count)
-    plugins(action="status") — health detail: every loaded surface AND every
+    plugins(action="list"): bounded inventory of what loaded (+ failed count)
+    plugins(action="status"), health detail: every loaded surface AND every
                                failed/skipped entry with its one-line error
 """
 
@@ -48,7 +48,7 @@ class _Snapshot:
 
 def _collect() -> _Snapshot:
     """Snapshot the plugin surface. Ensures viz pages are discovered first."""
-    pages.load_viz_pages()  # idempotent — count console pages even without a dashboard
+    pages.load_viz_pages()  # idempotent, count console pages even without a dashboard
     return _Snapshot(
         host=host_version() or "unknown",
         backends=sorted(list_backends())[:_MAX_ITEMS],
@@ -61,12 +61,12 @@ def _collect() -> _Snapshot:
 
 
 def _render_list(snap: _Snapshot) -> str:
-    page_str = ", ".join(f"`{name}` ({href})" for name, href in snap.viz_pages) or "—"
+    page_str = ", ".join(f"`{name}` ({href})" for name, href in snap.viz_pages) or ", "
     lines = [
         f"**Plugin surface** (devtools-mcp {snap.host})",
         "",
-        f"- Backends ({len(snap.backends)}): " + (", ".join(f"`{b}`" for b in snap.backends) or "—"),
-        f"- MCP tool plugins ({len(snap.tool_plugins)}): " + (", ".join(f"`{t}`" for t in snap.tool_plugins) or "—"),
+        f"- Backends ({len(snap.backends)}): " + (", ".join(f"`{b}`" for b in snap.backends) or ", "),
+        f"- MCP tool plugins ({len(snap.tool_plugins)}): " + (", ".join(f"`{t}`" for t in snap.tool_plugins) or ", "),
         f"- Console pages ({len(snap.viz_pages)}): " + page_str,
     ]
     failed = snap.total_failed()
@@ -103,9 +103,9 @@ async def plugins(action: str = "list") -> str:
     loaded and what failed.
 
     Actions:
-        list   — bounded inventory: loaded backends, MCP tool plugins, console
+        list: bounded inventory: loaded backends, MCP tool plugins, console
                  pages, and a failed/skipped count.
-        status — the inventory plus a health section listing every failed or
+        status, the inventory plus a health section listing every failed or
                  version-skipped entry with its one-line error message.
     """
     snap = _collect()

@@ -1,7 +1,7 @@
 """Tests for the out-of-tree console-page registry (viz/pages.py).
 
 Covers the registry API (register/get/iter, collision guards), the built-in
-/recipes page migrated onto it, and — the headline — a registered
+/recipes page migrated onto it, and, the headline, a registered
 out-of-tree-STYLE page that renders and routes (GET root, GET subpath, POST
 redirect) through the live viz HTTP server exactly as a plugin's page would.
 """

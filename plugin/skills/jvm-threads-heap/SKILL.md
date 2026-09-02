@@ -1,20 +1,20 @@
 ---
 name: jvm-threads-heap
 description: >
-  Diagnose JVM thread state and memory via the devtools-mcp jvm backend —
+  Diagnose JVM thread state and memory via the devtools-mcp jvm backend:
   thread dumps (jstack / Thread.print) and heap histograms (jmap / GC.class_
   histogram). Use when a Java process hangs, deadlocks, is stuck/blocked, or its
-  heap is growing — to see thread states, lock contention, deadlocks, and the
+  heap is growing, to see thread states, lock contention, deadlocks, and the
   classes retaining the most bytes. For CPU/alloc sampling use jvm-profiling.
 ---
 
 # JVM threads & heap (devtools-mcp `jvm:threads` / `jvm:heap`)
 
-Point-in-time JVM diagnosis by **PID** — no sampling window needed. Output is
+Point-in-time JVM diagnosis by PID, with no sampling window needed. Output is
 parsed into queryable Polars frames, so you triage from a bounded summary and
 drill in.
 
-## Thread dump — hangs, deadlocks, contention
+## Thread dump: hangs, deadlocks, contention
 
 ```
 devtools_run(suite="jvm", tool="threads", binary="<pid>")
@@ -33,9 +33,9 @@ What to look for:
 - **Deadlock** banner → two threads each holding what the other wants.
 - Many threads **BLOCKED** on the same monitor → lock contention; find the holder.
 - A pool of threads **WAITING** on a queue → usually fine (idle workers).
-- Take **two dumps a few seconds apart** — frames that don't move are truly stuck.
+- Take two dumps a few seconds apart. Frames that don't move are truly stuck.
 
-## Heap histogram — what's eating memory
+## Heap histogram: what's eating memory
 
 ```
 devtools_run(suite="jvm", tool="heap", binary="<pid>")
@@ -60,6 +60,6 @@ What to look for:
 - These attach to a **live** JVM (PID via `binary` or `--pid N`); the JDK's
   `jcmd`/`jstack`/`jmap` must be on PATH.
 - A heap *histogram* is cheap; a full **heap dump** (`jmap -dump`) is heavy and
-  not exposed here — capture one manually if you need object-graph analysis.
+  not exposed here. Capture one manually if you need object-graph analysis.
 - For *why* CPU is hot rather than *where threads are stuck*, use
   [[jvm-profiling]]. Overall workflow: [[devtools-mcp-usage]].

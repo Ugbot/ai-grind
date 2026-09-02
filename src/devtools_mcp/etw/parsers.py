@@ -36,7 +36,7 @@ def shorten(name: str, max_len: int = 110) -> str:
 
 
 def is_synthetic(name: str) -> bool:
-    """PerfView pseudo-nodes (process/thread/module aggregates) — not real frames."""
+    """PerfView pseudo-nodes (process/thread/module aggregates), not real frames."""
     if name.endswith("!?") or "!?!?" in name:
         return True
     if name.startswith("Thread (") or name.startswith("Process"):

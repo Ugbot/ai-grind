@@ -5,7 +5,7 @@ Backend contract
 Each suite is a subpackage registering one BackendSpec via register_backend()
 at import time (module-level _register() in its backend.py). Loading is driven
 by the explicit _BACKEND_MODULES manifest below plus the 'devtools_mcp.backends'
-entry-point group for out-of-tree plugins — see load_backends().
+entry-point group for out-of-tree plugins. See load_backends().
 
 Capabilities are DERIVED from which optional fields a spec sets, never declared:
 a spec with `stacks` supports flame graphs, one with `install` supports
@@ -14,7 +14,7 @@ devtools_install. Deriving makes declaration/implementation drift impossible.
 Dependency convention: a backend needing a non-core Python dependency must
 (a) import it lazily inside runner functions, (b) report absence via detect()
 as unavailable with an install hint, and (c) get a `devtools-mcp[<suite>]`
-extra at that point — not before. Core deps stay minimal.
+extra at that point, not before. Core deps stay minimal.
 """
 
 from __future__ import annotations
@@ -107,7 +107,7 @@ class BackendSpec:
     description: str = ""  # one line shown in devtools_check
 
     def capabilities(self) -> frozenset[str]:
-        """Derived, never declared — a capability exists iff its field does."""
+        """Derived, never declared, a capability exists iff its field does."""
         caps = {"detect", "run", "frames", "summary"}
         if self.format_details is not None:
             caps.add("details")
@@ -177,9 +177,9 @@ _BACKEND_MODULES: tuple[str, ...] = (
 # A plugin may declare which host version it needs, so an incompatible plugin is
 # skipped-with-warning (into the _FAILED_* map) rather than crashing the loader.
 # Two declaration styles, both documented in docs/extending.md:
-#   1. dist metadata `Requires-Dist: devtools-mcp>=X` — checked PRE-import, so a
+#   1. dist metadata `Requires-Dist: devtools-mcp>=X`, checked PRE-import, so a
 #      too-new plugin never even runs its module. This is the enforced path.
-#   2. a `__devtools_mcp_requires__ = ">=X"` module attribute — a convenience
+#   2. a `__devtools_mcp_requires__ = ">=X"` module attribute, a convenience
 #      honored POST-import (best-effort) for plugins that don't pin via metadata.
 
 HOST_DIST_NAME: str = "devtools-mcp"
@@ -197,7 +197,7 @@ def _spec_incompat(spec: str, hv: str) -> str | None:
     """Reason string if host version `hv` does not satisfy specifier `spec`."""
     spec = (spec or "").strip()
     if not spec or not hv:
-        return None  # nothing declared, or host version unknown — never block
+        return None  # nothing declared, or host version unknown. Never block
     try:
         from packaging.specifiers import SpecifierSet
         from packaging.version import Version
@@ -205,7 +205,7 @@ def _spec_incompat(spec: str, hv: str) -> str | None:
         if Version(hv) in SpecifierSet(spec):
             return None
         return f"requires {HOST_DIST_NAME}{spec} (host is {hv})"
-    except Exception:  # noqa: BLE001 — a malformed spec must never block loading
+    except Exception:  # noqa: BLE001  # a malformed spec must never block loading
         return None
 
 
@@ -239,7 +239,7 @@ def _declared_host_requirement(ep: Any) -> str:
 def host_incompat_reason(ep: Any) -> str | None:
     """Pre-import gate: reason string when a plugin needs a host version we lack.
 
-    None means "compatible / no declaration" — load it. A non-None reason means
+    None means "compatible / no declaration", load it. A non-None reason means
     the loader skips the plugin (records the reason) before importing it.
     """
     return _spec_incompat(_declared_host_requirement(ep), host_version())
@@ -267,7 +267,7 @@ def load_backends() -> None:
     for module_name in _BACKEND_MODULES:
         try:
             importlib.import_module(module_name)
-        except Exception as exc:  # noqa: BLE001 — degrade to unavailable, don't die
+        except Exception as exc:  # noqa: BLE001  # degrade to unavailable, don't die
             _FAILED_BACKENDS[module_name] = f"{type(exc).__name__}: {exc}"
     entry_points = importlib.metadata.entry_points(group="devtools_mcp.backends")
     for ep in entry_points:
@@ -299,7 +299,7 @@ def load_tool_plugins() -> None:
     """Load out-of-tree MCP tools from the 'devtools_mcp.mcp_tools' entry-point
     group. Unlike backends (which register without the server), tool plugins
     attach @mcp.tool()s and so must load AFTER the FastMCP `mcp` instance and
-    the in-tree tools exist — server.py calls this at the very end of import.
+    the in-tree tools exist, server.py calls this at the very end of import.
     A broken or version-incompatible plugin degrades to an entry in the failed
     map, never crashes. Idempotent.
     """
@@ -313,7 +313,7 @@ def load_tool_plugins() -> None:
             continue
         try:
             loaded = ep.load()
-        except Exception as exc:  # noqa: BLE001 — degrade, don't die
+        except Exception as exc:  # noqa: BLE001  # degrade, don't die
             _FAILED_TOOL_PLUGINS[key] = f"{type(exc).__name__}: {exc}"
             continue
         attr_reason = _attr_incompat_reason(loaded)
@@ -399,7 +399,7 @@ class ToolRegistry:
             installable = [s for s in unavailable if _BACKENDS[s].install is not None]
             if installable:
                 parts.append(
-                    "Install commands available — devtools_install(suite=...) for: " + ", ".join(sorted(installable))
+                    "Install commands available, devtools_install(suite=...) for: " + ", ".join(sorted(installable))
                 )
         failed = failed_backends()
         if failed:

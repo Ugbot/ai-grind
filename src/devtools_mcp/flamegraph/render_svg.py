@@ -3,7 +3,7 @@
 Width of each frame is proportional to its inclusive weight; depth grows
 downward. Hover shows a tooltip with the full frame name, percentage, and sample
 count. The SVG is written to a workspace file and only its path is returned to
-the caller — it is never inlined into the LLM response.
+the caller. It is never inlined into the LLM response.
 """
 
 from __future__ import annotations

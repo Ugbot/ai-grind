@@ -1,4 +1,4 @@
-"""DTrace execution — run scripts and one-liners."""
+"""DTrace execution. Run scripts and one-liners."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ async def run_dtrace(
     """Run a DTrace script or one-liner.
 
     `env`: extra environment for the PROFILED process. Merged over the
-    server's own environment (not replacing it — dtrace itself needs PATH and
+    server's own environment (not replacing it, dtrace itself needs PATH and
     sudo needs its own vars). Without this, profiling a binary whose behaviour
     is env-gated (feature flags, worker counts, kill switches) silently
     measures the default configuration instead of the one asked for.
@@ -63,7 +63,7 @@ async def run_dtrace(
         cmd.extend(extra_args)
 
     # `trace` has no built-in probe, so devtools_run callers pass the D program
-    # via args (or direct callers via script/one_liner) — otherwise it's unusable.
+    # via args (or direct callers via script/one_liner), otherwise it's unusable.
     program = one_liner or (" ".join(args) if tool == "trace" and args else "")
 
     # Script file or one-liner
@@ -88,7 +88,7 @@ async def run_dtrace(
             "",
         )
 
-    # Attach to process or command (quote each token — dtrace -c splits on spaces)
+    # Attach to process or command (quote each token, dtrace -c splits on spaces)
     if pid and "-p" not in cmd:
         cmd.extend(["-p", str(pid)])
     elif binary and tool != "trace" and "-c" not in cmd:
@@ -116,7 +116,7 @@ async def run_dtrace(
                 timeout=timeout,
             )
         except TimeoutError:
-            _kill_group(proc)  # SIGKILL the group — SIGTERM to sudo can't reach the child
+            _kill_group(proc)  # SIGKILL the group, SIGTERM to sudo can't reach the child
             await proc.wait()
             stdout_bytes = b""
             stderr_bytes = b"DTrace timed out"

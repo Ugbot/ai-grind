@@ -6,7 +6,7 @@ asks, which is about the CALL PATH a sample came from, not the name of its leaf.
 
 The motivating failure: whole-process profiles of a database benchmark spend ~34%
 of samples in a table-load phase. Aggregated raw, `_platform_memmove` ranked #1 at
-27% — but 73% of that memmove was underneath `decompress_page`/`decode_chunk`, i.e.
+27%, but 73% of that memmove was underneath `decompress_page`/`decode_chunk`, i.e.
 loading, not executing. Excluding the function would have deleted the memmove that
 mattered too; excluding the *phase* (any sample whose stack contains a loader frame)
 is the only filter that answers "where does EXECUTION time go".
@@ -32,7 +32,7 @@ class StackFilter:
     """What a stack-containment filter kept and dropped.
 
     Carried into report headers so a filtered view can never be mistaken for the
-    whole picture — the single most dangerous way to misread a profile.
+    whole picture, the single most dangerous way to misread a profile.
 
     Counts come in two flavours because both matter: `stacks` is how many distinct
     call paths survived (shape), `weight` is how many samples they carry (cost).
@@ -52,7 +52,7 @@ class StackFilter:
 
     @property
     def total_weight(self) -> int:
-        """Sample weight before filtering — the denominator the raw profile used."""
+        """Sample weight before filtering, the denominator the raw profile used."""
         return self.kept_weight + self.dropped_weight
 
     @property
@@ -62,7 +62,7 @@ class StackFilter:
         return round(100.0 * self.dropped_weight / total, 1) if total else 0.0
 
     def __add__(self, other: StackFilter) -> StackFilter:
-        """Accumulate across runs — devtools_aggregate filters each run separately.
+        """Accumulate across runs, devtools_aggregate filters each run separately.
 
         Patterns are taken from whichever side has them (they are the same
         user-supplied pair in every real use).
@@ -117,7 +117,7 @@ def filter_samples(
         input list is returned unchanged and the filter reports itself inactive.
 
     Raises:
-        re.error: if a pattern is not a valid regex. Deliberately not swallowed —
+        re.error: if a pattern is not a valid regex. Deliberately not swallowed,
             silently ignoring a bad filter would present the unfiltered profile as
             if it had been filtered.
     """

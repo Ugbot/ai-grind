@@ -1,4 +1,4 @@
-"""GitLab issue provider — skeleton only.
+"""GitLab issue provider, skeleton only.
 
 The provider interface is in place so the tracker's external_refs and tool
 surface stay provider-agnostic; only the HTTP layer is unimplemented.

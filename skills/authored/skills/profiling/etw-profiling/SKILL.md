@@ -2,7 +2,7 @@
 name: etw-profiling
 description: >
   CPU-profile native Windows programs via the devtools-mcp ETW backend (PerfView).
-  Use when you need to find CPU hotspots in a Windows .exe — Exc%/Inc% tables,
+  Use when you need to find CPU hotspots in a Windows .exe: Exc%/Inc% tables,
   call attribution, and flame graphs. Covers the symbol-resolution prerequisites
   (PDBs, _NT_SYMBOL_PATH), the elevation/exit-code-2 gotcha, and how to read the
   output. The deep-dive complement to bench-rdtsc-profile (which says WHICH
@@ -12,7 +12,7 @@ description: >
 # ETW CPU profiling on Windows (devtools-mcp `etw:cpu`)
 
 The `etw` backend drives **PerfView** to capture an ETW CPU trace, resolves
-symbols, and returns hotspot tables (Exc%/Inc%) as a queryable Polars frame — no
+symbols, and returns hotspot tables (Exc%/Inc%) as a queryable Polars frame, with no
 raw spew. Add a flame graph with `devtools_flamegraph`.
 
 ## Prerequisites (symbols are 90% of the battle)
@@ -24,7 +24,7 @@ raw spew. Add a flame graph with `devtools_flamegraph`.
 3. The backend sets `_NT_SYMBOL_PATH` to the exe dir + the Microsoft public symbol
    server, so system DLLs resolve (`ucrtbase!memset`, not `ucrtbase!?`).
 4. Some kernel providers need **admin**; PerfView self-elevates. The parent
-   process exits with **code 2** while the elevated child keeps writing the ETL —
+   process exits with code 2 while the elevated child keeps writing the ETL,
    that's expected; the backend waits for the `.etl` to stabilise instead of
    trusting the exit code.
 
@@ -35,16 +35,16 @@ devtools_run(suite="etw", tool="cpu", binary="C:/path/app.exe", args=["100000"])
 ```
 
 Useful `extra_args`:
-- `--process NAME` — focus process name (default = exe stem).
-- `--decode-only --etl C:/x.etl` — re-decode an existing trace, no recapture.
-- `--folded C:/stacks.txt` — feed folded stacks (async-profiler-style) so
+- `--process NAME` sets the focus process name (default = exe stem).
+- `--decode-only --etl C:/x.etl` re-decodes an existing trace, with no recapture.
+- `--folded C:/stacks.txt` feeds folded stacks (async-profiler-style) so
   `devtools_flamegraph` can draw a true flame graph from ETW.
 
 ## Read it
 
 The summary gives two bounded tables:
-- **Hottest leaves (Exc%)** — where CPU cycles actually burn. Start here.
-- **Top dispatchers (Inc%)** — functions whose time is in their callees.
+- Hottest leaves (Exc%) show where CPU cycles burn. Start here.
+- Top dispatchers (Inc%) are functions whose time is in their callees.
 
 Then drill in without flooding context:
 ```
@@ -59,8 +59,8 @@ overall workflow. For sub-µs loops where sampling is too coarse, use inline RDT
 
 ## Gotchas
 
-- `/Ob3` aggressive inlining hides small helpers in their callers — build with
+- `/Ob3` aggressive inlining hides small helpers in their callers, so build with
   `/Ob1` if you need them separable.
-- `module!?` rows in the table mean unresolved symbols — fix PDBs/symbol path,
+- `module!?` rows in the table mean unresolved symbols. Fix PDBs and symbol path,
   the numbers are otherwise an aggregate, not a real leaf.
 - WPR/xperf are installed too, but PerfView is the supported capture path here.

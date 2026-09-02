@@ -1,20 +1,20 @@
 # ai-grind
 
-**An AI toolkit for developers building high-performance code with an LLM in the loop.** It gives your coding assistant real performance tooling it can drive itself, a built-in project tracker so plans never get lost between sessions, and the discipline to never pollute the model's context with raw tool output. Built to work nicely with **Claude Code**; works just as well with **Cursor** or any other [MCP](https://modelcontextprotocol.io/) client.
+An AI toolkit for developers building high-performance code with an LLM in the loop. It gives your coding assistant real performance tooling it can drive itself, a built-in project tracker so plans never get lost between sessions, and the discipline to keep raw tool output out of the model's context. Built for Claude Code, and it works just as well with Cursor or any other [MCP](https://modelcontextprotocol.io/) client.
 
 ## Why this exists
 
-Serious performance tools — VTune, Valgrind, PerfView/ETW, perf, JFR, the debuggers — demand two kinds of expertise: the command-line incantations to run them, and the experience to read what comes back. An LLM actually has both. What it doesn't have is room: one raw profiler dump is tens of thousands of symbol-heavy lines, and pasting that into a conversation destroys the context you're working in. ai-grind handles that noise. Every run is parsed into a queryable [Polars](https://pola.rs/) DataFrame; the model gets a bounded summary and a `run_id`, then **queries for exactly what it needs** instead of getting everything thrown back at once.
+Serious performance tools demand two kinds of expertise: the command-line incantations to run them, and the experience to read what comes back. VTune, Valgrind, PerfView and ETW, perf, JFR, the debuggers, all of them. An LLM has both. What it doesn't have is room. One raw profiler dump is tens of thousands of symbol-heavy lines, and pasting that into a conversation destroys the context you're working in. ai-grind absorbs that noise. Every run is parsed into a queryable [Polars](https://pola.rs/) DataFrame, so the model gets a bounded summary and a `run_id`, then queries for exactly what it needs instead of taking the whole dump back at once.
 
-The same problem applies to the plan itself. Plans made in chat evaporate between sessions — pause and resume, and the knowledge is gone. So the server carries a **built-in project tracker** (a mini-JIRA in one SQLite file): the LLM writes its plan directly into it — epics, stories, punch-card subtasks, acceptance criteria tied to real tests, dependencies that resolve into "what should happen next" — and that state persists on disk across restarts, sessions, and tools.
+The same problem applies to the plan itself. Plans made in chat evaporate between sessions. Pause, resume, and the knowledge is gone. So the server carries a built-in project tracker, a mini-JIRA in one SQLite file. The LLM writes its plan straight into it: epics, stories, punch-card subtasks, acceptance criteria tied to real tests, dependencies that resolve into "what should happen next". That state persists on disk across restarts, sessions, and tools.
 
-> This is a working version, not a final one — it's the toolkit I'm using to build the next one.
+> This is a working version, not a final one. It's the toolkit I'm using to build the next one.
 
 ## The pieces
 
-1. **devtools-mcp** — the MCP server: 17 backends spanning profilers (VTune, ETW/PerfView, perf, DTrace, Valgrind, JFR/async-profiler, py-spy, V8, RenderDoc), debuggers (LLDB, CDB), and build/package systems (Maven, Gradle, npm, pnpm, yarn, Cargo), all behind one normalized vocabulary, with flame graphs and a local browser dashboard for the human in the loop.
-2. **The tracker** — persistent project management driven entirely through MCP tools: tasks with `PROJ-123` keys, hierarchy, status workflow with an acceptance-test close gate, commit linking, auto-tagging, GitHub issue sync, and a dependency resolver.
-3. **The skills library** (`skills/`) — 79 skills that teach the assistant *how* to use all of this and more: driving each profiler and reading its output, interpreting flame graphs, the tracker workflows, making PowerShell behave on Windows (5.1 vs 7), uv for Python, and project-specific drivers.
+1. `devtools-mcp`, the MCP server. 17 backends spanning profilers (VTune, ETW/PerfView, perf, DTrace, Valgrind, JFR/async-profiler, py-spy, V8, RenderDoc), debuggers (LLDB, CDB), and build/package systems (Maven, Gradle, npm, pnpm, yarn, Cargo), all behind one normalized vocabulary, with flame graphs and a local browser dashboard for the human in the loop.
+2. The tracker, persistent project management driven entirely through MCP tools: tasks with `PROJ-123` keys, hierarchy, status workflow with an acceptance-test close gate, commit linking, auto-tagging, GitHub issue sync, and a dependency resolver.
+3. The skills library (`skills/`), 112 skills that teach the assistant how to use all of this and more: driving each profiler and reading its output, interpreting flame graphs, the tracker workflows, making PowerShell behave on Windows (5.1 vs 7), uv for Python, and project-specific drivers.
 
 > **Design rule (everywhere):** the LLM is never flooded with raw, symbol-heavy tool output. Every run is stored as a queryable Polars DataFrame; tools return only bounded summaries (top-N, percentages, a `run_id`) and large artifacts (flame-graph SVGs, raw traces) are written to disk and returned as a path. Drill in on demand with `devtools_analyze` / `devtools_query`.
 
@@ -43,10 +43,10 @@ Instead of dozens of individual tool wrappers, devtools-mcp provides **a few cat
 | **ETW** (PerfView) | cpu (CPU hotspots Exc%/Inc% + flame graph) | Windows |
 | **VTune** (Intel) | cpu (hotspots), threads (threading), alloc (memory-consumption), memory (memory-access), uarch (top-down), snapshot | Windows, Linux (oneAPI) |
 | **JVM** | cpu (JFR), alloc (async-profiler), threads (jstack), heap (jmap/jcmd) | any (JDK) |
-| **CDB** | stacks (`~*k`), analyze (`!analyze -v`), inspect — batch-mode Windows debugger | Windows |
+| **CDB** | stacks (`~*k`), analyze (`!analyze -v`), inspect. Batch-mode Windows debugger | Windows |
 | **Python** | cpu (py-spy sampling), threads (py-spy dump), cprofile (deterministic) | any (cProfile stdlib; py-spy = `pip install py-spy`) |
-| **Node/JS** | cpu (`--cpu-prof`), alloc (`--heap-prof`) — V8 profiles → flame graph | any (Node.js) |
-| **RenderDoc** | capture, analyze, counters, resources, thumb — GPU frame capture (D3D/Vulkan/OpenGL) → per-drawcall tree + GPU-time flame graph | Windows, Linux (GPU + interactive session) |
+| **Node/JS** | cpu (`--cpu-prof`), alloc (`--heap-prof`). V8 profiles, turned into a flame graph | any (Node.js) |
+| **RenderDoc** | capture, analyze, counters, resources, thumb. GPU frame capture (D3D/Vulkan/OpenGL) giving a per-drawcall tree and a GPU-time flame graph | Windows, Linux (GPU + interactive session) |
 | **Maven** | build, test, deps, sync | any (mvn or project `mvnw`) |
 | **Gradle** | build, test, deps, sync, tasks | any (gradle or project `gradlew`) |
 | **npm** | build, test, deps, sync, audit, outdated, tasks | any (Node.js) |
@@ -54,36 +54,36 @@ Instead of dozens of individual tool wrappers, devtools-mcp provides **a few cat
 | **yarn** | build, test, deps, sync, audit, tasks | any (yarn classic) |
 | **Cargo** | build, check, test, deps, sync, audit | any (Rust / rustup) |
 
-**One vocabulary, many backends.** Every build/package-manager backend speaks the
-same verbs — `deps` (dependency tree + subdependencies), `sync` (resolve / install
-/ refresh / fetch), `build`, `test`, plus `audit` / `outdated` / `tasks` where the
-tool supports them — so `devtools_run(suite="npm", tool="deps")` and
+One vocabulary, many backends. Every build and package-manager backend speaks the
+same verbs: `deps` (dependency tree plus subdependencies), `sync` (resolve /
+install / refresh / fetch), `build`, `test`, plus `audit` / `outdated` / `tasks`
+where the tool supports them. So `devtools_run(suite="npm", tool="deps")` and
 `devtools_run(suite="cargo", tool="deps")` behave identically; only the backend
 implementation differs.
 
-Profiling verbs are unified too — **`cpu`** means a CPU profile whether the backend
-is perf, dtrace, etw, jvm, py, or node; **`alloc`** is allocation profiling
-(jvm/node); **`threads`** is a thread dump (jvm/py). Any sampling run can be turned
-into a flame graph with `devtools_flamegraph(run_id=...)` — folded stacks are the
-universal currency, so flame graphs work the same for native code (Linux `perf
-script`, macOS dtrace `ustack`, Windows ETW), the JVM, **Python** (py-spy), and
-**JavaScript** (V8).
+Profiling verbs are unified too. `cpu` means a CPU profile whether the backend is
+perf, dtrace, etw, jvm, py, or node; `alloc` is allocation profiling (jvm, node);
+`threads` is a thread dump (jvm, py). Any sampling run can be turned into a flame
+graph with `devtools_flamegraph(run_id=...)`. Folded stacks are the universal
+currency, so flame graphs work the same for native code (Linux `perf script`,
+macOS dtrace `ustack`, Windows ETW), the JVM, Python (py-spy), and JavaScript
+(V8).
 
 ### Visualization terminal
 
-`devtools_dashboard(action="start")` launches a local (127.0.0.1-only) web UI — the browser becomes a window onto everything the LLM sees:
+`devtools_dashboard(action="start")` launches a local, 127.0.0.1-only web UI. The browser becomes a window onto everything the LLM sees:
 
-- **`/`** — every run across workspaces.
-- **per run** — the bounded summary, the full **queryable data table**, and raw logs.
-- **interactive flame graph** — click any frame to zoom into its subtree (re-roots), hover for name + %. Pure server-rendered SVG, no JS framework or CDN.
+- `/` lists every run across workspaces.
+- A run page shows the bounded summary, the full queryable data table, and raw logs.
+- The interactive flame graph re-roots on any frame you click, and hovering gives the name and percentage. Pure server-rendered SVG, no JS framework or CDN.
 
 It reads the live workspace, so runs appear as you create them. This is also the seam where agentic/visual tooling can be added later.
 
 ### Progress tracker (mini-JIRA)
 
 A persistent, SQLite-backed task tracker built into the server, so the LLM can
-put its plan **directly into durable storage** instead of leaving it in chat.
-Pause a session, resume tomorrow, switch from Claude Code to Cursor — the
+put its plan straight into durable storage instead of leaving it in chat.
+Pause a session, resume tomorrow, switch from Claude Code to Cursor, and the
 epics, subtasks, acceptance criteria, and "what's next" are all still there.
 Eleven `tracker_*` tools over one global database (`~/.devtools-mcp/tracker.db`,
 override with `DEVTOOLS_MCP_TRACKER_DB`):
@@ -95,7 +95,7 @@ override with `DEVTOOLS_MCP_TRACKER_DB`):
 | `tracker_status` | Status workflow + the acceptance close gate |
 | `tracker_criteria` | Acceptance criteria linked to tests (`file::test_name`), pass/fail recording |
 | `tracker_tag` | Tags + auto-tag rules (kind / regex / parent-kind, applied at creation) |
-| `tracker_commits` | Commit links: manual or `git log` scan for task keys in messages (scan runs the subprocess off the event loop and batches links in one transaction — never blocks the server) |
+| `tracker_commits` | Commit links: manual or `git log` scan for task keys in messages (scan runs the subprocess off the event loop and batches links in one transaction, so it never blocks the server) |
 | `tracker_deps` | Task dependencies + execution-plan resolver: what's ready now, what's blocked by what, parallelizable order |
 | `tracker_issue` | GitHub issue bridge (create from task with criteria checklist, sync drift, close); provider-abstracted, `GITHUB_TOKEN`/`GH_TOKEN` |
 | `tracker_query` | Bounded reporting: `tasks` / `tree` / `rollup` / `criteria` / `commits` / `tags` / `deps` / `issues` / `activity` / `claims` views |
@@ -106,37 +106,37 @@ Same no-token-flood contract as the profiling tools: every response is bounded
 markdown; the data lives in SQLite (WAL, indexed for the tag/kind/rollup and
 reverse-dependency probes) and is paged through Polars-backed views.
 Workflow skills live in `skills/authored/skills/tracker/`. The tracker also
-renders as **cards in the dashboard** — project overview, a per-project board
-(status columns + the execution plan), and task detail pages at `/tracker`.
+renders as cards in the dashboard: project overview, a per-project board with
+status columns and the execution plan, and task detail pages at `/tracker`.
 
 ### Local-first collaboration (CRDT)
 
-The tracker is a **replicated, local-first store**, not just a local file.
+The tracker is a replicated, local-first store rather than a local file.
 Every replica has a site id and a hybrid logical clock; SQLite triggers
 capture every mutation into an op-log with site-independent payloads (rows
-carry global `uid`s, references use uids — never local rowids). Merging is
+carry global `uid`s, and references use uids, never local rowids). Merging is
 last-writer-wins per row, idempotent, and converges regardless of sync order
-or topology — ops propagate transitively, so two laptops that only ever talk
+or topology. Ops propagate transitively, so two laptops that only ever talk
 to a third machine still end up identical. Concurrent allocation of the same
 human key (both sides mint `PROJ-7` offline) is resolved by deterministic
 re-keying, so no replica ever loses a task.
 
 Syncing is one tool call: `tracker_sync(action="sync", url="http://other-box:8765")`
-— the peer is any machine running `devtools_dashboard`, which serves the sync
+The peer is any machine running `devtools_dashboard`, which serves the sync
 API at `/api/crdt/`. Work fully offline, sync when you meet the network again.
 (v1 is row-level LWW with full-exchange transport; field-level merge and
 incremental vector-clock exchange are the documented upgrade path.)
 
 ### Agent collaboration (local)
 
-Run several agents on one machine — Claude Code, Cursor, Codex, side by side —
-without them silently stepping on each other's edits. **Claude Code hooks**
+Run several agents on one machine, say Claude Code, Cursor, and Codex side by
+side, without them silently stepping on each other's edits. Claude Code hooks
 (`hooks/`, wired up automatically by the plugin) report every Edit/Write to
 the local service; the tracker records who touched what, and if another
 session is on the same file the agent gets a warning injected straight into
-its context. Agents can also take **advisory claims** (self-expiring leases,
+its context. Agents can also take advisory claims (self-expiring leases,
 heartbeated by their own edits) on files before a big refactor via the
-`tracker_files` tool — by default a contested file warns, and with
+`tracker_files` tool. By default a contested file warns, and with
 `DEVTOOLS_MCP_COLLAB_MODE=ask` it surfaces a permission prompt to the human
 instead. Everything links to tracker tasks (`DEVTOOLS_MCP_TASK=GRIND-42`), the
 **`/collab`** dashboard page shows sessions, claims and contested files live,
@@ -149,14 +149,14 @@ the `agent-collab` skill for the workflow.
 
 ### Live skills (CRDT documents)
 
-Skills don't have to be static files. A **live skill** is a SKILL.md whose
-source of truth is a CRDT text document ([pycrdt](https://github.com/y-crdt/pycrdt)
-— Yrs under the hood): agents edit it in place with the `skill_live` tool
+Skills don't have to be static files. A live skill is a SKILL.md whose source of
+truth is a CRDT text document, [pycrdt](https://github.com/y-crdt/pycrdt) with
+Yrs under the hood. Agents edit it in place with the `skill_live` tool
 (`create` / `append` / `patch` with find-replace semantics), and every change
-is **materialized** to a real `~/.claude/skills/<name>/SKILL.md`
+is materialized to a real `~/.claude/skills/<name>/SKILL.md`
 (`DEVTOOLS_MCP_LIVE_SKILLS_DIR` overrides), so the file Claude loads is always
 the current merged state. `skill_live(action="sync", url="http://other-box:8765")`
-exchanges state-vector diffs with any peer dashboard — concurrent edits from
+exchanges state-vector diffs with any peer dashboard, and concurrent edits from
 different agents or machines merge at character level instead of one side
 clobbering the other. An agent that learns a better incantation appends it to
 the skill; after the next sync, every machine's copy teaches it.
@@ -167,14 +167,14 @@ rewrites both survive a CRDT merge (that's the point) and duplicate content.
 ### Skills library
 
 `skills/` is the other half of the toolkit: the knowledge that makes the tools
-usable. 79 Claude Code skills covering how to drive each profiler and
-*read* its output (etw-profiling, vtune-profiling, flamegraph-reading, jvm /
+usable. 112 Claude Code skills covering how to drive each profiler and read its
+output (etw-profiling, vtune-profiling, flamegraph-reading, jvm /
 python / node profiling), the tracker workflows (tracker-usage, -breakdown,
 -acceptance, -github-sync), build tooling, a full set of
 PowerShell-on-Windows survival guides (5.1 vs 7 idioms, errors, native
 commands, non-interactive automation), and uv for Python projects. Skills are
-managed as a library — harvested + hand-authored sources merged into a
-loadable mirror by `skills/sync.py` — see `skills/README.md`.
+managed as a library: harvested and hand-authored sources merged into a loadable
+mirror by `skills/sync.py`. See `skills/README.md`.
 
 ## Install
 
@@ -191,16 +191,16 @@ uv sync
 
 This repo is a self-contained Claude Code **plugin marketplace**
 (`.claude-plugin/marketplace.json`) shipping one plugin, `devtools-mcp`, that
-bundles the MCP server **and** the full skills library (79 skills, 5 commands,
-3 agents), plus the agent-collab hooks. Install it in Claude Code:
+bundles the MCP server and the full skills library (112 skills, 5 commands,
+6 agents), plus the agent-collab hooks. Install it in Claude Code:
 
 ```
 /plugin marketplace add Ugbot/ai-grind
 /plugin install devtools-mcp@ai-grind
 ```
 
-The plugin wires up the MCP server automatically via `${CLAUDE_PLUGIN_ROOT}` —
-no hand-edited `.mcp.json` path. It still needs `uv` on `PATH` and the repo's
+The plugin wires up the MCP server through `${CLAUDE_PLUGIN_ROOT}`, so no
+hand-edited `.mcp.json` path. It still needs `uv` on `PATH` and the repo's
 Python deps (`uv sync` runs on first launch). To iterate on bundled skills, edit
 `skills/authored/` (or `skills/catalog/`) and regenerate the committed bundle:
 
@@ -212,8 +212,8 @@ python skills/sync.py --target plugin   # rebuild plugin/{skills,commands,agents
 
 ### As a shared local service (recommended)
 
-Run **one instance** on the machine; every project — and every client — talks
-to it over HTTP. The dashboard comes up with it, so the UI is always there:
+Run one instance on the machine, and every project and client talks to it over
+HTTP. The dashboard comes up with it, so the UI is always there:
 
 ```powershell
 .\scripts\devtools-service.ps1 start     # MCP at http://127.0.0.1:8000/mcp, dashboard at :8765
@@ -221,17 +221,18 @@ to it over HTTP. The dashboard comes up with it, so the UI is always there:
 .\scripts\devtools-service.ps1 install   # also start automatically at login
 ```
 
-(Equivalent manual command: `uv run devtools-mcp --transport http --port 8000`
-— network transports auto-start the dashboard; `--no-dashboard` to opt out.)
+The equivalent manual command is `uv run devtools-mcp --transport http --port
+8000`. Network transports auto-start the dashboard; pass `--no-dashboard` to opt
+out.
 
-Then point clients at the URL — **once, at user scope**, so all projects get it:
+Then point clients at the URL once, at user scope, so all projects get it:
 
 ```bash
 # Claude Code (all projects):
 claude mcp add --transport http devtools-mcp http://127.0.0.1:8000/mcp --scope user
 ```
 
-Or per project — `.mcp.json` (Claude Code) and `.cursor/mcp.json` (Cursor),
+Or per project, in `.mcp.json` (Claude Code) and `.cursor/mcp.json` (Cursor),
 both already in this repo:
 
 ```json
@@ -245,24 +246,24 @@ both already in this repo:
 Why this shape: one process owns the tracker DB and the run workspace, so every
 project's profiling runs and tasks land in the same dashboard; restart the
 service and Claude Code reconnects automatically (exponential backoff). If the
-service is down, the MCP server just shows as unavailable — `/mcp` in Claude
+service is down, the MCP server shows as unavailable, and `/mcp` in Claude
 Code retries it once you've started the service.
 
 ### Cursor setup
 
 1. `uv sync` (once)
 2. `.\scripts\devtools-service.ps1 start`
-3. Open **Cursor → Settings → MCP** — project [`.cursor/mcp.json`](.cursor/mcp.json) registers `devtools-mcp` at `http://127.0.0.1:8000/mcp`
-4. **Reload MCP** if the service was started after Cursor opened
+3. Open Cursor, then Settings, then MCP. Project [`.cursor/mcp.json`](.cursor/mcp.json) registers `devtools-mcp` at `http://127.0.0.1:8000/mcp`
+4. Reload MCP if the service was started after Cursor opened
 5. Smoke test: ask the agent to run `devtools_check`
 6. Optional login autostart: `.\scripts\devtools-service.ps1 install`
 
-Dashboard (auto-starts with the service): `http://127.0.0.1:8765` — Runs, Search, Tracker board, installed-tools status.
+Dashboard, which auto-starts with the service: `http://127.0.0.1:8765`. It has Runs, Search, the Tracker board, and installed-tools status.
 
 ### As a per-project stdio server (alternative)
 
 The classic spawn-per-session model still works (this is also what the plugin
-install above wires up automatically) — in `.mcp.json`:
+install above wires up automatically), in `.mcp.json`:
 
 ```json
 {
@@ -291,19 +292,19 @@ Then in Claude Code:
 
 ### As an MCP server (Cursor and other clients)
 
-The server speaks three transports — pick with `--transport` (or env vars):
+The server speaks three transports. Pick one with `--transport`, or with env vars:
 
 ```bash
-uv run devtools-mcp                              # stdio (pipes) — default
+uv run devtools-mcp                              # stdio (pipes), the default
 uv run devtools-mcp --transport http --port 8000 # streamable HTTP at /mcp
 uv run devtools-mcp --transport sse  --port 8000 # SSE at /sse
 ```
 
-- **stdio** — MCP over stdin/stdout; how editor/CLI clients (Claude Code, Cursor)
-  spawn it. Nothing is printed to stdout except the protocol.
-- **http** (streamable-http) — a long-lived server at `http://<host>:<port>/mcp`;
-  connect multiple clients, run it remotely, or share one instance.
-- **sse** — legacy Server-Sent-Events transport at `/sse` for older clients.
+- `stdio` carries MCP over stdin and stdout, which is how editor and CLI clients
+  (Claude Code, Cursor) spawn it. Nothing is printed to stdout except the protocol.
+- `http` (streamable-http) is a long-lived server at `http://<host>:<port>/mcp`.
+  Connect multiple clients, run it remotely, or share one instance.
+- `sse` is the legacy Server-Sent-Events transport at `/sse`, for older clients.
 
 Host/port/transport can also come from env: `DEVTOOLS_MCP_TRANSPORT`,
 `DEVTOOLS_MCP_HOST`, `DEVTOOLS_MCP_PORT` (default `127.0.0.1:8000`). To connect an
@@ -347,12 +348,12 @@ Claude Code ←→ MCP Protocol ←→ devtools-mcp server
             & Sampling  (A vs B)       (cross-run search)
 ```
 
-**Key design decisions:**
+Key design decisions:
 
-- **Normalized interface** — Every backend registers a `BackendSpec` with `detect()`, `run()`, `df_builders`, and `format_summary()`. Adding a new tool suite means implementing one module, not 10 tools.
-- **Polars DataFrames** — All results are converted to DataFrames for filtering, grouping, correlation, and comparison. The `FilterSpec` engine supports regex patterns, thresholds, pagination, sampling (random, stratified, every-nth), and sort overrides.
-- **Unified search index** — All runs in a workspace are indexed into a single DataFrame with normalized columns (`function`, `file`, `kind`, `value`, etc.), enabling cross-tool queries like "find all functions that both leak memory and are CPU hotspots."
-- **Structured LLDB sessions** — Debug sessions use a PTY-based interactive process. Snapshots (backtrace, variables, breakpoints, etc.) are parsed into structured models and stored as workspace runs, making them queryable through the same analysis tools.
+- Normalized interface. Every backend registers a `BackendSpec` with `detect()`, `run()`, `df_builders`, and `format_summary()`. Adding a tool suite means implementing one module, not 10 tools.
+- Polars DataFrames. Every backend converts its results into a DataFrame for filtering, grouping, correlation, and comparison. The `FilterSpec` engine supports regex patterns, thresholds, pagination, sampling (random, stratified, every-nth), and sort overrides.
+- Unified search index. Every run in a workspace lands in one DataFrame with normalized columns (`function`, `file`, `kind`, `value`, and so on), which is what makes cross-tool queries work: "find all functions that both leak memory and are CPU hotspots."
+- Structured LLDB sessions. A debug session drives a PTY-based interactive process. The parser turns each snapshot (backtrace, variables, breakpoints) into structured models and stores it as a workspace run, so the same analysis tools can query it.
 
 ## Example: correlating memory leaks with CPU hotspots
 
@@ -386,11 +387,11 @@ uv run pytest tests/ -v
 #   end-to-end tracker_* tools)
 ```
 
-Windows/JVM/CDB backends are tested with **synthetic** tool output (PerfView CSV,
+Windows, JVM, and CDB backends are tested against synthetic tool output (PerfView CSV,
 JFR JSON, jstack/jmap text, CDB backtraces) so the suite needs none of the real
 tools installed.
 
-All test data is randomized via factory functions — no hardcoded fixtures.
+Factory functions randomize all test data. No hardcoded fixtures.
 
 ## Project structure
 

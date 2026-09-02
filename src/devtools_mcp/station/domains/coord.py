@@ -5,7 +5,7 @@ Sessions are push-only (the platform allows owner-only PATCH): a local
 session seen in file_activity within the active window gets a platform
 session; a linked session idle beyond the window is completed remotely.
 Handoff creation/accept/decline are explicit station_session verbs, not
-sync rules — the sync part only mirrors *pending* handoffs into
+sync rules, the sync part only mirrors *pending* handoffs into
 station_remote_handoffs for display.
 """
 
@@ -111,4 +111,4 @@ def _mirror_pending_handoffs(db: TrackerDB, client: StationClient, project_row: 
             )
     report["pulled"] += len(pending)
     if pending:
-        report["notes"].append(f"{len(pending)} pending handoff(s) mirrored — station_session action='inbox'")
+        report["notes"].append(f"{len(pending)} pending handoff(s) mirrored, station_session action='inbox'")

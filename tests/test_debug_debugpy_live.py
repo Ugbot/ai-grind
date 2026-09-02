@@ -1,7 +1,7 @@
 """Live integration test: DapSession driving a real debugpy adapter.
 
 Skipped entirely unless debugpy is importable by the interpreter running
-the tests (the adapter and the debuggee share it — see adapters/debugpy.py).
+the tests (the adapter and the debuggee share it. See adapters/debugpy.py).
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ pytestmark = pytest.mark.skipif(debugpy_missing, reason="debugpy not importable 
 
 _TIMEOUT = 30.0
 
-# Line 6 is `marker = total * 2` — the conditional breakpoint target.
+# Line 6 is `marker = total * 2`, the conditional breakpoint target.
 _SCRIPT = textwrap.dedent("""\
     def loop() -> int:
         total = 0
@@ -48,7 +48,7 @@ async def test_debugpy_conditional_breakpoint_step_and_set_variable(tmp_path):
     session.node = manager.register_root(session)
     try:
         assert session.add_watch("i * 10") is None
-        # Conditional breakpoint set BEFORE launch — applied (and its
+        # Conditional breakpoint set BEFORE launch, applied (and its
         # condition honoured) during the initialized-event dance.
         await session.set_breakpoints(
             str(script),

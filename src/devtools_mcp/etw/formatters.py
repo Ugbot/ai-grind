@@ -1,4 +1,4 @@
-"""ETW summary formatters — bounded top-N Exc%/Inc% tables."""
+"""ETW summary formatters. Bounded top-N Exc%/Inc% tables."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ _TOP = 15
 
 
 def format_etw_summary(result: EtwResult) -> str:
-    """Top CPU leaves (Exc%) and dispatchers (Inc%) — never the full table."""
+    """Top CPU leaves (Exc%) and dispatchers (Inc%). Never the full table."""
     parts = [format_run_header(result), ""]
     real = [s for s in result.samples if not is_synthetic(s.name)]
     if not real:
@@ -22,7 +22,7 @@ def format_etw_summary(result: EtwResult) -> str:
         parts.append(f"**ETL:** `{result.etl_path}`")
 
     by_exc = sorted(real, key=lambda s: s.exc_pct, reverse=True)[:_TOP]
-    parts.append("\n**Hottest leaves (Exc% — where cycles burn):**")
+    parts.append("\n**Hottest leaves (Exc%, where cycles burn):**")
     parts.append("| Exc% | Inc% | function |")
     parts.append("|---:|---:|---|")
     for s in by_exc:
@@ -31,7 +31,7 @@ def format_etw_summary(result: EtwResult) -> str:
         parts.append(f"| {s.exc_pct:.2f} | {s.inc_pct:.2f} | {shorten(s.name)} |")
 
     by_inc = sorted(real, key=lambda s: s.inc_pct - s.exc_pct, reverse=True)[:_TOP]
-    parts.append("\n**Top dispatchers (Inc% — time in callees):**")
+    parts.append("\n**Top dispatchers (Inc%, time in callees):**")
     parts.append("| Inc% | Exc% | function |")
     parts.append("|---:|---:|---|")
     for s in by_inc:

@@ -2,19 +2,19 @@
 
 The java debug adapter is not a standalone process: com.microsoft.java.debug
 is an Eclipse plugin that runs INSIDE the jdt.ls language server and is asked
-— via LSP workspace/executeCommand — to start a DAP server, answering with a
+via LSP workspace/executeCommand, to start a DAP server, answering with a
 TCP port. This module owns that lifecycle: boot jdt.ls over stdio, do the
 initialize dance (passing the debug plugin jar as a bundle), wait until the
 workspace is imported, then expose exactly the operations the java adapter
 needs:
 
-- start_debug_session() -> int          (the DAP server port; idempotent —
+- start_debug_session() -> int          (the DAP server port; idempotent,
   java-debug runs one shared ServerSocket, one session per TCP connection)
 - resolve_main_class(project_root)      (vscode.java.resolveMainClass)
 - resolve_classpath(main_class, name)   (vscode.java.resolveClasspath)
 
 LSP uses the same Content-Length framing as DAP, so the wire helpers are
-reused from debug.protocol (encode_message/read_message) — no framing code
+reused from debug.protocol (encode_message/read_message). No framing code
 is duplicated here. Clients are cached per project root (bounded, LRU) since
 booting jdt.ls and importing a project costs 10-60s.
 """
@@ -46,7 +46,7 @@ _READY_POLL_INTERVAL = 15.0
 _SHUTDOWN_TIMEOUT = 10.0
 _LOG_TAIL_LINES = 20
 
-# install.py does NOT expanduser() paths — expand here, at import time.
+# install.py does NOT expanduser() paths, expand here, at import time.
 _HOME = os.path.expanduser(os.path.join("~", ".devtools-mcp", "adapters", "jdtls"))
 _WORKSPACES = os.path.expanduser(os.path.join("~", ".devtools-mcp", "jdtls-workspaces"))
 
@@ -156,7 +156,7 @@ class JdtlsClient:
         assert self.process is None, "jdt.ls client already started"
         java = shutil.which("java")
         if not java:
-            raise JdtlsError("`java` not found on PATH — jdt.ls needs a JDK 17+")
+            raise JdtlsError("`java` not found on PATH, jdt.ls needs a JDK 17+")
         home = jdtls_home()
         launcher = find_launcher(home)
         config_dir = find_config_dir(home)
@@ -374,7 +374,7 @@ class JdtlsClient:
 
     async def start_debug_session(self) -> int:
         """Start (or get) java-debug's DAP server; returns its TCP port. The
-        port is shared — every new connection to it is a separate session."""
+        port is shared. Every new connection to it is a separate session."""
         result = await self.execute_command("vscode.java.startDebugSession")
         try:
             port = int(result)
@@ -415,7 +415,7 @@ async def get_client(project_root: str) -> JdtlsClient:
             _CLIENTS[root] = client  # refresh LRU position
             return client
         if client is not None:
-            await client.shutdown()  # dead process — reap before replacing
+            await client.shutdown()  # dead process, reap before replacing
         client = JdtlsClient(root)
         try:
             await client.start()

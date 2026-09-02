@@ -10,7 +10,7 @@ PLAN_STEPS_MAX: int = 64  # hard bound on a returned plan
 
 
 class PlannerError(Exception):
-    """Expected/reportable planning failure — not a bug."""
+    """Expected/reportable planning failure, not a bug."""
 
 
 @dataclass

@@ -94,7 +94,7 @@ async def devtools_analyze(
     if group_by:
         if group_by not in df.columns:
             cols = ", ".join(df.columns)
-            return f"Cannot group by {group_by!r} — not a column of this run. Available columns: {cols}"
+            return f"Cannot group by {group_by!r}, not a column of this run. Available columns: {cols}"
         numeric_cols = [c for c in df.columns if c != group_by and df[c].dtype in (pl.Int64, pl.Float64, pl.UInt64)]
         aggs = [pl.len().alias("count")]
         for col in numeric_cols[:5]:
@@ -205,20 +205,20 @@ async def devtools_aggregate(
     devtools_compare answers "what changed between run A and run B".
     This answers the other question a profiling campaign asks: "across my
     whole benchmark suite, where does the time actually go, and which costs
-    are BROAD (many workloads) versus SPIKY (one workload)?" — the split that
+    are BROAD (many workloads) versus SPIKY (one workload)?", the split that
     decides whether an optimization pays once or everywhere.
 
     Percentages are normalized per run before combining, so a long capture
     cannot outvote a short one. Reports, per function:
-      runs        — how many runs it appears in (breadth)
-      mean_pct    — mean share across the runs it appears in
-      max_pct     — its worst single run
-      top_run     — which run that was (where to go profile next)
-      total_share — mean_pct * runs / n_runs: the suite-wide ranking key
+      runs: how many runs it appears in (breadth)
+      mean_pct: mean share across the runs it appears in
+      max_pct: its worst single run
+      top_run: which run that was (where to go profile next)
+      total_share: mean_pct * runs / n_runs, the suite-wide ranking key
 
     `function_pattern`/`exclude_functions` filter the RESULT ROWS by name;
     `stack_include`/`stack_exclude` filter the SAMPLES by call path. Reach for
-    the latter whenever a whole-process profile mixes phases — see below.
+    the latter whenever a whole-process profile mixes phases. See below.
 
     Args:
         run_ids: Runs to aggregate. None = every stacks-capable run matching
@@ -228,8 +228,8 @@ async def devtools_aggregate(
             run several ways at once (by suite, by query, by sweep date), so the
             useful selection is usually the intersection, not one label.
             Combines with `tag`, which is kept for existing callers.
-        metric: "self" (exclusive — where cycles burn) or "total"
-            (inclusive — subtree cost, for finding expensive call paths).
+        metric: "self" (exclusive, where cycles burn) or "total"
+            (inclusive, subtree cost, for finding expensive call paths).
         function_pattern: Regex to include only matching functions.
         exclude_functions: Regex to drop functions (e.g. framework frames).
         stack_include: Regex matched against EVERY frame; keep only samples whose
@@ -253,10 +253,7 @@ async def devtools_aggregate(
     app = get_app_ctx(ctx)
     ws = app.get_workspace(workspace_id)
 
-    if run_ids:
-        candidates = list(run_ids)
-    else:
-        candidates = [r["run_id"] for r in ws.list_runs()]
+    candidates = list(run_ids) if run_ids else [r["run_id"] for r in ws.list_runs()]
 
     from devtools_mcp.flamegraph.sample_filter import StackFilter, filter_samples
     from devtools_mcp.flamegraph.tree import function_frame
@@ -374,7 +371,7 @@ async def devtools_compare(
             Compares one subsystem's call paths instead of two whole processes.
         stack_exclude: Regex matched against EVERY frame; drop a sample whole if
             any frame matches (stack-based suites only). Needed when the two runs
-            share a phase you are not comparing — a setup/load phase that differs
+            share a phase you are not comparing, a setup/load phase that differs
             in length between A and B otherwise shows up as a fake regression in
             every function it touches. Applied before %-normalization, so both
             sides renormalize to their own filtered universe and the deltas stay
@@ -452,7 +449,7 @@ async def devtools_compare(
         if not samples_a or not samples_b:
             return (
                 "The stack filter removed every sample from one of the runs "
-                f"(A kept {len(samples_a)}, B kept {len(samples_b)}) — "
+                f"(A kept {len(samples_a)}, B kept {len(samples_b)}), "
                 "nothing left to compare."
             )
         fa = function_frame(samples_a).rename(

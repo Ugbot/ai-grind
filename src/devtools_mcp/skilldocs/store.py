@@ -5,7 +5,7 @@ One pycrdt Doc per skill, holding the full SKILL.md markdown in a Text named
 periodic compaction to one snapshot), so a doc rebuilds by replaying its log
 and any two replicas converge by exchanging update diffs. After every local
 change or remote merge the current text is materialized to
-`<publish_root>/<name>/SKILL.md` — the real file skill loaders read.
+`<publish_root>/<name>/SKILL.md`, the real file skill loaders read.
 
 Edits should be *surgical* (append / patch with Edit-tool find-replace
 semantics), not whole-document replaces: concurrent full replaces both survive
@@ -79,7 +79,7 @@ def connect(path: Path) -> sqlite3.Connection:
 
 
 class SkillDocError(Exception):
-    """Expected/reportable condition (bad input, unknown skill) — not a bug."""
+    """Expected/reportable condition (bad input, unknown skill), not a bug."""
 
 
 def _utc_now_iso() -> str:
@@ -198,7 +198,7 @@ class SkillDocStore:
         name = self._validate_name(name)
         row = self.conn.execute("SELECT name FROM skill_docs WHERE name = ?", (name,)).fetchone()
         if row is None:
-            raise SkillDocError(f"No live skill {name!r} — create it or sync from a peer")
+            raise SkillDocError(f"No live skill {name!r}, create it or sync from a peer")
         return name
 
     # -- queries ---------------------------------------------------------------
@@ -224,7 +224,7 @@ class SkillDocStore:
         return text
 
     def state(self, name: str) -> bytes:
-        """State vector — what this replica has seen for the skill."""
+        """State vector, what this replica has seen for the skill."""
         name = self._require(name)
         return self._load_doc(name).get_state()
 
@@ -240,7 +240,7 @@ class SkillDocStore:
         """Create a live skill from full initial content (frontmatter required)."""
         name = self._validate_name(name)
         if self.exists(name):
-            raise SkillDocError(f"Live skill {name!r} already exists — use append/patch")
+            raise SkillDocError(f"Live skill {name!r} already exists. Use append/patch")
         if len(content) > CONTENT_MAX:
             raise SkillDocError(f"content too large: {len(content)} > {CONTENT_MAX}")
         fm = frontmatter_name(content)
@@ -283,11 +283,11 @@ class SkillDocStore:
         if count == 0:
             raise SkillDocError("old string not found in the skill document")
         if count > 1:
-            raise SkillDocError(f"old string matches {count} times — add context to make it unique")
+            raise SkillDocError(f"old string matches {count} times, add context to make it unique")
         if len(current) - len(old) + len(new) > CONTENT_MAX:
             raise SkillDocError(f"patch would exceed {CONTENT_MAX} chars")
         # pycrdt Text is indexed by UTF-8 byte offset, not Python code points, so
-        # translate — otherwise any non-ASCII before the match corrupts the doc.
+        # translate, otherwise any non-ASCII before the match corrupts the doc.
         char_start = current.index(old)
         byte_start = len(current[:char_start].encode("utf-8"))
         byte_len = len(old.encode("utf-8"))
@@ -319,7 +319,7 @@ class SkillDocStore:
     def delete(self, name: str) -> bool:
         """Remove a live skill locally: its update log and its materialized file.
 
-        Local-only — peers that already synced the doc keep their copy (and a
+        Local-only, peers that already synced the doc keep their copy (and a
         later sync from such a peer recreates it here; true tombstone deletion
         is the team collab server's job).
         """
@@ -359,8 +359,8 @@ class SkillDocStore:
     def materialize(self, name: str) -> Path | None:
         """Write the current merged text to `<publish_root>/<name>/SKILL.md`.
 
-        Skipped (returns None) when the document isn't a valid skill yet — e.g. a
-        partially-synced doc whose frontmatter doesn't parse — when it's the
+        Skipped (returns None) when the document isn't a valid skill yet, e.g. a
+        partially-synced doc whose frontmatter doesn't parse, when it's the
         reserved control doc, or when the skill is disabled (existing file is then
         removed). Power variants are rendered to the active mode. The DB copy is
         always authoritative; the file is a projection.

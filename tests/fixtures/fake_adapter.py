@@ -22,7 +22,7 @@ Speaks Content-Length framed DAP over stdin/stdout. Behavior:
 
 Crash mode: set FAKE_ADAPTER_CRASH_AFTER=<command> in the environment (or
 pass --crash-after=<command>) and the adapter exits(1) immediately after
-responding to that command — for adapter-crash detection tests.
+responding to that command, for adapter-crash detection tests.
 """
 
 from __future__ import annotations
@@ -194,7 +194,7 @@ def handle(request: dict) -> bool:
     elif command == "continue":
         respond(request, {"allThreadsContinued": True})
         # Small delay so the client processes the continue response (and its
-        # running-state bookkeeping) before terminated arrives — mirrors the
+        # running-state bookkeeping) before terminated arrives, mirrors the
         # gap a real debuggee takes to finish.
         time.sleep(0.05)
         event("exited", {"exitCode": 0})

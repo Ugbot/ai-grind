@@ -14,9 +14,9 @@ _TOP = 15  # bound: top-N rows shown per section
 
 
 def _failed_test_label(name: str, classname: str, message: str) -> str:
-    """`Class::test — message`, trimming empty pieces."""
+    """`Class::test: message`, trimming empty pieces."""
     label = f"{classname}::{name}" if classname else name
-    return f"{label} — {message}" if message else label
+    return f"{label}: {message}" if message else label
 
 
 def _section(parts: list[str], title: str, lines: list[str]) -> None:
@@ -68,7 +68,7 @@ def format_build_summary(result: BuildResult) -> str:
     _section(
         parts,
         "Vulnerabilities",
-        [f"[{v.severity}] {v.name} — {v.title}".rstrip(" —") for v in result.vulnerabilities],
+        [f"[{v.severity}] {v.name}: {v.title}".rstrip(" :") for v in result.vulnerabilities],
     )
     _section(
         parts,

@@ -8,7 +8,7 @@ from devtools_mcp.lldb.models import LldbSnapshot
 
 
 def lldb_frames_df(snapshot: LldbSnapshot) -> pl.DataFrame:
-    """All stack frames across all threads — filterable by function, file, module."""
+    """All stack frames across all threads, filterable by function, file, module."""
     rows = []
     for thread in snapshot.threads:
         for frame in thread.frames:
@@ -59,7 +59,7 @@ def lldb_raw_lines_df(snapshot: LldbSnapshot) -> pl.DataFrame:
 
 
 def lldb_threads_df(snapshot: LldbSnapshot) -> pl.DataFrame:
-    """Thread summary — one row per thread with stop reason and frame count."""
+    """Thread summary. One row per thread with stop reason and frame count."""
     rows = []
     for thread in snapshot.threads:
         top_frame = thread.frames[0] if thread.frames else None

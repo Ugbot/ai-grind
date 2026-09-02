@@ -26,8 +26,11 @@
   "skills": "./plugin/skills",
   "commands": "./plugin/commands",
   "agents": [
+    "./plugin/agents/comment-sicko.md",
     "./plugin/agents/frontend-backend-connectivity-checker.md",
     "./plugin/agents/living-docs-writer.md",
-    "./plugin/agents/test-bench-runner.md"
+    "./plugin/agents/test-bench-runner.md",
+    "./plugin/agents/thermo-nuclear-code-quality-review-subagent.md",
+    "./plugin/agents/thermo-nuclear-review-subagent.md"
   ]
 }

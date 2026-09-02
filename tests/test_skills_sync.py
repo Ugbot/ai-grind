@@ -47,7 +47,7 @@ class TestLibraryStatus:
 
 class TestRunScript:
     async def test_sync_local_runs(self):
-        # target=local rewrites skills/loadable — derived, gitignored output.
+        # target=local rewrites skills/loadable, derived, gitignored output.
         code, tail = await run_script(REPO_SKILLS, "sync.py", ["--target", "local"])
         assert code == 0
         assert "synced ->" in tail

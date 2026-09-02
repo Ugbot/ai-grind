@@ -1,6 +1,6 @@
 """LLDB backend registration for the tool registry.
 
-The interactive PTY LLDB stack is gone — native debugging goes through the
+The interactive PTY LLDB stack is gone, native debugging goes through the
 unified debug suite's lldb-dap adapter. This backend survives for two jobs:
 hydrating historical LldbSnapshot runs from disk (store/hydrate.py resolves
 them by _module/_class) and serving their df_builders/summaries.
@@ -23,7 +23,7 @@ from devtools_mcp.registry import BackendSpec, InstalledTool, register_backend
 
 
 async def detect() -> list[InstalledTool]:
-    """Probe lldb-dap — the implementation behind native debug sessions."""
+    """Probe lldb-dap, the implementation behind native debug sessions."""
     from devtools_mcp.debug.adapters.lldb_dap import detect as detect_lldb_dap
 
     tool = await detect_lldb_dap()
@@ -39,7 +39,7 @@ async def detect() -> list[InstalledTool]:
 
 
 async def run(**kwargs: object) -> tuple[str, None, str]:
-    """LLDB doesn't use batch run — it's session-based. Use debug_start instead."""
+    """LLDB doesn't use batch run. It's session-based. Use debug_start instead."""
     return "Native debugging is session-based. Use debug_start() (lldb-dap adapter).", None, ""
 
 

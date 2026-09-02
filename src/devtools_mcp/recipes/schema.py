@@ -9,7 +9,7 @@ from __future__ import annotations
 
 MIGRATIONS_MAX: int = 50
 
-# v1: the whole recipe/pipeline engine —
+# v1: the whole recipe/pipeline engine,
 #   recipes       one row per registered pipeline (an ordered list of steps),
 #                 addressed by a stable `key`; `spec_hash` fingerprints the
 #                 executable spec (kind + env_axes + steps) for cache validity.

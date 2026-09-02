@@ -2,7 +2,7 @@
 
 The transport is deliberately simple and always-correct for v1: a full
 bidirectional exchange (pull everything, merge, push everything). Merge is
-idempotent and LWW, so re-sending ops costs bandwidth, never correctness —
+idempotent and LWW, so re-sending ops costs bandwidth, never correctness,
 and a tracker op-log is small. Watermarks are recorded per peer for status
 display; incremental exchange (vector clocks) is the documented upgrade path.
 
@@ -46,7 +46,7 @@ def sync_once(db: TrackerDB, peer_url: str, client: httpx.Client | None = None) 
     remote = _get_json(http, "/api/crdt/ops")
     remote_site = remote.get("site_id", "")
     if remote_site == db.site_id:
-        raise TrackerError("peer reports our own site_id — refusing to sync with self")
+        raise TrackerError("peer reports our own site_id, refusing to sync with self")
     pulled = crdt.merge_ops(db, remote.get("ops", []))
 
     local_ops = crdt.ops_after(db.conn)

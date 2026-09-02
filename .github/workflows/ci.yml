@@ -29,6 +29,9 @@ jobs:
       - name: Lint
         run: uv run ruff check src/
 
+      - name: Prose check (unslop)
+        run: uv run python scripts/unslop_check.py
+
       - name: Check plugin/ mirror is in sync
         run: |
           uv run python skills/sync.py --target plugin

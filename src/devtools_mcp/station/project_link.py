@@ -82,7 +82,7 @@ def _resolve_repo(client: StationClient, cfg: StationConfig) -> str | None:
     if not origin:
         raise TrackerError(
             f"[domains.collab] is enabled but repo='auto' found no git origin under {repo_root} "
-            "— set [project].repo to a platform repo id"
+            ", set [project].repo to a platform repo id"
         )
     existing = client.repo_by_url(origin)
     if existing is not None:
@@ -101,7 +101,7 @@ def link_project(db: TrackerDB, cfg: StationConfig, client: StationClient) -> di
     if cfg.station.org and cfg.station.org != org_id:
         raise TrackerError(
             f"Config org {cfg.station.org!r} does not match the API key's org {org_id!r} "
-            "— keys are org-scoped, fix [station].org or use the right key"
+            ", keys are org-scoped, fix [station].org or use the right key"
         )
     client.org_id = org_id  # adopt the key's org before any org-scoped call
     remote_project = _resolve_remote_project(client, cfg)

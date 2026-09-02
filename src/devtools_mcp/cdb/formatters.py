@@ -1,4 +1,4 @@
-"""CDB summary formatters — bounded."""
+"""CDB summary formatters. Bounded."""
 
 from __future__ import annotations
 

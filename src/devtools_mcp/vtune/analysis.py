@@ -1,4 +1,4 @@
-"""VTune analysis — Polars DataFrame + flame-graph stacks."""
+"""VTune analysis, Polars DataFrame + flame-graph stacks."""
 
 from __future__ import annotations
 

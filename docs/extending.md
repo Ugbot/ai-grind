@@ -16,7 +16,7 @@ out-of-tree **`devtools-mcp-abap`** / **`devtools-mcp-conduct`** plugins.
 
 ---
 
-## Part 1 — Bolt on a domain (in-tree)
+## Part 1: bolt on a domain (in-tree)
 
 A "domain" is a self-contained, SQLite-backed area of state with its own tools and
 (optionally) its own console page. `tracker/` and `recipes/` are the templates. A
@@ -66,7 +66,7 @@ Every domain store follows the same shape (see `recipes/db.py`):
 
   WAL is what lets the dashboard read while a tool writes, and lets a background
   worker thread open its **own** connection to the same file (sqlite connections are
-  thread-affine — never hand one across threads; reopen from the path).
+  thread-affine, so never hand one across threads; reopen from the path).
 
 - **Explicit write transactions** via a `transaction()` context manager doing
   `BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`, so concurrent server instances serialize
@@ -74,7 +74,7 @@ Every domain store follows the same shape (see `recipes/db.py`):
 
 - **Versioned migrations** in `schema.py`, applied in order inside one transaction
   each, tracked in a `schema_migrations(version, applied_at)` table. Add a table by
-  appending a `(N, (…statements…))` tuple — never edit an applied migration:
+  appending a `(N, (…statements…))` tuple. Never edit an applied migration:
 
   ```python
   MIGRATIONS = ((1, MIGRATION_V1), (2, MIGRATION_V2))  # contiguous, starting at 1
@@ -85,7 +85,7 @@ Every domain store follows the same shape (see `recipes/db.py`):
 
 - **Close is idempotent** and releases the WAL sidecar files.
 
-### 1b. Frames — the bounded-query layer
+### 1b. Frames, the bounded-query layer
 
 Tools never dump raw rows. `frames.py` builds a typed Polars frame with a bound
 (`FRAME_MAX_ROWS`), the tool slices it, and hands it to the shared formatters
@@ -97,7 +97,7 @@ Tools never dump raw rows. `frames.py` builds a typed Polars frame with a bound
 `action` parameter (`recipe(action="register|list|get|run|…")`), returning bounded
 markdown. It pulls its DB from the app context getter and validates its inputs,
 raising the domain's error type for expected failures (never asserting on user
-input — asserts are for programmer-error invariants):
+input, because asserts are for programmer-error invariants):
 
 ```python
 def _recipes(ctx: Context) -> RecipesDB:
@@ -108,7 +108,7 @@ def _recipes(ctx: Context) -> RecipesDB:
 
 Input validation the recipes tool enforces (copy the pattern):
 
-- keys are slugs (`KEY_RE`), kinds are slugs (`KIND_RE`) — not free text;
+- keys are slugs (`KEY_RE`), kinds are slugs (`KIND_RE`), not free text;
 - a recipe must have **at least one step**, and every step a non-empty command;
 - `run` validates the key exists (the store's `get_recipe` raises `RecipesError`).
 
@@ -130,10 +130,10 @@ def get_<domain>(self):
 
 and close it in `AppContext.cleanup_all()`.
 
-### 1d. Durable external sequences — the DBOS `@workflow`/`@step` pattern
+### 1d. Durable external sequences: the DBOS `@workflow`/`@step` pattern
 
 When a domain runs an **external, side-effecting sequence** (shell commands, network
-calls) that must survive an interrupt, use DBOS Transact — the durable executor the
+calls) that must survive an interrupt, use DBOS Transact, the durable executor the
 recipes runner is built on. The rule: **every external side effect lives inside a
 `@DBOS.step`**, so it is checkpointed exactly once and NOT repeated when the workflow
 replays completed steps on recovery.
@@ -163,10 +163,10 @@ Key gotchas, all learned the hard way (see `recipes/runner.py` + `recipes/dbos_a
 
 - **DBOS is a process-global singleton.** `launch_dbos()` constructs + launches it once
   (idempotent), backed by its own SQLite *system database* (`dbos.db`, override
-  `DEVTOOLS_MCP_DBOS_DB`) — separate from your domain DB. The domain DB stays the
+  `DEVTOOLS_MCP_DBOS_DB`), separate from your domain DB. The domain DB stays the
   human-facing model; the DBOS DB is the durability layer.
 - **Reopen your own connection inside the workflow/step from a path**, never capture a
-  live sqlite connection — workflow args are checkpointed for recovery and a
+  live sqlite connection. The executor checkpoints workflow args for recovery, and a
   connection can't be serialized or cross a thread.
 - **The workflow + steps are synchronous.** An async workflow binds to the event loop
   that launched DBOS and cannot be re-invoked from a later loop (fatal under
@@ -176,16 +176,16 @@ Key gotchas, all learned the hard way (see `recipes/runner.py` + `recipes/dbos_a
 - **Generate ids in the workflow, not the step** (a step may replay). The workflow id
   is deterministic (`_workflow_id`) so a crashed run resumes/forks under the same id.
 - **Wrap the durable call** so a launch/step crash *finalizes the run failed* rather
-  than leaving it stuck `running` and propagating — `run_recipe` and
+  than leaving it stuck `running` and propagating. `run_recipe` and
   `start_background_run` both record a failed run (with the error captured to a raw
   log) on any DBOS error.
 
 ---
 
-## Part 2 — Ship a plugin (out-of-tree)
+## Part 2: ship a plugin (out-of-tree)
 
 A plugin is its own installable Python package that the host discovers through
-**entry-point groups** — no host edit, no fork. There are three groups, each mirroring
+entry-point groups, with no host edit and no fork. There are three groups, each mirroring
 an in-tree loader in `registry.py` / `viz/pages.py`:
 
 | Group                     | Adds                         | Loaded by            | When                              |
@@ -198,7 +198,7 @@ The worked example is **`devtools-mcp-abap`** (`plugins/devtools-mcp-abap/`), wh
 ships a backend + a bundle of MCP tools; **`devtools-mcp-conduct`** is a second such
 plugin (Conduct/SAP-specific tools) that follows the identical shape.
 
-### 2a. `pyproject.toml` — declare the entry points
+### 2a. Declare the entry points in `pyproject.toml`
 
 ```toml
 [project]
@@ -232,7 +232,7 @@ Install it into the same environment as the host (`uv pip install -e .` /
 
 ### 2b. A backend (`devtools_mcp.backends`)
 
-The entry point points at a module that calls `register_backend()` on import — exactly
+The entry point points at a module that calls `register_backend()` on import, exactly
 like an in-tree backend. Backends load *before* the FastMCP `mcp` instance exists, so a
 backend module must not touch `mcp`.
 
@@ -285,7 +285,7 @@ register()
 
 This is the seam that used to be missing: a plugin can now add a **web-console tab**.
 The entry point points at a module that calls `register_page(VizPage(...))` on import.
-The in-tree reference is `viz/recipes_page.py` — the `/recipes` tab is itself a
+The in-tree reference is `viz/recipes_page.py`. The `/recipes` tab is itself a
 registered page, proving the mechanism end-to-end.
 
 A `VizPage` (from `devtools_mcp.viz.pages`) is a tab + its routes:
@@ -317,14 +317,14 @@ register_page(VizPage(
 Contract:
 
 - **`prefix`** is the single first path segment the page owns (`abap` → `/abap/*`). It
-  may not shadow a built-in route (`tracker`, `run`, `api`, …) — `register_page`
+  may not shadow a built-in route (`tracker`, `run`, `api`, and so on); `register_page`
   asserts.
 - A handler returns an HTML **`str`** (sent 200), a **`VizResponse`** (explicit
   status / `content_type` / `redirect`), or **`None`** (falls through to a 404).
-- The tab appears in the nav on every page automatically — `render.page()` appends
+- The tab appears in the nav on every page automatically, because `render.page()` appends
   `registered_tabs()` to the built-ins.
 - POSTs still pass through the server's `_guard_state_change` (cross-origin / DNS-
-  rebinding protection) before your handler runs — you get the same CSRF guard the
+  rebinding protection) before your handler runs, so you get the same CSRF guard the
   built-in POSTs get, for free.
 
 ### 2e. Version compatibility
@@ -342,7 +342,7 @@ Two ways, both honored by every loader:
 
 On a mismatch the loader records `skipped: requires devtools-mcp>=X (host is Y)`.
 
-### 2f. Observe what loaded — the `plugins` tool
+### 2f. Observe what loaded with the `plugins` tool
 
 Because loaders degrade silently, use the `plugins` MCP tool to see the surface:
 
@@ -351,6 +351,6 @@ plugins(action="list")     # inventory: backends, tool plugins, console pages, f
 plugins(action="status")   # + a Health section: every failed/skipped entry + its error
 ```
 
-The dashboard is the visual counterpart — a registered plugin's tab simply appears in
+The dashboard is the visual counterpart: a registered plugin's tab appears in
 the nav.
 ```

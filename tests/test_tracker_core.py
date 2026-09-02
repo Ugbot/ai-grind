@@ -72,7 +72,7 @@ class TestTaskCreation:
 
     def test_depth_bound_enforced(self, db, project):
         parent_key = None
-        for level in range(MAX_DEPTH + 1):  # builds depth 0..5 — all legal
+        for level in range(MAX_DEPTH + 1):  # builds depth 0..5, all legal
             task, _ = tasks.create_task(db, "GR", f"level {level}", parent_key=parent_key)
             assert task.depth == level
             parent_key = task.key

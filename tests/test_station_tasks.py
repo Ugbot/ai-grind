@@ -200,7 +200,7 @@ class TestPush:
 
 class TestPull:
     def test_remote_create_gets_fresh_local_key(self, db, cfg, platform, linked):
-        # Local GRIND-1 exists; the platform also allocates GRIND-1 — keys are
+        # Local GRIND-1 exists; the platform also allocates GRIND-1, keys are
         # not identity, the pulled task must get a fresh local key.
         tasks_mod.create_task(db, "GRIND", "local first")
         remote = platform.add_task("from platform")

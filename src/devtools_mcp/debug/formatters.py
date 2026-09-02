@@ -31,12 +31,12 @@ def format_stop_summary(snapshot: DebugSnapshot) -> str:
     if snapshot.threads and snapshot.threads[0].frames:
         location = snapshot.threads[0].frames[0].location
     reason = snapshot.stop_reason or "stopped"
-    parts.append(f"**Stopped ({reason})** at {location or 'unknown'}  — stop #{snapshot.stop_seq}")
+    parts.append(f"**Stopped ({reason})** at {location or 'unknown'}: stop #{snapshot.stop_seq}")
     if snapshot.hit_breakpoint_ids:
         parts.append(f"Hit breakpoint(s): {', '.join(map(str, snapshot.hit_breakpoint_ids))}")
     if snapshot.exception is not None:
         header = snapshot.exception.exception_id or "exception"
-        parts.append(f"**Exception:** {header} — {_clip(snapshot.exception.description, 200)}")
+        parts.append(f"**Exception:** {header}: {_clip(snapshot.exception.description, 200)}")
 
     if snapshot.threads and snapshot.threads[0].frames:
         parts.append("")
@@ -79,14 +79,14 @@ def format_stop_summary(snapshot: DebugSnapshot) -> str:
                 rendered.append(f"`{change.path}` removed")
         more = f" (+{len(snapshot.changes) - len(shown)} more)" if len(snapshot.changes) > len(shown) else ""
         parts.append("")
-        parts.append(f"**Δ since last stop:** {len(snapshot.changes)} — " + ", ".join(rendered) + more)
+        parts.append(f"**Δ since last stop:** {len(snapshot.changes)}: " + ", ".join(rendered) + more)
 
     if len(snapshot.threads) > 1:
         parts.append("")
         parts.append(f"Threads: {len(snapshot.threads)} (stopped thread listed first)")
 
     parts.append("")
-    parts.append(f"**Snapshot run_id:** `{snapshot.run_id}` — drill in with devtools_query")
+    parts.append(f"**Snapshot run_id:** `{snapshot.run_id}`: drill in with devtools_query")
     return "\n".join(parts)
 
 
@@ -120,7 +120,7 @@ def format_capabilities(adapter: str, caps: DebugCapabilities) -> str:
 
 
 def format_plan_report(report: PlanReport) -> str:
-    parts = [f"**Plan finished** — {len(report.stops)} stop(s), halted by: {report.halted}"]
+    parts = [f"**Plan finished**: {len(report.stops)} stop(s), halted by: {report.halted}"]
     if report.until_value:
         parts.append(f"`until` evaluated truthy: {_clip(report.until_value)}")
     parts.append("")
@@ -132,5 +132,5 @@ def format_plan_report(report: PlanReport) -> str:
             f"| {_clip(row.watches, 48)} | {row.change_count} | `{row.run_id[:8]}` |"
         )
     parts.append("")
-    parts.append(f"Session state: {report.session_state} — continue interactively with debug()")
+    parts.append(f"Session state: {report.session_state}, continue interactively with debug()")
     return "\n".join(parts)

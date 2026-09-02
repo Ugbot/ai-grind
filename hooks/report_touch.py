@@ -1,7 +1,7 @@
 """Claude Code PostToolUse hook: report edited files to the local devtools-mcp
 collab service so agents on this machine can see each other's activity.
 
-Fire-and-forget by design — any failure (service down, bad JSON, timeout)
+Fire-and-forget by design. Any failure (service down, bad JSON, timeout)
 exits 0 silently so editing is never blocked. Stdlib only; keep startup cheap.
 
 Env:
@@ -9,7 +9,7 @@ Env:
     DEVTOOLS_MCP_COLLAB_URL      service base URL (default http://127.0.0.1:8765)
     DEVTOOLS_MCP_AGENT           human-readable agent label shown in the dashboard
     DEVTOOLS_MCP_TASK            tracker task key (PROJ-123) to link activity to
-    DEVTOOLS_MCP_COLLAB_MODE     warn (default) | off — whether conflict warnings
+    DEVTOOLS_MCP_COLLAB_MODE     warn (default) | off: whether conflict warnings
                                  are surfaced back into the agent's context
 """
 

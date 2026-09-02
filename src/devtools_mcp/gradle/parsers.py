@@ -170,7 +170,7 @@ def parse_gradle_insight(text: str) -> list[Dependency]:
 def parse_gradle_projects(text: str) -> list[BuildModule]:
     """Parse `gradle projects` into BuildModules (root + `Project ':x'` lines).
 
-    The root name appears in both the banner and the tree — deduped by name.
+    The root name appears in both the banner and the tree, deduped by name.
     """
     assert isinstance(text, str), "text must be str"
     modules: list[BuildModule] = []

@@ -94,7 +94,7 @@ def _get(url: str) -> tuple[int, str]:
 
 
 def _fresh_nonce(served: str) -> str:
-    """Obtain a one-time callback nonce the way the real flow does — via the auth page."""
+    """Obtain a one-time callback nonce the way the real flow does, via the auth page."""
     _, page = _get(served + "/station/auth")
     match = re.search(r"nonce%3D([A-Za-z0-9_-]+)", page)
     assert match, "auth page did not embed a callback nonce"
@@ -133,7 +133,7 @@ class TestVizAuthRoutes:
         assert credentials.load_credentials() is None
 
     def test_callback_without_nonce_is_rejected(self, served):
-        # A forged callback (no valid nonce — e.g. an <img src> CSRF) must not store creds.
+        # A forged callback (no valid nonce, e.g. an <img src> CSRF) must not store creds.
         query = urllib.parse.urlencode({"key": "lls_evil", "org": "attacker", "url": "http://evil"})
         status, _ = _get(served + "/api/station/callback?" + query)
         assert status == 403
