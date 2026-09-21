@@ -187,7 +187,7 @@ class TestMerge:
 
     def test_deferred_op_recovers_in_later_batch(self, db_a, db_b):
         """A child that arrives before its project must land once the project
-        shows up in a *separate, later* batch — not only within one batch's passes."""
+        shows up in a *separate, later* batch, not only within one batch's passes."""
         tasks.create_project(db_a, "GR", "Grind")
         task, _ = tasks.create_task(db_a, "GR", "child-first")
         all_ops = crdt.ops_after(db_a.conn)
@@ -198,12 +198,12 @@ class TestMerge:
         def _landed(key: str) -> bool:
             return db_b.conn.execute("SELECT 1 FROM tasks WHERE key = ?", (key,)).fetchone() is not None
 
-        # Batch 1: only the task op — its project referent is absent, so it defers.
+        # Batch 1: only the task op, its project referent is absent, so it defers.
         first = crdt.merge_ops(db_b, task_ops)
         assert first["deferred"] >= 1
         assert not _landed(task.key)  # not landed yet
 
-        # Batch 2: the project op arrives separately — the backlog must recover.
+        # Batch 2: the project op arrives separately, the backlog must recover.
         second = crdt.merge_ops(db_b, project_ops)
         assert second["recovered"] >= 1
         assert _landed(task.key)

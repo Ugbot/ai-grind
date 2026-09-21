@@ -6,7 +6,7 @@ js-debug, kotlin, java via jdt.ls) today, non-DAP implementations (SAP
 ADT) behind the same DebugSession interface.
 
 Server-side heavy lifting: every stop auto-captures a snapshot (stack +
-locals + watches + diff vs the previous stop) stored as a queryable run —
+locals + watches + diff vs the previous stop) stored as a queryable run,
 execution verbs return that summary in the same call, so stepping through
 code is one round trip per stop.
 """
@@ -97,7 +97,7 @@ async def _await_stop(manager: DebugSessionManager, session_id: str, timeout: fl
     node = await manager.wait_for_stop(session_id, timeout=timeout)
     if node is None:
         return (
-            f"**Running** — no stop within {timeout:.0f}s. "
+            f"**Running**: no stop within {timeout:.0f}s. "
             'Use debug(action="pause") to interrupt, or debug_inspect(what="output") for program output.'
         )
     session = node.session
@@ -198,7 +198,7 @@ def _session_header(session_id: str, session: DebugSession, node_count: int = 1)
         highlights.append("memory")
     if caps.disassemble:
         highlights.append("disassembly")
-    caps_note = f" — {', '.join(highlights)}" if highlights else ""
+    caps_note = f", {', '.join(highlights)}" if highlights else ""
     children = f"\n**Child sessions:** {node_count - 1}" if node_count > 1 else ""
     return (
         f"**Debug session started** ({session.adapter_name}{caps_note})\n"
@@ -206,7 +206,7 @@ def _session_header(session_id: str, session: DebugSession, node_count: int = 1)
     )
 
 
-async def _session_start(  # noqa: PLR0912 — launch/attach/plan routing is a flat decision table
+async def _session_start(  # noqa: PLR0912  # launch/attach/plan routing is a flat decision table
     ctx: Context,
     session: DebugSession,
     target: str,
@@ -275,7 +275,7 @@ async def _session_start(  # noqa: PLR0912 — launch/attach/plan routing is a f
                     extra=extra or {},
                 )
             )
-    except Exception as exc:  # noqa: BLE001 — surface the failure, clean up the tree
+    except Exception as exc:  # noqa: BLE001  # surface the failure, clean up the tree
         await manager.stop_tree(session_id)
         return f"Failed to start {session.adapter_name} session: {exc}"
 
@@ -292,7 +292,7 @@ async def _session_start(  # noqa: PLR0912 — launch/attach/plan routing is a f
     return header + await _await_stop(manager, session_id, wait)
 
 
-async def _dap_action(  # noqa: PLR0911, PLR0912 — one flat verb table by design
+async def _dap_action(  # noqa: PLR0911  # pLR0912  # one flat verb table by design
     session: DebugSession,
     manager: DebugSessionManager,
     node: SessionNode,
@@ -350,7 +350,7 @@ async def _dap_action(  # noqa: PLR0911, PLR0912 — one flat verb table by desi
         for state in states:
             mark = "verified" if state.verified else f"pending{': ' + state.message if state.message else ''}"
             where = state.function or f"{state.source}:{state.line}"
-            lines.append(f"  [{state.id}] {where} — {mark}")
+            lines.append(f"  [{state.id}] {where}, {mark}")
         return "\n".join(lines)
 
     if action == "breakpoint_delete":
@@ -380,7 +380,7 @@ async def _dap_action(  # noqa: PLR0911, PLR0912 — one flat verb table by desi
         if session.state == SessionState.stopped:
             result = await session.evaluate(expr, _current_frame_id(session), context="watch")
             note = f" = {result.value}" if not result.error else f" (currently: {result.error})"
-        return f"**Watch added:** `{expr}`{note} — evaluated at every stop ({len(session.watches)}/{16})"
+        return f"**Watch added:** `{expr}`{note}: evaluated at every stop ({len(session.watches)}/{16})"
 
     if action == "watch_remove":
         expr = watch or expression
@@ -455,7 +455,7 @@ async def _dap_action(  # noqa: PLR0911, PLR0912 — one flat verb table by desi
     return f"Unknown action: `{action}`. Valid: {valid}"
 
 
-async def _dap_inspect(  # noqa: PLR0911, PLR0912, PLR0915 — one flat inspect table by design
+async def _dap_inspect(  # noqa: PLR0911, PLR0912  # pLR0915  # one flat inspect table by design
     ctx: Context,
     session: DebugSession,
     session_id: str,
@@ -488,7 +488,7 @@ async def _dap_inspect(  # noqa: PLR0911, PLR0912, PLR0915 — one flat inspect 
         snapshot.tool = "stack"
         tid = thread_id if thread_id is not None else _stopped_thread_id(session)
         if tid is None:
-            return "No stopped thread — stack is only available while stopped."
+            return "No stopped thread, stack is only available while stopped."
         frames = await session.stack_trace(tid, levels=count or 32)
         snapshot.threads = [ThreadInfo(thread_id=tid, stopped=True, frames=frames)]
         ws.store_run(snapshot)
@@ -502,7 +502,7 @@ async def _dap_inspect(  # noqa: PLR0911, PLR0912, PLR0915 — one flat inspect 
     if what == "variables":
         frame_id = _current_frame_id(session, frame_index)
         if frame_id is None:
-            return "No stopped frame — variables are only available while stopped."
+            return "No stopped frame, variables are only available while stopped."
         if expand:
             resolved = await _resolve_variable_container(session, expand, frame_id)
             if isinstance(resolved, str):
@@ -527,7 +527,7 @@ async def _dap_inspect(  # noqa: PLR0911, PLR0912, PLR0915 — one flat inspect 
     if what == "registers":
         frame_id = _current_frame_id(session, frame_index)
         if frame_id is None:
-            return "No stopped frame — registers are only available while stopped."
+            return "No stopped frame, registers are only available while stopped."
         scopes = await session.scopes(frame_id)
         register_scope = next((s for s in scopes if "register" in s.name.lower()), None)
         if register_scope is None:
@@ -557,7 +557,7 @@ async def _dap_inspect(  # noqa: PLR0911, PLR0912, PLR0915 — one flat inspect 
         for thread in threads[:16]:
             try:
                 thread.frames = await session.stack_trace(thread.thread_id, levels=1)
-            except Exception:  # noqa: BLE001 — running threads may refuse stackTrace
+            except Exception:  # noqa: BLE001  # running threads may refuse stackTrace
                 thread.frames = []
         snapshot.threads = threads
         ws.store_run(snapshot)
@@ -586,7 +586,7 @@ async def _dap_inspect(  # noqa: PLR0911, PLR0912, PLR0915 — one flat inspect 
             if bp.log_message:
                 extras.append(f"log: {bp.log_message}")
             extra_note = f" ({'; '.join(extras)})" if extras else ""
-            lines.append(f"  [{bp.id}] {where} — {mark}{extra_note}")
+            lines.append(f"  [{bp.id}] {where}, {mark}{extra_note}")
         lines.append(f"\n**run_id:** `{snapshot.run_id}`")
         return "\n".join(lines)
 
@@ -642,7 +642,7 @@ async def _dap_inspect(  # noqa: PLR0911, PLR0912, PLR0915 — one flat inspect 
     if what == "diff":
         current = session.last_snapshot
         if current is None:
-            return "No stop snapshot yet — diff needs at least one stop."
+            return "No stop snapshot yet, diff needs at least one stop."
         prev_id = against or current.parent_run_id
         if not prev_id or prev_id == "previous":
             prev_id = current.parent_run_id
@@ -708,7 +708,7 @@ async def debug_start(
 ) -> str:
     """Start a debug session: launch a program or attach to a running one.
 
-    One interface across languages — the adapter is picked from `adapter`,
+    One interface across languages, the adapter is picked from `adapter`,
     `language`, or sniffed from the program (.py → debugpy, native binary →
     lldb, .js → js-debug, ...). Every stop auto-captures a snapshot (stack,
     locals, watches, diff vs previous stop) stored as a queryable run.
@@ -768,7 +768,7 @@ async def debug_start(
             except KeyError as exc:
                 return str(exc)
         if adapter_spec is None:
-            return "Cannot infer an adapter for attach — pass adapter= or language=."
+            return "Cannot infer an adapter for attach. Pass adapter= or language=."
         session = DapSession(session_id, adapter_spec, manager, snapshot_sink=sink)
 
     return await _session_start(
@@ -815,7 +815,7 @@ async def debug(
     timeout: float = 15.0,
 ) -> str:
     """Execute a debug action. Execution verbs (run/continue/step/next/
-    finish) wait for the next stop and return its auto-captured summary —
+    finish) wait for the next stop and return its auto-captured summary,
     stack, locals, watch values, and what changed since the last stop.
 
     Args:
@@ -825,22 +825,22 @@ async def debug(
                 exception_breakpoints, watch_add, watch_remove, watch_list,
                 watchpoint, set_variable, thread_select, frame_select,
                 command, plan
-        location: For breakpoint — "file:line" or a function name
-        condition: For breakpoint — conditional expression
-        hit_condition: For breakpoint — hit count condition (e.g. ">= 5")
-        log_message: For breakpoint — makes it a logpoint (no stop)
+        location: For breakpoint, "file:line" or a function name
+        condition: For breakpoint, conditional expression
+        hit_condition: For breakpoint, hit count condition (e.g. ">= 5")
+        log_message: For breakpoint, makes it a logpoint (no stop)
         expression: For watch_add/watch_remove (alias: watch)
         breakpoint_id: For breakpoint_delete
-        variable: For set_variable — dotted path (e.g. "config.retries")
-        value: For set_variable — the new value
+        variable: For set_variable, dotted path (e.g. "config.retries")
+        value: For set_variable, the new value
         thread_id: For thread_select / targeted stepping
         frame_index: For frame_select (0 = top)
         instruction: Step by instruction instead of line
-        raw_command: For command — passed to the debugger natively
+        raw_command: For command, passed to the debugger natively
                      (DAP repl / lldb command)
-        filters: For exception_breakpoints — filter ids (see capabilities)
-        watch: For watch_add/watch_remove — the expression
-        plan: For plan — {breakpoints, watches, max_stops, per_stop, until,
+        filters: For exception_breakpoints, filter ids (see capabilities)
+        watch: For watch_add/watch_remove, the expression
+        plan: For plan, {breakpoints, watches, max_stops, per_stop, until,
               time_budget_s}; runs server-side, returns a per-stop table
         child: Target a specific child session (see capabilities for ids)
         timeout: Seconds execution verbs wait for the next stop
@@ -880,7 +880,7 @@ async def debug(
         return str(exc)
     except AdapterCrashed as exc:
         await manager.stop_tree(session_id)
-        return f"Debug adapter crashed — session closed. {exc}"
+        return f"Debug adapter crashed, session closed. {exc}"
     except Exception as exc:  # noqa: BLE001
         return f"Debug action `{action}` failed: {exc}"
 
@@ -910,14 +910,14 @@ async def debug_inspect(
         what: "stack", "variables", "watches", "threads", "breakpoints",
               "registers", "expression", "memory", "disassemble", "output",
               "diff", "capabilities", "snapshot" (full re-capture)
-        expression: For expression — what to evaluate
-        address: For memory/disassemble — memory reference
+        expression: For expression, what to evaluate
+        address: For memory/disassemble, memory reference
         count: Item count (frames/bytes/instructions)
         frame_index: Evaluate/inspect in this frame (0 = top)
-        expand: For variables — drill into a dotted path (e.g. "obj.field")
-        against: For diff — run_id of the snapshot to diff the latest stop
+        expand: For variables, drill into a dotted path (e.g. "obj.field")
+        against: For diff, run_id of the snapshot to diff the latest stop
                  against (default: the previous stop)
-        thread_id: For stack — which thread (default: stopped thread)
+        thread_id: For stack, which thread (default: stopped thread)
         child: Target a specific child session
         workspace_id: Workspace to store the snapshot
     """
@@ -947,7 +947,7 @@ async def debug_inspect(
         return str(exc)
     except AdapterCrashed as exc:
         await manager.stop_tree(session_id)
-        return f"Debug adapter crashed — session closed. {exc}"
+        return f"Debug adapter crashed, session closed. {exc}"
     except Exception as exc:  # noqa: BLE001
         return f"Inspect `{what}` failed: {exc}"
 
@@ -959,7 +959,7 @@ async def debug_stop(ctx: Context, session_id: str, terminate: bool = True) -> s
     Args:
         session_id: The session to terminate
         terminate: Also terminate the debuggee (False = detach, leave it
-                   running — attach sessions only)
+                   running, attach sessions only)
     """
     app = get_app_ctx(ctx)
     manager: DebugSessionManager = app.get_debug_manager()
@@ -975,7 +975,7 @@ async def debug_stop(ctx: Context, session_id: str, terminate: bool = True) -> s
 def _store_session_summary(app, session_id: str) -> str:
     """Aggregate a finished session's stop snapshots into one summary run:
     one root-first stack per stop, so devtools_flamegraph renders 'where
-    this session stopped'. Best-effort — never fails debug_stop."""
+    this session stopped'. Best-effort. Never fails debug_stop."""
     try:
         stops: list[tuple[int, object, DebugSnapshot]] = []
         for ws in app.workspaces.values():
@@ -1014,8 +1014,8 @@ def _store_session_summary(app, session_id: str) -> str:
             return ""
         target_ws.store_run(summary)
         return (
-            f"\n**Session summary:** `{summary.run_id}` ({len(stops)} stops) — "
+            f"\n**Session summary:** `{summary.run_id}` ({len(stops)} stops): "
             f"devtools_flamegraph(run_id) shows where this session stopped."
         )
-    except Exception:  # noqa: BLE001 — summary is a bonus, never a failure
+    except Exception:  # noqa: BLE001  # summary is a bonus, never a failure
         return ""

@@ -1,7 +1,7 @@
 ---
 name: pwsh-text-and-data
 description: >
-  Working with text and structured data in PowerShell — JSON, CSV, regex,
+  Working with text and structured data in PowerShell: JSON, CSV, regex,
   Select-String (grep), string manipulation, and here-strings. Use when you need
   to parse or emit JSON/CSV, grep file contents, extract with regex, build
   multi-line strings, or when ConvertFrom-Json gives you a PSCustomObject you
@@ -34,7 +34,7 @@ Key gotchas:
   $o = Get-Content f.json -Raw | ConvertFrom-Json
   $h = @{}; $o.PSObject.Properties | ForEach-Object { $h[$_.Name] = $_.Value }
   ```
-- **`ConvertTo-Json` default `-Depth` is 2 (5.1) / 2 (7+)** — nested objects beyond
+- `ConvertTo-Json` default `-Depth` is 2 in both 5.1 and 7+, so nested objects beyond
   that become `System.Object[]` / type names. **Always set `-Depth`** for nested data.
 - 7+ adds `-Depth` auto-warnings, `-AsArray`, and nicer formatting; 5.1 output is
   more verbose/escaped.
@@ -53,7 +53,7 @@ $rows | ConvertTo-Csv -NoTypeInformation             # to string, not file
   in **5.1 you must pass it** or you get an extra junk first line.
 - Use `-Delimiter "`t"` for TSV.
 
-## Select-String — the grep of PowerShell
+## Select-String, the grep of PowerShell
 
 ```powershell
 Select-String -Path *.log -Pattern 'ERROR'                       # grep
@@ -65,10 +65,10 @@ Select-String -Pattern 'warn' f -Context 2,2                     # 2 lines of co
 ```
 
 Each match is a `MatchInfo` object: `.LineNumber`, `.Line`, `.Path`, `.Matches`.
-`-Recurse` on `Select-String` itself is **7+ only** — on 5.1 pipe `Get-ChildItem`
+`-Recurse` on `Select-String` itself is 7+ only. On 5.1, pipe `Get-ChildItem`
 into it.
 
-## Regex — `-match`, `-replace`, `[regex]`
+## Regex: `-match`, `-replace`, `[regex]`
 
 ```powershell
 'order-1234' -match 'order-(\d+)'      # True; populates $matches

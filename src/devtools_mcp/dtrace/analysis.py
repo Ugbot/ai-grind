@@ -1,4 +1,4 @@
-"""DTrace analysis — convert results to Polars DataFrames."""
+"""DTrace analysis, convert results to Polars DataFrames."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from devtools_mcp.models import StackSample
 # Trailing instruction offset in a dtrace ustack frame ("func+0x1a4"). Kept in
 # the RAW stored stacks, stripped here so every consumer (flame graph, analyze,
 # compare) aggregates by FUNCTION: with offsets left in, one hot function
-# fragments into dozens of offset buckets — a per-function view showed
+# fragments into dozens of offset buckets, a per-function view showed
 # join_probe_typed's biggest "function" at 4.9% when the real function held
 # ~40% of the run.
 _OFFSET_RE = re.compile(r"\+0x[0-9a-fA-F]+$")

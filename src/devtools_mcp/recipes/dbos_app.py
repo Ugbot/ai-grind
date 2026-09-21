@@ -1,4 +1,4 @@
-"""DBOS Transact bootstrap — the durable executor for recipe step sequences.
+"""DBOS Transact bootstrap, the durable executor for recipe step sequences.
 
 DBOS is a process-global singleton: one `DBOS(config=...)` instance, launched
 once, backed by a local SQLite *system database* that checkpoints every
@@ -8,13 +8,13 @@ recipe resume from its last completed step instead of re-running.
 This module owns that singleton's lifecycle so the rest of the codebase never
 touches DBOS construction directly:
 
-    launch_dbos()   — construct (idempotently) + launch; safe to call from
+    launch_dbos(): construct (idempotently) + launch; safe to call from
                       every server-startup path and from the console handler.
-    destroy_dbos()  — tear the singleton down (tests, clean shutdown).
+    destroy_dbos(): tear the singleton down (tests, clean shutdown).
 
 The system DB path defaults to ``~/.devtools-mcp/dbos.db`` and is overridable
 via ``DEVTOOLS_MCP_DBOS_DB`` (the test suite points it at a temp file). The
-domain recipes DB (recipes.db) is a *separate* SQLite file — DBOS's DB is the
+domain recipes DB (recipes.db) is a *separate* SQLite file, DBOS's DB is the
 durability layer, the domain DB stays the human-facing model (console + tools).
 """
 
@@ -45,7 +45,7 @@ def get_dbos() -> DBOS:
 
     Construction reads the system-DB path lazily (env override honoured), so the
     test suite can point ``DEVTOOLS_MCP_DBOS_DB`` at a temp file before the first
-    call. Does NOT launch — call `launch_dbos()` for that.
+    call. Does NOT launch. Call `launch_dbos()` for that.
     """
     global _instance
     with _lock:
@@ -65,7 +65,7 @@ def launch_dbos() -> DBOS:
     """Construct (if needed) and launch DBOS exactly once. Idempotent.
 
     Safe to call from every entrypoint (MCP lifespan, service-mode boot, the
-    dashboard's trigger-run handler) — the first call launches, the rest are
+    dashboard's trigger-run handler), the first call launches, the rest are
     no-ops. Importing the recipe runner (which applies the @workflow/@step
     decorators) must happen before launch so the workflow is registered.
     """

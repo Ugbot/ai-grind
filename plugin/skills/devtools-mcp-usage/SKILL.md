@@ -1,7 +1,7 @@
 ---
 name: devtools-mcp-usage
 description: >
-  How to drive the devtools-mcp server — the normalized interface over Valgrind,
+  How to drive the devtools-mcp server, the normalized interface over Valgrind,
   LLDB, DTrace, perf, Windows ETW (PerfView), the JVM (JFR/jstack/jmap/async-
   profiler), and the Windows debugger (CDB), plus flame graphs. Use whenever you
   need to profile or debug a native or JVM program through devtools-mcp: pick a
@@ -18,22 +18,22 @@ precisely.
 
 ## The loop
 
-1. **`devtools_check()`** — see which suites/tools are installed on this machine
+1. `devtools_check()` shows which suites and tools are installed on this machine
    (per-suite capability tags, plus install hints for missing suites).
    Missing a tool? **`devtools_install(suite)`** returns the exact per-OS install
    commands (winget/apt/pip/download) to run in your shell; `execute=True` runs
    them from the server when `DEVTOOLS_MCP_ALLOW_INSTALL=1`.
-2. **`devtools_run(suite, tool, binary, args=…, extra_args=…)`** — run a tool.
+2. `devtools_run(suite, tool, binary, args=…, extra_args=…)` runs a tool.
    Returns a bounded summary + `run_id`. Always set **`label`** (short title) and
-   **`notes`** (what you profiled and why) — they appear on dashboard run cards at
+   `notes` (what you profiled and why) appear on dashboard run cards at
    `http://127.0.0.1:8765`. Link runs to tracker work with **`task_key`** (`PROJ-123`).
-3. **`devtools_analyze(run_id, …)`** / **`devtools_query(run_id, columns=…)`** —
+3. `devtools_analyze(run_id, …)` and `devtools_query(run_id, columns=…)`:
    filter/group/sort/paginate the stored DataFrame. `columns=["schema"]` lists
    available columns first.
-4. **`devtools_flamegraph(run_id)`** — for any sampling run, write an SVG + show a
+4. `devtools_flamegraph(run_id)` writes an SVG for any sampling run and shows a
    bounded text flame-tree.
 5. **`devtools_compare(a, b)`** / **`devtools_correlate(a, b, join_on="function")`**
-   — diff two runs, or join them (e.g. leaks ∩ CPU hotspots).
+   Diff two runs, or join them (leaks ∩ CPU hotspots, for instance).
 
 ## Suites and what to reach for
 
@@ -67,7 +67,7 @@ precisely.
 
 A perf/ETW/JFR run can contain tens of thousands of symbol-resolved nodes. Asking
 for all of it wastes context and buries the signal. The summary gives you the
-top-N; `devtools_analyze` lets you ask exactly what you need — e.g. group by
+top-N; `devtools_analyze` lets you ask exactly what you need, for example group by
 module, filter to your own namespace, sort by exclusive %, or sample. Reach for
 `devtools_raw(run_id)` only as a last resort (it truncates at 200 KB).
 
@@ -82,7 +82,7 @@ tracker tasks. Populate them when you create work:
 | Tracker tasks | `description` on `tracker_task` create/update | title + description preview (3 lines) |
 | Projects | `description` on `tracker_project` create | project card preview |
 
-Use descriptions for **what / why / done-when** in plain language — not just the title repeated.
+Use descriptions for what, why, and done-when in plain language, not the title repeated.
 
 See also: [[flamegraph-reading]], [[etw-profiling]], [[jvm-profiling]],
 [[jvm-threads-heap]], [[cdb-windows-debug]], [[renderdoc-frame-analysis]].

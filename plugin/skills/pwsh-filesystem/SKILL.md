@@ -32,7 +32,7 @@ with double quotes; prefer `Join-Path` over string concatenation.
 | `rm f` | `Remove-Item f` |
 | `rm -rf d` | `Remove-Item d -Recurse -Force` |
 | `mkdir -p a/b/c` | `New-Item -ItemType Directory -Force a/b/c` |
-| `touch f` | see "touch" below — **do NOT** use `New-Item -Force` |
+| `touch f` | see "touch" below; do NOT use `New-Item -Force` |
 | `ln -s tgt lnk` | `New-Item -ItemType SymbolicLink -Path lnk -Target tgt` |
 | `pwd` | `Get-Location` (alias `pwd`) |
 | `realpath f` | `(Resolve-Path f).Path` |
@@ -41,7 +41,7 @@ with double quotes; prefer `Join-Path` over string concatenation.
 
 ## Safety traps (read these)
 
-### `touch` — never `New-Item -Force` on an existing file
+### `touch`, and never `New-Item -Force` on an existing file
 
 `New-Item -ItemType File -Force f` **truncates** an existing file. To touch safely:
 
@@ -64,7 +64,7 @@ Remove-Item $path -Recurse -Force -Confirm:$false
 ### `mkdir -p` equivalent
 
 `New-Item -ItemType Directory -Force a/b/c` creates the whole chain and does **not**
-error if it already exists. (`-Force` on a *directory* is safe — unlike on a file.)
+error if it already exists. (`-Force` on a directory is safe, unlike on a file.)
 
 ## Listing, filtering, finding
 
@@ -89,7 +89,7 @@ $lines = Get-Content $f                       # array of lines
 $obj | Set-Content $f -Encoding utf8          # overwrite (always set -Encoding; see pwsh-core-idioms)
 ```
 
-**Always pass `-Encoding utf8`** when another program reads the file — 5.1 defaults
+Always pass `-Encoding utf8` when another program reads the file. 5.1 defaults
 to UTF-16-with-BOM.
 
 ## Paths: build them, don't concatenate
@@ -103,7 +103,7 @@ Split-Path $p -Parent                          # dirname
 [System.IO.Path]::ChangeExtension($p, '.bak')  # .NET helpers when needed
 ```
 
-`$PSScriptRoot` is the directory of the running script — use it to locate files
+`$PSScriptRoot` is the directory of the running script. Use it to locate files
 relative to the script, never the (unpredictable) current directory.
 
 ## Copy/move/rename
@@ -115,7 +115,7 @@ Rename-Item $f 'newname.txt'
 robocopy $srcDir $dstDir /MIR /NFL /NDL        # large/mirrored copies; robocopy exit codes 0-7 = success
 ```
 
-`robocopy` returns 0–7 on success (8+ is failure) — don't treat its non-zero
+`robocopy` returns 0 to 7 on success (8 and up is failure), so don't treat its non-zero
 "files copied" codes as errors.
 
 ## Bulk operations

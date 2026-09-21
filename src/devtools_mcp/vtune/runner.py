@@ -2,7 +2,7 @@
 
 One run = collect into a result dir, then decode three bounded reports:
 summary (text), a function-grouped CSV (the queryable frame), and a top-down
-CSV (folded into flame-graph stacks). The result dir is kept — it remains
+CSV (folded into flame-graph stacks). The result dir is kept. It remains
 openable in the VTune GUI (`vtune-gui <dir>`), the wrapper only ever surfaces
 bounded slices of it.
 
@@ -109,7 +109,7 @@ def _opt(extra_args: list[str] | None, flag: str) -> str | None:
 
 
 def _passthrough(extra_args: list[str] | None) -> list[str]:
-    """extra_args minus the wrapper's own flags — handed to `vtune -collect` verbatim."""
+    """extra_args minus the wrapper's own flags, handed to `vtune -collect` verbatim."""
     own = {"--pid", "--duration", "--result-dir", "--report-only"}
     out: list[str] = []
     skip = False

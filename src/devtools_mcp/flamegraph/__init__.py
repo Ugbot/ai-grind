@@ -6,7 +6,7 @@ call tree and renders it as a bounded text flame-tree for agents.
 
 The SVG renderer (`render_svg`) still exists in `flamegraph.render_svg` and is
 used by the browser visualization terminal (_flame route in viz/server.py), but
-it is not part of the MCP tool API — the MCP tool returns text or folded-stack
+it is not part of the MCP tool API, the MCP tool returns text or folded-stack
 JSON (for GUI / ImPlot consumers).
 """
 

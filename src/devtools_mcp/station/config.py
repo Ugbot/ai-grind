@@ -1,11 +1,11 @@
 """Per-project station sync rules: TOML config, precedence, validation.
 
-Pure module — no HTTP, no DB. Three layers, highest wins:
+Pure module. No HTTP, no DB. Three layers, highest wins:
 
 1. Env vars: LLM_STATION_REMOTE_URL / LLM_STATION_ORG_ID override url/org;
    DEVTOOLS_MCP_STATION_CONFIG points at an explicit config file. The API
    key is env-only (var named by [station].api_key_env, default
-   LLM_STATION_API_KEY) — a config file containing anything shaped like an
+   LLM_STATION_API_KEY), a config file containing anything shaped like an
    lls_ key is rejected outright.
 2. Per-repo `.devtools-mcp/station.toml`, found by a bounded walk up from
    the starting directory. Committed rules, never credentials.
@@ -42,7 +42,7 @@ Direction = Literal["push", "pull", "both"]
 
 
 class DomainRule(BaseModel):
-    """One domain's sync rule. Unknown keys are config typos — fail loudly."""
+    """One domain's sync rule. Unknown keys are config typos, fail loudly."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -79,7 +79,7 @@ class StationConfig(BaseModel):
     source_path: str = ""  # where this config was loaded from (not hashed)
 
     def config_hash(self) -> str:
-        """Stable content hash — source_path excluded so moving a file is a no-op."""
+        """Stable content hash, source_path excluded so moving a file is a no-op."""
         payload = self.model_dump(exclude={"source_path"})
         digest = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
         assert len(digest) == 64, "sha256 hexdigest must be 64 chars"
@@ -124,7 +124,7 @@ def _scan_for_key_leak(node: object, depth: int = 0) -> None:
     if isinstance(node, str) and node.startswith("lls_"):
         raise TrackerError(
             "station.toml contains what looks like an API key (lls_...). "
-            "Remove it — keys are env-only (see [station].api_key_env)."
+            "Remove it, keys are env-only (see [station].api_key_env)."
         )
     if isinstance(node, dict):
         assert len(node) <= LEAK_SCAN_MAX_VALUES, "config dict over leak-scan bound"
@@ -212,11 +212,11 @@ def validate_for_link(cfg: StationConfig) -> None:
     if not cfg.project.local.strip():
         raise TrackerError("[project].local (tracker project key) is required")
     if not cfg.enabled_domains():
-        raise TrackerError("No domains enabled — enable at least one [domains.*] section")
+        raise TrackerError("No domains enabled, enable at least one [domains.*] section")
 
 
 CONFIG_TEMPLATE: str = """\
-# devtools-mcp station sync — per-project rules.
+# devtools-mcp station sync, per-project rules.
 # Secrets NEVER live here: the API key comes from the env var named by
 # api_key_env. Env overrides: LLM_STATION_REMOTE_URL, LLM_STATION_ORG_ID.
 

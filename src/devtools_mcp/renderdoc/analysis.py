@@ -1,4 +1,4 @@
-"""RenderDoc analysis — Polars frames per verb + GPU-time flame-graph stacks."""
+"""RenderDoc analysis, Polars frames per verb + GPU-time flame-graph stacks."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ _ACTIONS_SCHEMA = {
 
 
 def rdoc_actions_df(result: RunBase) -> pl.DataFrame:
-    """The frame's action tree — `value` is duration_us when counters ran, else indices."""
+    """The frame's action tree, `value` is duration_us when counters ran, else indices."""
     assert isinstance(result, RenderdocReplayResult), f"expected replay result, got {type(result)}"
     rows = []
     for a in result.actions:
@@ -62,7 +62,7 @@ def rdoc_actions_df(result: RunBase) -> pl.DataFrame:
 
 
 def rdoc_resources_df(result: RunBase) -> pl.DataFrame:
-    """GPU resources referenced by the capture — `value` is byte size."""
+    """GPU resources referenced by the capture, `value` is byte size."""
     assert isinstance(result, RenderdocReplayResult), f"expected replay result, got {type(result)}"
     rows = [
         {
@@ -125,7 +125,7 @@ def rdoc_counters_df(result: RunBase) -> pl.DataFrame:
 
 
 def rdoc_capture_df(result: RunBase) -> pl.DataFrame:
-    """Captures produced by a capture run — one row per .rdc."""
+    """Captures produced by a capture run. One row per .rdc."""
     assert isinstance(result, RenderdocCaptureResult), f"expected capture result, got {type(result)}"
     rows = []
     for path in result.rdc_paths:
@@ -145,7 +145,7 @@ def rdoc_capture_df(result: RunBase) -> pl.DataFrame:
 
 
 def rdoc_thumb_df(result: RunBase) -> pl.DataFrame:
-    """Thumbnail output — a single-row frame."""
+    """Thumbnail output, a single-row frame."""
     assert isinstance(result, RenderdocThumbResult), f"expected thumb result, got {type(result)}"
     row = {
         "rdc": result.rdc_path,

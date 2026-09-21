@@ -17,9 +17,9 @@ from devtools_mcp.server import get_app_ctx, get_run, mcp
 async def devtools_check(ctx: Context) -> str:
     """Detect all installed development tools and their versions.
 
-    Probes every registered suite — the profilers/debuggers (valgrind, lldb,
+    Probes every registered suite, the profilers/debuggers (valgrind, lldb,
     dtrace, perf, etw, vtune, jvm, cdb, py, node, renderdoc) and the build/
-    package-manager backends (maven, gradle, npm, pnpm, yarn, cargo) — and
+    package-manager backends (maven, gradle, npm, pnpm, yarn, cargo), and
     reports which tools are available on this machine. Run this first.
     """
     app = get_app_ctx(ctx)
@@ -50,30 +50,30 @@ async def devtools_run(
     Dispatches to the backend named by `suite`. Run devtools_check first to see
     the installed suites and tools. Two families:
       - profilers/debuggers: valgrind, lldb, dtrace, perf, etw, vtune, jvm, cdb,
-        py, node, renderdoc — `binary` is the executable (or a PID for jvm and
+        py, node, renderdoc, `binary` is the executable (or a PID for jvm and
         py attach verbs).
-      - build/package managers: maven, gradle, npm, pnpm, yarn, cargo — `binary`
+      - build/package managers: maven, gradle, npm, pnpm, yarn, cargo, `binary`
         is the project directory.
     Returns a concise summary with a run_id for devtools_analyze / devtools_search.
 
     Args:
         suite: Tool suite (see devtools_check for the full list)
-        tool: Verb within the suite — e.g. "memcheck"/"callgrind" (valgrind),
+        tool: Verb within the suite, e.g. "memcheck"/"callgrind" (valgrind),
             "build"/"test"/"audit" (build backends), "cpu" (dtrace/py)
         binary: Executable to analyze, or the project directory for build suites
         args: Arguments to pass to the binary / build verb
         extra_args: Extra flags for the tool (e.g. valgrind suppression files)
         timeout: Max seconds to wait (default 300; raise it for real builds)
         working_dir: Directory to run in (supported by suites that honor it, e.g.
-            valgrind — for binaries that read data files by relative path)
+            valgrind, for binaries that read data files by relative path)
         env: Extra environment variables for the PROFILED process, merged over
             the server's own environment. Required whenever the thing you are
-            measuring is env-gated — feature flags, kill switches, worker
-            counts — otherwise the profile silently describes the DEFAULT
+            measuring is env-gated, feature flags, kill switches, worker
+            counts, otherwise the profile silently describes the DEFAULT
             configuration rather than the one you asked for.
         workspace_id: Workspace to store results
         label: Short human title for the run catalog (shown on dashboard cards)
-        notes: What/why context — shown as preview text on dashboard cards
+        notes: What/why context, shown as preview text on dashboard cards
         tags: Labels for filtering runs in the dashboard
         task_key: Link to tracker task key (e.g. GRIND-42)
         parent_run_id: Prior run this re-run relates to
@@ -189,7 +189,7 @@ async def devtools_raw(ctx: Context, run_id: str, workspace_id: str | None = Non
         max_len = 200_000
 
         def _read_head() -> str | None:
-            # Raw profiles can be tens/hundreds of MB — read only the cap off the
+            # Raw profiles can be tens/hundreds of MB. Read only the cap off the
             # event loop, never the whole file into memory.
             try:
                 with open(raw_path, errors="replace") as f:

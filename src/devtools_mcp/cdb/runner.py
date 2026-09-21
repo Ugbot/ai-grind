@@ -1,6 +1,6 @@
 """CDB batch-mode execution: run a scripted command sequence, capture, parse.
 
-Headless and non-interactive (`-c "...;q"`), so no pseudo-console is needed —
+Headless and non-interactive (`-c "...;q"`), so no pseudo-console is needed,
 the same philosophy as pwsh-non-interactive. Works on a crash dump (`--dump`) or
 a live exe. cdb.exe ships with the Windows SDK "Debugging Tools for Windows".
 Capture needs cdb installed + a target; tests exercise the parsers.
@@ -103,7 +103,7 @@ async def run_cdb(
 
 
 def parse_cdb_output(tool: str, text: str, target: str, duration: float) -> CdbSnapshot:
-    """Build a CdbSnapshot from raw cdb output (pure — used by tests too)."""
+    """Build a CdbSnapshot from raw cdb output (pure, used by tests too)."""
     base = create_run_base(suite="cdb", tool=tool, binary=target, duration_seconds=duration)
     threads = parse_stacks(text)
     analysis, exception = parse_analyze(text) if tool == "analyze" else ({}, "")

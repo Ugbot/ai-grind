@@ -1,4 +1,4 @@
-"""JVM summary formatters — bounded per tool."""
+"""JVM summary formatters. Bounded per tool."""
 
 from __future__ import annotations
 

@@ -2,7 +2,7 @@
 
 Scan runs `git log` in a given repository and links any commit whose message
 contains a task key (PROJ-123) belonging to a known project. Linking is
-idempotent — the (task, hash, repo) UNIQUE constraint dedupes re-scans.
+idempotent, the (task, hash, repo) UNIQUE constraint dedupes re-scans.
 """
 
 from __future__ import annotations
@@ -66,7 +66,7 @@ def _git_log(repo_path: str, max_commits: int) -> list[tuple[str, str, str]]:
     """Read (hash, subject, full_message) from git log.
 
     Uses unit/record separators (\\x1f / \\x1e) so multi-line commit bodies
-    parse unambiguously — task keys are scanned in the whole message, not
+    parse unambiguously, task keys are scanned in the whole message, not
     just the subject line.
     """
     assert 1 <= max_commits <= SCAN_MAX_COMMITS, f"max_commits {max_commits} out of bounds"
@@ -115,7 +115,7 @@ def link_entries(
 
     Split out from scan_repo so the blocking git read (`_git_log`) can run off
     the event loop while every insert here batches into ONE BEGIN IMMEDIATE
-    transaction — not one transaction (and one CRDT-trigger commit) per link,
+    transaction, not one transaction (and one CRDT-trigger commit) per link,
     which is what made a large scan crawl and starve the server.
     """
     assert isinstance(entries, list), f"entries must be a list, got {type(entries)}"

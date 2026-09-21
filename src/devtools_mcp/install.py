@@ -1,7 +1,7 @@
 """Install-plan resolution and execution for backend tool dependencies.
 
 MCP-free and testable: the devtools_install tool (tools/install_tools.py) is a
-thin wrapper. Dry-run (format_plan) is the primary mode — the agent runs the
+thin wrapper. Dry-run (format_plan) is the primary mode, the agent runs the
 commands in its own shell under the client's permission system. Execution
 (run_steps) is opt-in and env-gated at the tool layer.
 """
@@ -45,13 +45,13 @@ def format_plan(suite: str, steps: list[InstallStep], note: str = "", url: str =
         if url:
             lines.append(f"Manual install: {url}")
         return "\n".join(lines)
-    lines = [f"**Install plan for '{suite}'** ({len(steps)} step(s)) — run these in your shell:", ""]
+    lines = [f"**Install plan for '{suite}'** ({len(steps)} step(s)): run these in your shell:", ""]
     for i, step in enumerate(steps, 1):
         marker = " [admin]" if step.elevation else ""
         if step.kind == "download":
-            lines.append(f"{i}. download {step.argv[0]} -> {step.argv[1]}{marker} — {step.description}")
+            lines.append(f"{i}. download {step.argv[0]} -> {step.argv[1]}{marker}: {step.description}")
         else:
-            lines.append(f"{i}. `{' '.join(step.argv)}`{marker} — {step.description}")
+            lines.append(f"{i}. `{' '.join(step.argv)}`{marker}: {step.description}")
     if any(s.elevation for s in steps):
         lines.append("")
         lines.append("[admin] steps need an elevated shell (Windows: run as Administrator; POSIX: sudo).")
@@ -67,7 +67,7 @@ async def run_steps(steps: list[InstallStep], timeout: int = 900) -> list[tuple[
     """Run steps sequentially, stopping at the first failure.
 
     Returns (step, exit_code, bounded output tail) per attempted step.
-    Commands run as argv vectors — never through a shell.
+    Commands run as argv vectors. Never through a shell.
     """
     assert 0 < len(steps) <= MAX_INSTALL_STEPS, f"bad step count {len(steps)}"
     assert timeout > 0, f"bad timeout {timeout}"
@@ -127,7 +127,7 @@ async def _download(url: str, dest: str) -> tuple[int, str]:
                     if written > _DOWNLOAD_MAX_BYTES:
                         raise ValueError(f"download exceeds {_DOWNLOAD_MAX_BYTES} bytes")
                     f.write(chunk)
-    except Exception as exc:  # noqa: BLE001 — network/user errors, not invariants
+    except Exception as exc:  # noqa: BLE001  # network/user errors, not invariants
         path.unlink(missing_ok=True)
         return 1, f"download failed: {type(exc).__name__}: {exc}"
     assert written <= _DOWNLOAD_MAX_BYTES, "download bound violated"

@@ -4,7 +4,7 @@ same skilldocs.db, so flipping a flag is one row write.
 
 Machine-local in v1 (a `DEVTOOLS_MCP_SKILL_MODE` env var overrides everything);
 cross-machine sync of this state is a marked follow-on that would reuse the
-tracker's HLC+LWW pattern. The skill documents themselves already sync — a peer
+tracker's HLC+LWW pattern. The skill documents themselves already sync, a peer
 just renders the synced content at its own effective mode.
 """
 
@@ -30,7 +30,7 @@ _DISABLED_KEY = "disabled"
 
 
 class SkillControlError(Exception):
-    """Expected/reportable condition (bad input) — not a bug."""
+    """Expected/reportable condition (bad input), not a bug."""
 
 
 def _utc_now_iso() -> str:
@@ -58,7 +58,7 @@ class SkillControl:
 
     def __init__(self, root: Path | None = None, conn: sqlite3.Connection | None = None) -> None:
         if conn is not None:
-            # Shared connection (from a SkillDocStore) — already migrated; never
+            # Shared connection (from a SkillDocStore), already migrated; never
             # re-create tables and never own/close it.
             self.conn = conn
             self._owns_conn = False

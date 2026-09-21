@@ -2,13 +2,13 @@
 
 Synchronous httpx (the tracker layer is sync-with-injected-client; tool
 functions wrap calls via anyio.to_thread). One short method per endpoint,
-no pagination loops — callers own their bounds. Every network failure
+no pagination loops. Callers own their bounds. Every network failure
 surfaces as StationError; offline is a normal, reported state.
 
 Retry policy: connect errors retry for all methods (the request never
-reached the server); read timeouts and 5xx retry only for GET — a replayed
-non-idempotent POST could double-create (task creates are additionally
-protected by pending-intent links, see station.links).
+reached the server); read timeouts and 5xx retry only for GET, a replayed
+non-idempotent POST could double-create (pending-intent links also
+protect task creates, see station.links).
 """
 
 from __future__ import annotations

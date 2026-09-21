@@ -93,7 +93,7 @@ async def run_cargo(
             failures = [f"{subcmd} is not installed. Install it: cargo install {subcmd}"]
             success = False
         else:
-            # Both exit non-zero when they find something — findings are not failure.
+            # Both exit non-zero when they find something, findings are not failure.
             found = bool(deps) if tool == "outdated" else bool(vulns)
             success = rc == 0 or found
     else:  # deps, sync

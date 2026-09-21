@@ -6,7 +6,7 @@ bounded page scan + canonical-hash diff (the platform has no updated_since).
 Conflict policy: row-level local-wins by default (config: remote_wins).
 Run order is pull -> push (the engine calls sync() once; we pull first),
 so a conflicted row skipped by pull is overwritten by push in the same run
-— one run reaches fixpoint.
+one run reaches fixpoint.
 
 Platform constraints honored here:
 - keys are allocated server-side; pulled tasks get fresh LOCAL keys too
@@ -128,7 +128,7 @@ def _pull(
     if not truncated and not dry_run:
         _mark_disappeared(db, org_id, seen_remote_ids, report)
     elif truncated:
-        report["notes"].append(f"remote page at cap ({TASKS_PAGE_MAX}) — disappearance check skipped")
+        report["notes"].append(f"remote page at cap ({TASKS_PAGE_MAX}), disappearance check skipped")
 
 
 def _pull_create(db: TrackerDB, org_id: str, project_key: str, remote: dict, remote_hash: str, report: dict) -> None:
@@ -179,7 +179,7 @@ def _mark_disappeared(db: TrackerDB, org_id: str, seen_remote_ids: set[str], rep
             links.mark_deleted(db, "task", link["local_id"])
             gone += 1
     if gone:
-        report["notes"].append(f"{gone} remote task(s) disappeared — links marked deleted, local kept")
+        report["notes"].append(f"{gone} remote task(s) disappeared, links marked deleted, local kept")
 
 
 # -- push ---------------------------------------------------------------------
@@ -204,7 +204,7 @@ def _push(
             if _is_transient(exc):
                 report["notes"].append(f"transport failure, push halted: {exc.detail[:120]}")
                 report["errors"] += 1
-                return  # watermark stays — re-diff next run
+                return  # watermark stays, re-diff next run
             local = db.conn.execute("SELECT * FROM tasks WHERE uid = ?", (change["uid"],)).fetchone()
             attempted = _local_hash(local) if local is not None else None
             links.mark_error(db, "task", change["uid"], project_row["org_id"], str(exc), attempted)
@@ -320,7 +320,7 @@ def resolve_pending(db: TrackerDB, client: StationClient, project_row: sqlite3.R
     """Recover pending-intent links from a crash between POST and resolve.
 
     Exact-title match within the mapped remote project resolves the link;
-    no match means the POST never landed — drop the pending row so the next
+    no match means the POST never landed, drop the pending row so the next
     push re-creates cleanly. Ambiguity (duplicate titles) quarantines.
     """
     assert 1 <= limit <= 1000, f"limit out of range: {limit}"

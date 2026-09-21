@@ -28,7 +28,7 @@ class CodeGraph:
         return len(self.out_adj.get(node_id, ())) + len(self.in_adj.get(node_id, ()))
 
     def top_node(self) -> str | None:
-        """The highest-degree node — a good default focus."""
+        """The highest-degree node, a good default focus."""
         if not self.nodes:
             return None
         return max(self.nodes, key=self.degree)

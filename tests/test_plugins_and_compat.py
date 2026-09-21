@@ -85,7 +85,7 @@ class TestLoaderSkipsIncompatible:
         failed = reg.failed_tool_plugins()
         assert "tools:badplug" in failed
         assert "skipped" in failed["tools:badplug"] and "requires" in failed["tools:badplug"]
-        assert not bad.loaded  # gated BEFORE import — never executed
+        assert not bad.loaded  # gated BEFORE import. Never executed
         assert "tools:badplug" not in reg.loaded_tool_plugins()
 
     def test_broken_tool_plugin_degrades(self, monkeypatch):

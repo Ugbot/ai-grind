@@ -1,14 +1,14 @@
 """Claude Code PreToolUse hook: before editing a file, ask the local
 devtools-mcp collab service whether another agent session has an active claim
-on it. Optional strict layer — the PostToolUse touch report already surfaces
+on it. This is the optional strict layer; the PostToolUse touch report already surfaces
 warnings; install this one only when you want claimed files to prompt.
 
 Behavior by DEVTOOLS_MCP_COLLAB_MODE:
-    warn (default) — emit an additionalContext warning, never block
-    ask            — active claims by another session surface a permission
+    warn (default): emit an additionalContext warning, never block
+    ask: active claims by another session surface a permission
                      prompt to the human (permissionDecision 'ask');
                      recent-touch-only conflicts still just warn
-    off            — do nothing
+    off: do nothing
 
 Any failure (service down, timeout, bad JSON) exits 0 silently.
 Same env as report_touch.py otherwise (URL, AGENT, COLLAB=0 kill switch).
@@ -22,7 +22,7 @@ import sys
 import urllib.parse
 import urllib.request
 
-TIMEOUT_S = 2.0  # see report_touch.py — cold tracker open can exceed 0.5s
+TIMEOUT_S = 2.0  # see report_touch.py, cold tracker open can exceed 0.5s
 
 
 def _target_file(tool_input: dict) -> str:
@@ -64,7 +64,7 @@ def main() -> int:
         if not conflicts:
             return 0
         claims = [c for c in conflicts if c.get("kind") == "claim"]
-        message = f"devtools-collab: {body.get('file', path)} — " + _describe(conflicts)
+        message = f"devtools-collab: {body.get('file', path)}, " + _describe(conflicts)
         if claims and mode == "ask":
             print(
                 json.dumps(

@@ -1,4 +1,4 @@
-"""Python analysis — Polars DataFrames + flame-graph stacks."""
+"""Python analysis, Polars DataFrames + flame-graph stacks."""
 
 from __future__ import annotations
 

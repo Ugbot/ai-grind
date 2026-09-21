@@ -1,6 +1,6 @@
 """ETW capture + decode via PerfView (ported from marbledb/tools/perf_trace.py).
 
-The hard part isn't automating PerfView — it's the Windows symbol/elevation
+The hard part isn't automating PerfView. It's the Windows symbol/elevation
 plumbing: `_NT_SYMBOL_PATH` for PDB + system-DLL resolution, tolerating the
 elevated-child exit-code-2 (the parent exits non-zero while the child keeps
 writing the ETL), and waiting for the merge to settle. Capture needs a real exe
@@ -76,7 +76,7 @@ async def _perfview(pv: str, args: list[str], env: dict[str, str], timeout: int)
         stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        env=env,  # _NT_SYMBOL_PATH (exe dir + MS server) — without this,
+        env=env,  # _NT_SYMBOL_PATH (exe dir + MS server), without this,
         # PerfView never resolves the profiled binary's own PDB
     )
     try:

@@ -1,4 +1,4 @@
-"""CDB analysis — Polars DataFrame + flame-graph stacks."""
+"""CDB analysis, Polars DataFrame + flame-graph stacks."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from devtools_mcp.models import StackSample
 
 
 def cdb_frames_df(snapshot: CdbSnapshot) -> pl.DataFrame:
-    """Every stack frame across all threads — `function` aliased for search."""
+    """Every stack frame across all threads, `function` aliased for search."""
     rows = []
     for t in snapshot.threads:
         for f in t.frames:

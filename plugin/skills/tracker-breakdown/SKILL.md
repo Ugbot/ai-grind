@@ -12,7 +12,7 @@ description: >
 
 The tracker models a bounded hierarchy: any task can parent subtasks via a
 foreign key, up to **6 levels deep**. The conventional ladder is
-`epic → story → task → subtask`, but the schema doesn't force it — `kind` is a
+`epic → story → task → subtask`, but the schema doesn't force it. `kind` is a
 label, structure is the parent link.
 
 ## User-story building
@@ -28,11 +28,11 @@ label, structure is the parent link.
 parent kind (`epic→story`, `story→task`, `task→subtask`, anything else
 `→subtask`). Pass `kind=` to override.
 
-Write acceptance criteria on each story as you go — see tracker-acceptance.
+Write acceptance criteria on each story as you go. See tracker-acceptance.
 
 ## Restructuring
 
-- Reparent: `tracker_task(action="move", key="GRIND-9", parent="GRIND-4")` —
+- Reparent with `tracker_task(action="move", key="GRIND-9", parent="GRIND-4")`:
   moves the whole subtree; rejected if it would exceed 6 levels or create a
   cycle.
 - Detach to top level: `tracker_task(action="move", key="GRIND-9", to_root=True)`
@@ -67,7 +67,7 @@ tracker_deps(action="add", key="GRIND-5", depends_on="GRIND-4")
 ```
 
 Then `tracker_deps(action="resolve", key="GRIND-2")` answers "what needs to
-happen to finish this story" — ready tasks, blockers, and the parallelizable
+happen to finish this story": ready tasks, blockers, and the parallelizable
 order. Don't add edges for things the hierarchy already says (a parent is
 automatically 'waiting on subtasks' while children are open).
 

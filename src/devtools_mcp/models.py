@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 
 class RunBase(BaseModel):
-    """Base model for all tool results — batch runs and debug snapshots alike."""
+    """Base model for all tool results, batch runs and debug snapshots alike."""
 
     run_id: str
     suite: str  # "valgrind", "lldb", "dtrace", "perf"
@@ -63,7 +63,7 @@ class StackSample(BaseModel):
 
     The universal flame-graph input: any sampling backend (perf, dtrace profile,
     ETW, JFR, async-profiler, CDB thread stacks) maps its stacks onto this. Frames
-    are ordered root-first (outermost caller at index 0, leaf last) — the same
+    are ordered root-first (outermost caller at index 0, leaf last), the same
     order Brendan-Gregg folded stacks use.
     """
 
@@ -74,4 +74,4 @@ class StackSample(BaseModel):
 # ToolResult is the union of all concrete result types.
 # Each backend defines its own result types inheriting from RunBase.
 # This gets populated by the registry after all backends are imported.
-# For now, it's defined as RunBase — backends extend it.
+# For now, it's defined as RunBase, backends extend it.

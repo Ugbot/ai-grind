@@ -38,7 +38,7 @@ def auth_instructions(platform_url: str = "") -> str:
         f"Not authenticated with the station platform{target}. Tell the user to:\n"
         f"1. Start the dashboard if it isn't running (devtools_dashboard tool), then\n"
         f"2. Open {DEFAULT_DASHBOARD}{DASHBOARD_AUTH_PATH} in a browser and sign in with "
-        f"GitHub or Google — the key is stored locally and automatically.\n"
+        f"GitHub or Google, the key is stored locally and automatically.\n"
         f"Alternatively they can paste an existing lls_ key on that page, or "
         f"export LLM_STATION_API_KEY=lls_... in the environment (env always wins)."
     )

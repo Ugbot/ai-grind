@@ -1,8 +1,8 @@
-"""Server-rendered SVG of a code property graph — no JS graph lib, no CDN.
+"""Server-rendered SVG of a code property graph. No JS graph lib, no CDN.
 
 Ego-centric, click-to-focus: the focus node sits in the centre column, its
 dependencies fan right, its dependents fan left, and every node is a link that
-re-roots the view (`?focus=<id>`) — the same interaction model as the flamegraph
+re-roots the view (`?focus=<id>`), the same interaction model as the flamegraph
 (`flamegraph/render_svg.py`), which is the only precedent for a drawn graphic in
 this strictly server-rendered dashboard.
 """

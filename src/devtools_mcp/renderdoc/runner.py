@@ -7,13 +7,13 @@ JSON file referenced by env vars (the embedded interpreter has no sys.argv);
 the bridge writes a response JSON and sys.exit()s before the UI opens.
 
 Verbs:
-  capture   binary=<exe>  — launch + inject; default mode `targetcontrol`
+  capture   binary=<exe>, launch + inject; default mode `targetcontrol`
             (auto-trigger via the target-control API), `--mode launch-wait`
             falls back to renderdoccmd capture + in-app F12.
-  analyze   binary=<rdc>  — action/drawcall tree (no counters: fast).
-  counters  binary=<rdc>  — + GPU counter fetch (replays per pass: slow).
-  resources binary=<rdc>  — + texture/buffer/shader inventory.
-  thumb     binary=<rdc>  — renderdoccmd thumb (no GPU replay needed).
+  analyze   binary=<rdc>, action/drawcall tree (no counters: fast).
+  counters  binary=<rdc>, + GPU counter fetch (replays per pass: slow).
+  resources binary=<rdc>, + texture/buffer/shader inventory.
+  thumb     binary=<rdc>, renderdoccmd thumb (no GPU replay needed).
 """
 
 from __future__ import annotations
@@ -158,7 +158,7 @@ async def _run_bridge(request: dict, timeout: int) -> tuple[str | None, dict | N
         proc.kill()
         await proc.wait()
         return (
-            f"renderdoc bridge timed out after {timeout}s — counters on large captures can take "
+            f"renderdoc bridge timed out after {timeout}s, counters on large captures can take "
             "minutes; raise timeout",
             None,
             output_path,
@@ -204,7 +204,7 @@ async def run_renderdoc(
         return f"target not found: {binary!r}", None, ""
     if tool == "capture":
         if binary.lower().endswith(".rdc"):
-            return f"tool 'capture' takes binary=<path to .exe>; {binary} is a capture — use tool='analyze'", None, ""
+            return f"tool 'capture' takes binary=<path to .exe>; {binary} is a capture. Use tool='analyze'", None, ""
         return await _run_capture(binary, args, extra_args, timeout)
     if not binary.lower().endswith(".rdc"):
         return (
@@ -319,7 +319,7 @@ async def _run_capture(
 async def _run_thumb(
     rdc_path: str, extra_args: list[str] | None, timeout: int
 ) -> tuple[str | None, RenderdocThumbResult | None, str]:
-    """thumbnail via renderdoccmd thumb — no GPU replay required."""
+    """thumbnail via renderdoccmd thumb. No GPU replay required."""
     cmd = find_renderdoccmd()
     if not cmd:
         return (await check_renderdoc()).get("error", "renderdoccmd not found"), None, ""

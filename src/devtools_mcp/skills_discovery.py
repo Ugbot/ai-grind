@@ -1,18 +1,18 @@
 """Discover unharvested skills/commands/agents across the machine and adopt them.
 
 MCP-free and testable; the skills_sync tool wraps this. Discovery SCANS and
-REPORTS — sources.toml stays the single explicit source of truth (harvest.py
+REPORTS, sources.toml stays the single explicit source of truth (harvest.py
 never crawls). Adoption appends a validated [[item]] block to sources.toml.
 
 Skill folder anatomy (the forms that exist in the wild):
-  folder-form  <name>/SKILL.md  — frontmatter `name:` must equal the folder
+  folder-form  <name>/SKILL.md, frontmatter `name:` must equal the folder
                name; any other files in the folder (references/, scripts) are
                bundled assets, copied whole.
-  single-file  <name>.md        — frontmatter `name:`; harvest.py wraps it
+  single-file  <name>.md, frontmatter `name:`; harvest.py wraps it
                into <name>/SKILL.md.
-  command      .claude/commands/<name>.md — flat file, name = stem.
-  agent        .claude/agents/<name>.md   — flat file with frontmatter.
-Clients load flat skills/<name>/SKILL.md only — never category subtrees.
+  command      .claude/commands/<name>.md, flat file, name = stem.
+  agent        .claude/agents/<name>.md, flat file with frontmatter.
+Clients load flat skills/<name>/SKILL.md only. Never category subtrees.
 """
 
 from __future__ import annotations
@@ -112,7 +112,7 @@ def source_paths(root: pathlib.Path) -> set[str]:
 
 
 def _norm(path: str | pathlib.Path) -> str:
-    """Case-insensitive comparison key — for DEDUP only, never for real Paths.
+    """Case-insensitive comparison key, for DEDUP only, never for real Paths.
 
     (Lowercasing a filesystem path corrupts it on case-sensitive systems and
     folds macOS temp dirs like /T/ to /t/; derive real Paths from originals.)
@@ -131,7 +131,7 @@ def scan_roots(root: pathlib.Path) -> list[pathlib.Path]:
     home = pathlib.Path.home()
     marker = "/.claude/"
     roots: set[pathlib.Path] = set()
-    for src in _raw_srcs(root):  # original case — the derived Path must stay real
+    for src in _raw_srcs(root):  # original case, the derived Path must stay real
         lower = src.lower()
         if marker not in lower:
             continue
@@ -220,13 +220,13 @@ def discover(root: pathlib.Path) -> list[Candidate]:
 def format_candidates(candidates: list[Candidate], root: pathlib.Path) -> str:
     """Bounded report with copy-pasteable adopt calls."""
     if not candidates:
-        return "No unharvested skills/commands/agents found — the library covers every scanned client dir."
+        return "No unharvested skills/commands/agents found, the library covers every scanned client dir."
     assert len(candidates) <= MAX_CANDIDATES, "candidate list out of bounds"
     clean = [c for c in candidates if not c.issue]
     broken = [c for c in candidates if c.issue]
     parts = [f"**{len(candidates)} candidate(s) not in the library** (scanned via `{root / 'sources.toml'}`):", ""]
     for cand in clean[:40]:
-        parts.append(f"- {cand.kind} `{cand.name}` ({cand.form}) — `{cand.src}`")
+        parts.append(f"- {cand.kind} `{cand.name}` ({cand.form}), `{cand.src}`")
     if len(clean) > 40:
         parts.append(f"... {len(clean) - 40} more")
     if clean:
@@ -234,12 +234,12 @@ def format_candidates(candidates: list[Candidate], root: pathlib.Path) -> str:
         parts.append("")
         parts.append(
             f'Adopt one: skills_sync(action="adopt", src="{example.src}", category="<category>", '
-            'note="...") — appends to sources.toml and re-harvests.'
+            'note="..."), appends to sources.toml and re-harvests.'
         )
     if broken:
         parts.append("")
         parts.append("**Malformed (fix before adopting):**")
-        parts.extend(f"- `{c.src}` — {c.issue}" for c in broken[:15])
+        parts.extend(f"- `{c.src}`, {c.issue}" for c in broken[:15])
     return "\n".join(parts)
 
 

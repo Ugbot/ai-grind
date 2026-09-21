@@ -22,13 +22,13 @@ async def detect() -> list[InstalledTool]:
     for spec in list_adapters():
         try:
             tools.append(await spec.detect())
-        except Exception:  # noqa: BLE001 — one broken adapter must not hide the rest
+        except Exception:  # noqa: BLE001  # one broken adapter must not hide the rest
             tools.append(InstalledTool(suite="debug", name=spec.name, path="", version="", available=False))
     return tools
 
 
 async def run(**kwargs: object) -> tuple[str, None, str]:
-    """The debug suite is session-based — point at the session tools."""
+    """The debug suite is session-based, point at the session tools."""
     return "The debug suite is session-based. Use debug_start() to launch or attach.", None, ""
 
 

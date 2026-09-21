@@ -27,7 +27,7 @@ def _maybe_start_dashboard(ctx: AppContext) -> None:
     DEVTOOLS_MCP_DASHBOARD=1 (set by `--dashboard`, or defaulted on for network
     transports) brings the dashboard up with the server so a long-lived shared
     instance is always visible at DEVTOOLS_MCP_DASHBOARD_PORT (default 8765).
-    Failure to bind is reported on stderr, never fatal — the MCP server is the
+    Failure to bind is reported on stderr, never fatal, the MCP server is the
     primary service.
     """
     import os
@@ -56,7 +56,7 @@ def _launch_dbos() -> None:
     """Launch the DBOS durable executor (idempotent) for the recipe engine.
 
     Brought up at server startup so the recipe workflow can run durably and the
-    dashboard's trigger-run handler can enqueue it. Never fatal — recipes simply
+    dashboard's trigger-run handler can enqueue it. Never fatal, recipes simply
     fall back to erroring on run if DBOS cannot launch.
     """
     import sys
@@ -76,7 +76,7 @@ _EAGER_CTX: AppContext | None = None
 
 
 def _bootstrap_ctx() -> AppContext:
-    """Default workspace + persisted runs — shared by eager boot and the lifespan."""
+    """Default workspace + persisted runs, shared by eager boot and the lifespan."""
     import sys
 
     ctx = AppContext()
@@ -123,7 +123,7 @@ mcp = FastMCP(
         "(execute=True runs them when DEVTOOLS_MCP_ALLOW_INSTALL=1). "
         "skills_sync manages the static skills library (harvest upstream assets, sync the "
         "plugin/loadable mirrors); skill_live is the separate CRDT live-skill system. "
-        "Core rule: NEVER flood the model with raw output — every run is stored as a "
+        "Core rule: NEVER flood the model with raw output. Every run is stored as a "
         "queryable Polars DataFrame and tools return only bounded summaries + a run_id. "
         "Workflow: devtools_check() to see installed tools; devtools_run(suite, tool, binary) to "
         "run one; devtools_analyze()/devtools_query() to drill into the frame; "
@@ -131,15 +131,15 @@ mcp = FastMCP(
         "SVG + text flame graph from any sampling run; devtools_dashboard() to open a browser "
         "visualization terminal. debug_* tools provide unified interactive debugging across languages "
         "(debugpy/lldb-dap/js-debug/kotlin DAP adapters): launch or attach, conditional breakpoints, "
-        "logpoints, watches, stepping — every stop auto-captures a queryable snapshot with a diff vs "
+        "logpoints, watches, stepping. Every stop auto-captures a queryable snapshot with a diff vs "
         "the previous stop, and debug plans sweep many stops in one call. "
-        "tracker_* tools: a persistent SQLite-backed task tracker (mini-JIRA) — projects, "
+        "tracker_* tools: a persistent SQLite-backed task tracker (mini-JIRA). Projects, "
         "hierarchical tasks with PROJ-123 keys, acceptance criteria linked to tests, commit "
         "links, auto-tag rules, GitHub issue sync; query it via tracker_query (bounded views), "
         "ask tracker_deps(action='resolve') what needs to happen next (ready/blocked/order), "
         "and replicate it across machines with tracker_sync (CRDT local-first; peers are other "
         "dashboards). The dashboard also renders the tracker as card boards at /tracker. "
-        "recipe: a general recipe/pipeline engine — register a recipe (an ordered list of shell "
+        "recipe: a general recipe/pipeline engine, register a recipe (an ordered list of shell "
         "steps), then recipe(action='run') runs them one after another stop-on-fail with results "
         "cached in SQLite (a passed run is reused until the spec changes); domain-agnostic "
         "(build/test/setup/deploy), browsable at /recipes."
@@ -167,10 +167,10 @@ def get_run(
 
 
 # --- Register all tools ---
-import devtools_mcp.tools  # noqa: E402, F401
+import devtools_mcp.tools  # noqa: E402,F401
 
 # Out-of-tree plugins attach their @mcp.tool()s via the 'devtools_mcp.mcp_tools'
-# entry-point group — loaded HERE, after `mcp` exists and the in-tree tools are
+# entry-point group, loaded HERE, after `mcp` exists and the in-tree tools are
 # registered (backends load earlier, at line 21, before `mcp` is defined).
 from devtools_mcp.registry import load_tool_plugins  # noqa: E402
 
@@ -181,7 +181,7 @@ def main() -> None:
     """Run the MCP server over stdio (pipes), SSE, or streamable HTTP.
 
     Transport resolves from (highest first): CLI flags, env vars, then stdio.
-      stdio (default)         : MCP over stdin/stdout — for editor/CLI clients.
+      stdio (default)         : MCP over stdin/stdout, for editor/CLI clients.
       sse / http              : network transports bound to --host/--port.
 
     Env: DEVTOOLS_MCP_TRANSPORT, DEVTOOLS_MCP_HOST, DEVTOOLS_MCP_PORT.
@@ -229,7 +229,7 @@ def main() -> None:
         print(f"devtools-mcp: {transport} on http://{args.host}:{args.port}{path}", file=sys.stderr)
         if dashboard:
             # Service mode: the streamable-http lifespan only fires on the first
-            # client session, so bring the context + dashboard up eagerly — the
+            # client session, so bring the context + dashboard up eagerly, the
             # dashboard (and its collab ingest API) must be reachable from boot.
             global _EAGER_CTX
             _EAGER_CTX = _bootstrap_ctx()

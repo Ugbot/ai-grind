@@ -114,7 +114,7 @@ class TestRun:
         second = await run_recipe(db, "demo")
         assert second.cached
         assert second.run_id == first.run_id
-        # only one run row persisted — the second call reused the first
+        # only one run row persisted, the second call reused the first
         assert db.conn.execute("SELECT COUNT(*) FROM recipe_runs").fetchone()[0] == 1
 
     async def test_force_reruns(self, db):
@@ -167,7 +167,7 @@ class TestDurability:
     exactly the number of times that step's shell command actually executed.
     `fork_workflow(id, start_step)` restarts the durable workflow from a given
     step, replaying the results of earlier *completed* steps from the DBOS
-    checkpoint instead of re-executing them — the same replay DBOS performs when
+    checkpoint instead of re-executing them, the same replay DBOS performs when
     recovering an interrupted/crashed workflow. So forking past step 1 must leave
     step 1's marker untouched (not re-run) while step 2 runs again."""
 

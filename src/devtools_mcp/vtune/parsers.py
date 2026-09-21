@@ -5,9 +5,9 @@ Two shapes matter:
 - function reports (`-report hotspots -group-by function`): flat rows,
   "Function" + per-analysis metric columns ("CPU Time", "Loads", ...).
 - top-down (`-report top-down`): a "Function Stack" column where depth is
-  encoded as leading spaces — that tree becomes folded stacks for flame graphs.
+  encoded as leading spaces. That tree becomes folded stacks for flame graphs.
 
-Values arrive as "1.234", "1.234s", "12.5%", or "" — `_to_float` normalizes.
+Values arrive as "1.234", "1.234s", "12.5%", or "", `_to_float` normalizes.
 """
 
 from __future__ import annotations
@@ -85,7 +85,7 @@ def parse_function_csv(text: str) -> list[VtuneFunction]:
 
 
 def _stack_depth(cell: str) -> int:
-    """Depth of a 'Function Stack' cell — one leading space per level."""
+    """Depth of a 'Function Stack' cell. One leading space per level."""
     depth = len(cell) - len(cell.lstrip(" "))
     assert depth >= 0, "negative indentation"
     return depth

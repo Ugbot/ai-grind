@@ -1,4 +1,4 @@
-"""Visualization terminal tool: devtools_dashboard — serve runs in a browser."""
+"""Visualization terminal tool: devtools_dashboard, serve runs in a browser."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ async def devtools_dashboard(
     """Start/stop the browser visualization terminal for all runs.
 
     A local web UI to browse every run, view its queryable data table, read raw
-    output/logs, and explore interactive (click-to-zoom) flame graphs — the same
+    output/logs, and explore interactive (click-to-zoom) flame graphs, the same
     data the LLM sees, for a human. Nothing is sent anywhere; it binds to
     127.0.0.1 only.
 
@@ -63,7 +63,7 @@ async def devtools_dashboard(
         webbrowser.open(url)
     return (
         f"Visualization terminal started at **{url}**\n"
-        f"- `{url}/` — all runs\n"
+        f"- `{url}/`, all runs\n"
         f"- per run: data table, raw logs, and an interactive flame graph (click to zoom)\n"
         f"Open it in a browser; it binds to localhost only."
     )

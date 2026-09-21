@@ -1,4 +1,4 @@
-"""In-process GOAP planner over the local skill descriptors — the free/offline
+"""In-process GOAP planner over the local skill descriptors, the free/offline
 'internal' backend. Builds Action subclasses from each skill's ```goap block,
 scales cost by the active power mode, and runs the vendored regressive planner.
 """
@@ -61,7 +61,7 @@ class LocalPlanner:
             return PlanResult(False, "local", message="no skill path to the goal from the given world")
         names = [getattr(step.action, "skill_name", type(step.action).__name__) for step in steps]
         assert len(names) <= PLAN_STEPS_MAX, f"plan exceeded {PLAN_STEPS_MAX} steps"
-        message = "Kahn layering is a premium feature — returning the flat order" if layered else ""
+        message = "Kahn layering is a premium feature, returning the flat order" if layered else ""
         return PlanResult(True, "local", steps=names, layers=None, message=message)
 
     @staticmethod

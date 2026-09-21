@@ -233,7 +233,7 @@ class RunStore:
         ids = self.list_run_ids()
         if len(ids) <= max_runs:
             return
-        # Evict oldest first — run_ids are UUIDs, so lexicographic order is not age order.
+        # Evict oldest first, run_ids are UUIDs, so lexicographic order is not age order.
         by_age = sorted(ids, key=self._run_mtime)
         for run_id in by_age[: len(ids) - max_runs]:
             self.delete_run(run_id)

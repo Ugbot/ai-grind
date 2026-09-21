@@ -54,7 +54,7 @@ async def plan(
         planner = resolve()
         if planner is None:
             return "No planner available (DEVTOOLS_MCP_PLANNER=none). Dispatch a skill from the router index."
-        # A remote planner backend does blocking HTTP — keep it off the event loop.
+        # A remote planner backend does blocking HTTP. Keep it off the event loop.
         result = await anyio.to_thread.run_sync(planner.plan, goal_state, world_state, mode, layered)
     except PlannerError as exc:
         return f"Error: {exc}"
@@ -65,5 +65,5 @@ async def plan(
         waves = "\n".join(f"  wave {i + 1}: {', '.join(w)}" for i, w in enumerate(result.layers))
         body = f"{header}\n{waves}"
     else:
-        body = f"{header} " + " → ".join(result.steps) if result.steps else f"{header} (already satisfied — empty plan)"
+        body = f"{header} " + " → ".join(result.steps) if result.steps else f"{header} (already satisfied, empty plan)"
     return body + (f"\n_{result.message}_" if result.message else "")

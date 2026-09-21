@@ -2,7 +2,7 @@
 """Flatten the hierarchical catalog/ into a flat mirror Claude Code can load.
 
 Claude discovers skills only as flat <name>/SKILL.md folders under a skills/
-root -- it does not recurse into category folders. This script reads
+root, and it does not recurse into category folders. This script reads
 MANIFEST.json (written by harvest.py) and copies every non-archived item into a
 flat target tree.
 
@@ -16,7 +16,7 @@ Targets:
 `local`, `plugin` and `agents` are wiped wholesale (fully owned, derived
 output). project/global are overwritten per item so unrelated skills already
 present there are left untouched. The `plugin` mirror is the flat bundle the
-Claude Code plugin (.claude-plugin/plugin.json) points at -- it is committed,
+Claude Code plugin (.claude-plugin/plugin.json) points at. It is committed,
 not gitignored. The `agents` mirror feeds clients that read the agents.md
 convention (skills/<name>/SKILL.md only; commands/agents are Claude-specific)
 -- it is generated, gitignored output. Hand-written client configs (.codex/,
@@ -116,7 +116,7 @@ def sync_skill(item: dict, base: Path, seen: set[str]) -> bool:
     """Copy a catalog skill folder to base/skills/<name>/. Returns False if absent.
 
     A manifest entry whose source is missing from this checkout (partial clone,
-    upstream-only asset) is skipped, not fatal -- the caller records and reports it.
+    upstream-only asset) is skipped, not fatal. The caller records and reports it.
     """
     name = item["name"]
     assert name not in seen, f"duplicate skill name in mirror: {name}"
@@ -174,7 +174,7 @@ def main() -> int:
             missing.append(f"{kind}:{it.get('name', it['dest'])}")
 
     # A few upstream-only assets may be absent from a partial checkout; that is
-    # tolerable. Wholesale absence means a broken catalog -- fail loud instead.
+    # tolerable. Wholesale absence means a broken catalog, so fail loud instead.
     assert len(missing) <= MAX_MISSING, f"too many missing sources ({len(missing)}) -- run harvest.py?"
 
     authored = sync_authored(base, seen_skills)

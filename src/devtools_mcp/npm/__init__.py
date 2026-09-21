@@ -1,1 +1,1 @@
-"""npm backend — dependency tree, install (sync), audit, outdated, scripts."""
+"""npm backend, dependency tree, install (sync), audit, outdated, scripts."""
