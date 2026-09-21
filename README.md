@@ -127,6 +127,18 @@ API at `/api/crdt/`. Work fully offline, sync when you meet the network again.
 (v1 is row-level LWW with full-exchange transport; field-level merge and
 incremental vector-clock exchange are the documented upgrade path.)
 
+The dashboard **binds 127.0.0.1 by default**, so a fresh install is loopback-only
+and no peer can reach it. Sharing a replica is an explicit act , start the peer
+with `--dashboard-host 0.0.0.0` (env: `DEVTOOLS_MCP_DASHBOARD_HOST`), which keeps
+loopback working and admits that machine's own addresses, hostname and
+`<hostname>.local` to the Host allowlist that guards state-changing requests.
+Names it cannot discover (a DNS alias, or `127.0.0.1:8766` seen through an SSH
+tunnel) are listed explicitly in `DEVTOOLS_MCP_DASHBOARD_ALLOWED_HOSTS`. Note
+`--host` is a *different* knob , it binds the MCP transport and should stay on
+loopback. Anything that can reach the shared dashboard port can read and write
+that tracker replica, so share it on a trusted LAN or over SSH. Step-by-step
+two-machine recipe (firewall rules included): the `tracker-usage` skill.
+
 ### Agent collaboration (local)
 
 Run several agents on one machine, say Claude Code, Cursor, and Codex side by
@@ -224,6 +236,8 @@ HTTP. The dashboard comes up with it, so the UI is always there:
 The equivalent manual command is `uv run devtools-mcp --transport http --port
 8000`. Network transports auto-start the dashboard; pass `--no-dashboard` to opt
 out.
+Both ports bind loopback by default. Use `--dashboard-host 0.0.0.0` only
+when another machine needs access to this tracker replica.
 
 Then point clients at the URL once, at user scope, so all projects get it:
 
@@ -461,3 +475,51 @@ See any of `etw/`, `jvm/`, `cdb/` for the pattern.
 ## License
 
 MIT
+
+## Optional Station core
+
+Node CPU capture can use Station's standalone native core. It needs no model,
+account, editor, repository index or full Station daemon. Python remains the
+default engine for existing installations.
+
+Build in a current LLM Station checkout that includes `core/devtools`:
+
+```sh
+cmake -S core/devtools -B build/core -DCMAKE_BUILD_TYPE=Release
+cmake --build build/core --config Release
+ctest --test-dir build/core -C Release --output-on-failure
+```
+
+Then configure the ai-grind process (use the absolute executable path):
+
+```sh
+export DEVTOOLS_MCP_NODE_ENGINE=station
+export DEVTOOLS_MCP_STATION_CORE=/path/to/llm-station/build/core/station-core
+uv run devtools-mcp
+```
+
+Existing `devtools_run(suite="node", tool="cpu", binary="/path/to/script.js")`
+calls now capture through native MCP. Analyze, compare and render flame graphs
+using the returned run ID as usual. Capture timestamps, native engine identity,
+canonical stacks and raw profiles survive restart. Native artifacts live under
+`DEVTOOLS_MCP_DATA/station-core` (default `~/.devtools-mcp/station-core`); ai-grind
+also retains its own copy for querying when Station is unavailable. Native
+capture failures are reported without retrying the workload in Python.
+
+Set `DEVTOOLS_MCP_NODE_ENGINE=python` to return to Python capture. Other native
+verbs are not enabled yet. Each process has an explicit engine selection; this
+preview does not transfer ownership of an existing tracker or delete old data.
+
+Inspect tracker migration coverage without modifying the store:
+
+```sh
+uv run python -m devtools_mcp.station.migration /path/to/tracker.db
+```
+
+The report includes records the native importer would omit and blocks automatic
+ownership transfer. See [the delivery ledger](docs/station-progression.md) for
+remaining release gates and verification commands.
+
+Native CPU stacks retain file paths and line numbers. Compare two captures from
+the same engine; mixing legacy name-only Python frames with native frames is
+rejected rather than presented as a performance regression.

@@ -128,12 +128,17 @@ async def devtools_run(
         parsed.batch_id = batch_id
 
     tool_info = app.registry.tools.get(f"{suite}:{tool}")
-    if tool_info:
+    if tool_info and getattr(parsed, "engine", "python") == "python":
         parsed.tool_version = tool_info.version
         parsed.tool_path = tool_info.path
 
     summary = backend.format_summary(parsed)
-    ws.store_run(parsed, raw_path, summary=summary)
+    if getattr(parsed, "engine", "python") == "llm-station":
+        parsed.workspace_id = ws.workspace_id
+        parsed.workspace_name = ws.name
+        ws.store_run(parsed, raw_path, summary=summary, enrich=False)
+    else:
+        ws.store_run(parsed, raw_path, summary=summary)
     return summary
 
 

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import deque
 from sys import float_info
+from typing import Any
 
 from devtools_mcp.goap.priority_queue import PriorityQueue
 
@@ -17,7 +18,7 @@ class AStarAlgorithm(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_g_score(self, current, node):
+    def get_g_score(self, node, neighbour):
         raise NotImplementedError
 
     @abstractmethod
@@ -27,7 +28,7 @@ class AStarAlgorithm(ABC):
     def find_path(self, start, end):
         g_scores = {start: 0}
         f_scores = {start: self.get_h_score(start)}
-        parents = {}
+        parents: dict[Any, Any] = {}
 
         candidates = PriorityQueue([start], key=f_scores.__getitem__)
         rejects = set()

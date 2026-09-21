@@ -65,9 +65,9 @@ def render_graph_svg(graph: CodeGraph, focus: str | None = None, hops: int = 1, 
     # Node id -> (x, y) centre.
     pos: dict[str, tuple[float, float]] = {}
     for col, ids in columns.items():
-        cx = _MARGIN + col_index[col] * _COL_W + _NODE_R
+        cx: float = _MARGIN + col_index[col] * _COL_W + _NODE_R
         for row, node_id in enumerate(ids):
-            cy = _MARGIN + row * _ROW_H + _NODE_R
+            cy: float = _MARGIN + row * _ROW_H + _NODE_R
             pos[node_id] = (cx, cy)
 
     width = _MARGIN * 2 + (len(ordered_cols) - 1) * _COL_W + _COL_W

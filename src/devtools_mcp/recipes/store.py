@@ -1,15 +1,16 @@
 """Domain layer for recipes: register/lookup recipes and record runs.
 
 A recipe's `spec_hash` is the sha256 of the canonical JSON of its executable
-spec ({kind, env_axes, steps}). It is what makes a cached run valid: a cached
-result is only reused while the recipe's current spec_hash still matches the
-hash the run executed against, so editing any step invalidates the cache.
+spec ({kind, env_axes, steps}). Cache reuse requires both this
+spec hash and the execution snapshot hash (effective explicit environment and
+resolved working directories). Editing any step invalidates the cache.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 
@@ -136,15 +137,36 @@ def list_recipes(conn: sqlite3.Connection, kind: str | None = None) -> list[Reci
     return [Recipe.from_row(row) for row in rows]
 
 
-def record_run_start(db: RecipesDB, recipe: Recipe) -> int:
+def execution_snapshot(recipe: Recipe, env_extra: dict[str, str] | None = None) -> dict:
+    """Freeze explicit execution inputs, never the inherited process environment."""
+    env = dict(recipe.env_axes)
+    env.update({str(k): str(v) for k, v in (env_extra or {}).items()})
+    steps = [dict(step.to_dict(), cwd=os.path.abspath(step.cwd or os.getcwd())) for step in recipe.steps]
+    return {"version": 1, "kind": recipe.kind, "env": env, "steps": steps}
+
+
+def _execution_hash(snapshot: dict) -> str:
+    return hashlib.sha256(json.dumps(snapshot, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def get_execution_snapshot(conn: sqlite3.Connection, run_id: int) -> dict:
+    row = conn.execute("SELECT execution_snapshot FROM recipe_runs WHERE id = ?", (run_id,)).fetchone()
+    if row is None or row[0] is None:
+        raise RecipesError(f"run {run_id} has no execution snapshot; legacy runs cannot be resumed safely")
+    return json.loads(row[0])
+
+
+def record_run_start(db: RecipesDB, recipe: Recipe, env_extra: dict[str, str] | None = None) -> int:
     """Create a recipe_runs row (status='running') and return its id."""
     assert db.conn is not None, "record_run_start on closed db"
     assert recipe.id > 0, "recipe must be persisted before a run"
     now = utc_now_iso()
+    snapshot = execution_snapshot(recipe, env_extra)
     with db.transaction() as conn:
         cur = conn.execute(
-            "INSERT INTO recipe_runs (recipe_id, spec_hash, status, started_at) VALUES (?, ?, 'running', ?)",
-            (recipe.id, recipe.spec_hash, now),
+            "INSERT INTO recipe_runs (recipe_id, spec_hash, status, started_at, execution_snapshot, execution_hash) "
+            "VALUES (?, ?, 'running', ?, ?, ?)",
+            (recipe.id, recipe.spec_hash, now, json.dumps(snapshot, sort_keys=True), _execution_hash(snapshot)),
         )
         run_id = int(cur.lastrowid or 0)
     assert run_id > 0, "record_run_start produced no run id"
@@ -162,10 +184,11 @@ def record_step(
     duration_ms: int | None,
     tail: str,
 ) -> None:
-    """Persist one step outcome within a run."""
+    """Persist one outcome per ordinal, including a DBOS retry before checkpoint."""
     assert db.conn is not None, "record_step on closed db"
     assert ordinal >= 0, f"ordinal must be non-negative, got {ordinal}"
     with db.transaction() as conn:
+        conn.execute("DELETE FROM run_steps WHERE run_id = ? AND ordinal = ?", (run_id, ordinal))
         conn.execute(
             "INSERT INTO run_steps (run_id, ordinal, label, command, exit_code, status, duration_ms, tail) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -199,17 +222,17 @@ def get_run(conn: sqlite3.Connection, run_id: int) -> Run:
     return Run.from_row(row)
 
 
-def cached_run(db: RecipesDB, key: str) -> Run | None:
-    """Latest passed run whose spec_hash matches the recipe's current spec_hash.
+def cached_run(db: RecipesDB, key: str, env_extra: dict[str, str] | None = None) -> Run | None:
+    """Latest passed run matching the spec and effective explicit execution inputs.
 
-    None when there is no such run (recipe never passed, or its spec changed
-    since the last pass), the signal to (re)run.
+    Legacy runs without snapshots are never cache hits. Files and inherited
+    environment are not fingerprinted; callers must force a run for freshness.
     """
     assert db.conn is not None, "cached_run on closed db"
     recipe = get_recipe(db.conn, key)
     row = db.conn.execute(
-        "SELECT * FROM recipe_runs WHERE recipe_id = ? AND spec_hash = ? AND status = 'passed' "
+        "SELECT * FROM recipe_runs WHERE recipe_id = ? AND spec_hash = ? AND execution_hash = ? AND status = 'passed' "
         "ORDER BY id DESC LIMIT 1",
-        (recipe.id, recipe.spec_hash),
+        (recipe.id, recipe.spec_hash, _execution_hash(execution_snapshot(recipe, env_extra))),
     ).fetchone()
     return Run.from_row(row) if row is not None else None

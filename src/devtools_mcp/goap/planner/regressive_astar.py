@@ -33,11 +33,13 @@ class RegressiveGOAPAStarNode:
 
     @property
     def services(self):
+        assert self.action is not None, "services require an action"
         return {k: self.current_state[k] for k in self.action.service_names}
 
     def compute_cost(self, other: "RegressiveGOAPAStarNode") -> float:
         # The action determines the cost, and is stored on the "destination" node
         # i.e. x, action --> y is encoded as (x, None), (y, action)
+        assert other.action is not None, "destination requires an action"
         return other.action.get_cost(other.services)
 
     def apply_action(self, world_state: State, action: Action) -> "RegressiveGOAPAStarNode":

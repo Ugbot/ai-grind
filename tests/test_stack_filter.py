@@ -213,21 +213,20 @@ class TestAggregateWithStackFilter:
 
     def _agg(self, frames: list[pl.DataFrame], col: str = "self_pct") -> pl.DataFrame:
         stacked = pl.concat(
-            [f.select(["function", col]).with_columns(pl.lit(f"r{i}").alias("run"))
-             for i, f in enumerate(frames)],
+            [f.select(["function", col]).with_columns(pl.lit(f"r{i}").alias("run")) for i, f in enumerate(frames)],
             how="vertical",
         )
         n = len(frames)
         return (
             stacked.group_by("function")
-            .agg([
-                pl.len().alias("runs"),
-                pl.col(col).mean().round(2).alias("mean_pct"),
-                pl.col(col).max().round(2).alias("max_pct"),
-            ])
-            .with_columns(
-                (pl.col("mean_pct") * pl.col("runs") / n).round(2).alias("total_share")
+            .agg(
+                [
+                    pl.len().alias("runs"),
+                    pl.col(col).mean().round(2).alias("mean_pct"),
+                    pl.col(col).max().round(2).alias("max_pct"),
+                ]
             )
+            .with_columns((pl.col("mean_pct") * pl.col("runs") / n).round(2).alias("total_share"))
             .sort("total_share", descending=True)
         )
 
@@ -252,10 +251,7 @@ class TestAggregateWithStackFilter:
 
     def test_every_kept_run_sums_to_one_hundred(self):
         for weightings in ([1, 1, 1], [5, 1, 9]):
-            runs = [
-                [StackSample(frames=s.frames, weight=s.weight * w) for s in _mixed_phase_run()]
-                for w in weightings
-            ]
+            runs = [[StackSample(frames=s.frames, weight=s.weight * w) for s in _mixed_phase_run()] for w in weightings]
             for r in runs:
                 kept, _ = filter_samples(r, stack_exclude="load_parquet")
                 assert round(function_frame(kept)["self_pct"].sum(), 1) == 100.0

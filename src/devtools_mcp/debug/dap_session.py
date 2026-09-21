@@ -132,8 +132,10 @@ class DapSession(DebugSession):
         try:
             await asyncio.wait_for(self._initialized.wait(), timeout=_CONFIGURE_TIMEOUT)
         except TimeoutError:
-            if run_future.done() and run_future.exception() is not None:
-                raise run_future.exception() from None  # the real failure
+            if run_future.done():
+                error = run_future.exception()
+                if error is not None:
+                    raise error from None  # the real failure
             run_future.cancel()
             raise DapError(f"{self.adapter.name}: adapter never sent 'initialized'") from None
         for source, specs in self.breakpoint_specs.items():

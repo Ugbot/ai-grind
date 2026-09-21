@@ -32,7 +32,7 @@ A unified developer-tooling workspace. Two concerns live here:
 | `src/devtools_mcp/tracker/` | Progress tracker domain layer. `schema.py` holds versioned migrations. `db.py` is WAL SQLite at `~/.devtools-mcp/tracker.db`, overridable with `DEVTOOLS_MCP_TRACKER_DB`. Then `tasks.py`, `criteria.py`, `tags.py`, `commits.py`, `deps.py` (dependency edges and the execution-plan resolver), `issues.py`, and `frames.py` (Polars views). `crdt.py` and `sync.py` do local-first replication: HLC, op-capture triggers, LWW merge, HTTP peer sync through the dashboard's `/api/crdt/`. `activity.py` handles local agent collaboration through the v5 `file_activity` and `file_claims` tables: debounced touch log, advisory TTL claims, conflicts, all site-local rather than CRDT-synced. `providers/` covers GitHub REST via `GITHUB_TOKEN` and a GitLab stub. Tools live in `tools/tracker_tools.py` (11 `tracker_*` tools), the tracker card and `/collab` views in `viz/`, the skills in `skills/authored/skills/tracker/` and `collab/` |
 | `tests/` | Test suite (735 cases) plus `tests/fixtures/`, whose compiled targets are gitignored |
 | `.mcp.json` / `.cursor/mcp.json` | Client configs pointing at the shared local service (`http://127.0.0.1:8000/mcp`, streamable HTTP). One instance serves every project, and it is also registered at Claude Code user scope. Stdio spawn still works: `uv run devtools-mcp` |
-| `scripts/devtools-service.ps1` | Run that shared instance: start, stop, status, install(-at-login). Network transports auto-start the dashboard on `:8765`; pass `--no-dashboard` to opt out |
+| `scripts/devtools-service.ps1` | Run that shared instance: start/stop/status/install(-at-login). Network transports auto-start the dashboard (`:8765`, `--no-dashboard` to opt out). Dashboard bind address is `--dashboard-host` / `DEVTOOLS_MCP_DASHBOARD_HOST` (default `127.0.0.1`; `0.0.0.0` to let a peer replica's `tracker_sync` reach this box: extra Host-allowlist names via `DEVTOOLS_MCP_DASHBOARD_ALLOWED_HOSTS`), separate from `--host` which binds the MCP transport |
 | `scripts/unslop_check.py` | Flags AI writing tells in the markdown and Python this repo owns, skipping vendored and generated trees. Encodes the `unslop` skill as a check |
 | `.claude-plugin/` | Claude Code plugin and marketplace manifests. `plugin.json` treats the repo root as the plugin root, so `${CLAUDE_PLUGIN_ROOT}` is the Python project, and points component paths at `plugin/`. `marketplace.json` lists the one `devtools-mcp` plugin with `source: "."`. Install with `/plugin marketplace add Ugbot/ai-grind`, then `/plugin install devtools-mcp@ai-grind` |
 | `plugin/` | The committed flat plugin bundle (`skills/ commands/ agents/`) that `sync.py --target plugin` generates. The plugin loads this, because Claude does not recurse into the hierarchical `skills/catalog` and `authored` trees |
@@ -90,3 +90,14 @@ copied from upstream, never moved. Full breakdown in `skills/README.md`.
   text, or comments.
 - To add or refresh a harvested asset: edit `skills/sources.toml`, run
   `python skills/harvest.py`, then `python skills/sync.py --target <t>`.
+
+## Station progression
+
+`node/station_core.py` is the explicit local native MCP client, separate from
+`station/client.py` (remote platform REST). `DEVTOOLS_MCP_NODE_ENGINE=station`
+selects Node CPU capture through the standalone Station core. Versioned envelopes
+preserve engine provenance; the existing run store keeps a queryable local copy.
+`station/migration.py` reports tracker-import coverage without changing the DB.
+Tracker schema v7 preserves existing links while admitting codegraph identity.
+Recipe schema v2 adds immutable execution snapshots and explicit-input cache keys.
+See `docs/station-progression.md` for setup and rollout gates.

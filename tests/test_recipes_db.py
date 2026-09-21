@@ -125,3 +125,44 @@ class TestTransactions:
         db.close()
         db.close()  # no error
         assert db.conn is None
+
+
+def test_migrate_v1_preserves_history_and_rejects_unsafe_resume(tmp_path):
+    import sqlite3
+
+    from devtools_mcp.recipes import store
+    from devtools_mcp.recipes.db import RecipesError
+    from devtools_mcp.recipes.runner import _invoke_workflow
+    from devtools_mcp.recipes.schema import MIGRATION_V1
+
+    path = tmp_path / "legacy.db"
+    conn = sqlite3.connect(path)
+    for statement in MIGRATION_V1:
+        conn.execute(statement)
+    conn.execute("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)")
+    conn.execute("INSERT INTO schema_migrations VALUES (1, 'then')")
+    conn.execute(
+        "INSERT INTO recipes (key, name, spec_hash, steps, created_at, updated_at) "
+        "VALUES ('legacy', 'Legacy', 'old', '[{\"command\":\"exit 99\"}]', 'then', 'then')"
+    )
+    conn.execute(
+        "INSERT INTO recipe_runs (recipe_id, spec_hash, status, started_at) VALUES (1, 'old', 'running', 'then')"
+    )
+    conn.execute(
+        "INSERT INTO recipe_runs (recipe_id, spec_hash, status, started_at) VALUES (1, 'old', 'passed', 'then')"
+    )
+    conn.commit()
+    conn.close()
+    db = open_recipes(path)
+    try:
+        assert schema_version(db.conn) == MIGRATIONS[-1][0]
+        assert store.get_run(db.conn, 2).status == "passed"
+        assert store.cached_run(db, "legacy") is None
+        with pytest.raises(RecipesError, match="no execution snapshot"):
+            _invoke_workflow(str(path), "legacy", 1, None)
+        run = store.get_run(db.conn, 1)
+        assert run.status == "failed"
+        assert "legacy runs cannot be resumed safely" in Path(run.raw_path).read_text()
+        assert db.conn.execute("SELECT COUNT(*) FROM run_steps").fetchone()[0] == 0
+    finally:
+        db.close()

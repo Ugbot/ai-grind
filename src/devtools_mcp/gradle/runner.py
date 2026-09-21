@@ -10,7 +10,7 @@ import shutil
 import time
 
 from devtools_mcp.build.exec import run_capture, tail, write_raw
-from devtools_mcp.build.models import BuildResult, Dependency
+from devtools_mcp.build.models import BuildResult, Dependency, Vulnerability
 from devtools_mcp.build.osv import query_osv
 from devtools_mcp.build.parsers import parse_junit_dir
 from devtools_mcp.gradle.parsers import (
@@ -150,7 +150,7 @@ async def run_gradle(
     if tool not in _BUILDISH:
         success = rc == 0
     deps: list[Dependency] = []
-    vulns = []
+    vulns: list[Vulnerability] = []
     modules = []
     if tool in ("deps", "sync"):
         deps = parse_gradle_deps(text)

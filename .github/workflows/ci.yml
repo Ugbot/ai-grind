@@ -21,13 +21,19 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --frozen
 
       - name: Run tests
         run: uv run pytest -q
 
       - name: Lint
-        run: uv run ruff check src/
+        run: uv run ruff check src tests
+
+      - name: Formatting
+        run: uv run black --check src tests
+
+      - name: Types
+        run: uv run mypy src/devtools_mcp
 
       - name: Prose check (unslop)
         run: uv run python scripts/unslop_check.py

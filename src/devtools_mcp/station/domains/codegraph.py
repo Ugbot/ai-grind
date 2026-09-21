@@ -31,35 +31,48 @@ def sync(db, client, cfg, project_row, state_row, dry_run) -> dict:  # noqa: ANN
     }
     assert project_row["org_id"], "unlinked project reached codegraph sync"
 
+    if cfg.rule("codegraph").direction != "push":
+        report["errors"] += 1
+        report["notes"].append("codegraph supports push direction only")
+        return report
+
     path = os.environ.get(ENV_CODEGRAPH_JSON, "").strip()
     if not path or not Path(path).is_file():
         report["skipped"] += 1
         report["notes"].append(f"no graph export (set {ENV_CODEGRAPH_JSON} to a knowledge-graph.json)")
         return report
 
-    raw = Path(path).read_text(encoding="utf-8", errors="replace")
-    if len(raw.encode("utf-8")) > BODY_MAX_BYTES:
+    with Path(path).open("rb") as source:
+        data = source.read(BODY_MAX_BYTES + 1)
+    if len(data) > BODY_MAX_BYTES:
         report["errors"] += 1
         report["notes"].append("graph export exceeds size bound")
         return report
     try:
+        raw = data.decode("utf-8")
         obj = json.loads(raw)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, UnicodeDecodeError):
         report["errors"] += 1
         report["notes"].append("graph export is not valid JSON")
         return report
 
-    project = str(obj.get("project") or "default")
+    if not isinstance(obj, dict) or not isinstance(obj.get("nodes"), list) or not isinstance(obj.get("edges"), list):
+        report["errors"] += 1
+        report["notes"].append("graph export needs nodes and edges arrays")
+        return report
+
+    project = str(project_row["remote_project_id"])
+    local_id = json.dumps([project_row["org_id"], project])
     nodes = len(obj.get("nodes") or [])
     edges = len(obj.get("edges") or [])
     sha = hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
-    link = links.get_link(db.conn, "codegraph", project)
+    link = links.get_link(db.conn, "codegraph", local_id)
     if link is not None and link["synced_hash"] == sha:
         report["skipped"] += 1
         return report
     if not dry_run:
         remote = client.code_graph_upload({"project": project, "body": raw, "node_count": nodes, "edge_count": edges})
-        links.insert_link(db, "codegraph", project, str(remote["id"]), project_row["org_id"], None, sha)
+        links.insert_link(db, "codegraph", local_id, str(remote["id"]), project_row["org_id"], None, sha)
     report["pushed"] += 1
     return report

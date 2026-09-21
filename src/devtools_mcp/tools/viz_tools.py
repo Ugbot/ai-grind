@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import webbrowser
 
 from mcp.server.fastmcp import Context
@@ -22,7 +23,8 @@ async def devtools_dashboard(
     A local web UI to browse every run, view its queryable data table, read raw
     output/logs, and explore interactive (click-to-zoom) flame graphs, the same
     data the LLM sees, for a human. Nothing is sent anywhere; it binds to
-    127.0.0.1 only.
+    127.0.0.1 unless the operator set DEVTOOLS_MCP_DASHBOARD_HOST (the
+    --dashboard-host flag) to share this replica with a second machine.
 
     Args:
         action: "start" (default), "stop", or "status".
@@ -54,10 +56,14 @@ async def devtools_dashboard(
         return f"Visualization terminal already running at {app.viz_server.url}"
 
     srv = VizServer(app)
+    # The bind address is operator-owned (DEVTOOLS_MCP_DASHBOARD_HOST / the
+    # --dashboard-host flag), deliberately NOT a tool parameter: exposing this
+    # port off-box must never be something a model can decide to do.
+    host = os.environ.get("DEVTOOLS_MCP_DASHBOARD_HOST", "127.0.0.1").strip() or "127.0.0.1"
     try:
-        url = srv.start(port=port)
+        url = srv.start(host=host, port=port)
     except OSError as e:
-        return f"Could not start on port {port}: {e}. Try a different port or 0 for any free port."
+        return f"Could not start on {host}:{port}: {e}. Try a different port or 0 for any free port."
     app.viz_server = srv
     if open_browser:
         webbrowser.open(url)
@@ -65,5 +71,5 @@ async def devtools_dashboard(
         f"Visualization terminal started at **{url}**\n"
         f"- `{url}/`, all runs\n"
         f"- per run: data table, raw logs, and an interactive flame graph (click to zoom)\n"
-        f"Open it in a browser; it binds to localhost only."
+        f"Open it in a browser (bound to `{host}`)."
     )

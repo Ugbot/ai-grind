@@ -9,7 +9,7 @@ import shutil
 import time
 
 from devtools_mcp.build.exec import run_capture, tail, write_raw
-from devtools_mcp.build.models import BuildResult
+from devtools_mcp.build.models import BuildResult, Vulnerability
 from devtools_mcp.build.osv import query_osv
 from devtools_mcp.build.parsers import parse_junit_dir
 from devtools_mcp.maven.parsers import (
@@ -98,7 +98,7 @@ async def run_maven(
     if tool in _BUILDISH and not modules:
         success = rc == 0 and "BUILD FAILURE" not in text
     deps = []
-    vulns = []
+    vulns: list[Vulnerability] = []
     if tool in ("deps", "insight"):
         deps = parse_maven_tree(text)
     elif tool == "sync":

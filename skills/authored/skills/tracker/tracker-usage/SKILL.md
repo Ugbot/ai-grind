@@ -104,7 +104,66 @@ unblocked.
   machine's dashboard and converges (LWW, idempotent, offline-friendly,
   concurrent PROJ-N allocations are re-keyed deterministically, nothing is
   lost). `tracker_sync(action="status")` shows this replica's site id and
-  known peers.
+  known peers. Sync only works once the *peer* dashboard is reachable off-box ,
+  see below.
+
+## Two-machine setup (making a replica reachable)
+
+The dashboard serves the sync API (`/api/crdt/status|ops|push`) and **binds
+127.0.0.1 by default**, so out of the box no other machine can sync with it.
+Exposing it is deliberate, per machine:
+
+```bash
+# On the machine that should ACCEPT syncs (do this on both, if you want either
+# side to be able to initiate). 0.0.0.0 keeps loopback working too.
+uv run devtools-mcp --transport http --port 8010 \
+    --dashboard --dashboard-port 8765 --dashboard-host 0.0.0.0
+# Windows/PowerShell: same flags; the env form works everywhere:
+#   DEVTOOLS_MCP_DASHBOARD_HOST=0.0.0.0   ($env:DEVTOOLS_MCP_DASHBOARD_HOST="0.0.0.0")
+```
+
+Then, from the other machine:
+
+```
+tracker_sync(action="sync", url="http://<peer-lan-ip>:8765")
+```
+
+Sync is a full bidirectional exchange, so one call from either side converges
+both replicas. `tracker_sync(action="status")` lists peers and last-synced
+times.
+
+**Checklist / gotchas**
+
+- **Find the address**: macOS `ipconfig getifaddr en0`; Windows
+  `ipconfig | findstr IPv4`. Never hardcode it in a service file , it moves
+  with DHCP. Reserve it on the router, or use the mDNS name
+  (`<hostname>.local`), which the allowlist accepts automatically.
+- **Firewall**: macOS , System Settings → Network → Firewall → Options → allow
+  incoming for the `uv`/`python` binary (or turn the firewall off on a trusted
+  LAN). Windows , `New-NetFirewallRule -DisplayName "devtools-mcp dashboard"
+  -Direction Inbound -Protocol TCP -LocalPort 8765 -Action Allow` (elevated),
+  and keep the network profile set to **Private**.
+- **Verify reachability before blaming the CRDT**:
+  `curl http://<peer>:8765/api/crdt/status` should return JSON.
+- **403 "host not allowed"** means the `Host:` header the peer sent is not in
+  the dashboard's allowlist. The allowlist is loopback + the bind address + (for
+  a wildcard bind) this machine's own IPs, hostname and `<hostname>.local`. Any
+  other name a peer might use , a DNS/CNAME alias, or `127.0.0.1:8766` seen
+  through an SSH tunnel , must be listed explicitly:
+  `DEVTOOLS_MCP_DASHBOARD_ALLOWED_HOSTS=alias.lan,127.0.0.1:8766`.
+- **Over SSH instead of the LAN** (nothing exposed on the network):
+  `ssh -L 8766:127.0.0.1:8765 user@peer`, set
+  `DEVTOOLS_MCP_DASHBOARD_ALLOWED_HOSTS=127.0.0.1:8766` **on the peer**, then
+  `tracker_sync(action="sync", url="http://127.0.0.1:8766")`. Use a local port
+  other than 8765 , your own dashboard already owns that one.
+- **The MCP port stays loopback.** `--host` binds the MCP transport and should
+  remain `127.0.0.1`; `--dashboard-host` is a separate knob. Only the dashboard
+  needs to be reachable for sync.
+- **Trust boundary**: anything that can reach the shared port can read and write
+  this tracker replica , there is no per-peer authentication. Share it on a
+  trusted LAN (or an SSH tunnel), not on a café network. Setting
+  `DEVTOOLS_MCP_DASHBOARD_TOKEN` only affects *browser* cross-origin calls; it
+  does not authenticate a programmatic peer.
 
 ## Daily loop
 

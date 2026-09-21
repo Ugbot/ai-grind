@@ -9,6 +9,7 @@ REST, which is this module's job.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 import anyio
@@ -38,7 +39,7 @@ def _tracker(ctx: Context) -> TrackerDB:
     return db
 
 
-async def _offload_with_db(ctx: Context, fn) -> object:
+async def _offload_with_db[Result](ctx: Context, fn: Callable[[TrackerDB], Result]) -> Result:
     """Run fn(db) in a worker thread with a fresh TrackerDB.
 
     The event loop's connection is thread-affine (sqlite check_same_thread), so
@@ -48,7 +49,7 @@ async def _offload_with_db(ctx: Context, fn) -> object:
     """
     path = _tracker(ctx).path
 
-    def work() -> object:
+    def work() -> Result:
         db = TrackerDB(path)
         try:
             return fn(db)

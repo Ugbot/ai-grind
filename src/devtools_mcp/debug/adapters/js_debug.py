@@ -228,7 +228,9 @@ def launch_template(config: LaunchConfig) -> dict:
         args["env"] = config.env
     runtime_args = config.extra.get("runtime_args")
     if runtime_args:
-        args["runtimeArgs"] = [str(a) for a in runtime_args]  # type: ignore[union-attr]
+        if not isinstance(runtime_args, list):
+            raise ValueError("runtime_args must be a list")
+        args["runtimeArgs"] = [str(a) for a in runtime_args]
     node = config.extra.get("node")
     if node:
         args["runtimeExecutable"] = str(node)

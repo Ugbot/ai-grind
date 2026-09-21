@@ -30,6 +30,7 @@ LINK_DOMAINS: tuple[str, ...] = (
     "claim",
     "skill",
     "perf_run",
+    "codegraph",
 )
 PENDING_PREFIX: str = "pending:"
 LINKS_MAX: int = 100_000

@@ -18,6 +18,7 @@ def _isolated_data_dir(tmp_path, monkeypatch):
     lifespan, which loads every persisted run at startup). Live skills
     likewise materialize into the temp tree, never ~/.claude/skills."""
     monkeypatch.setenv("DEVTOOLS_MCP_DATA", str(tmp_path / "devtools-data"))
+    monkeypatch.setenv("DEVTOOLS_MCP_STATION_AUTH", str(tmp_path / "station-auth.json"))
     monkeypatch.setenv("DEVTOOLS_MCP_LIVE_SKILLS_DIR", str(tmp_path / "live-skills"))
 
 

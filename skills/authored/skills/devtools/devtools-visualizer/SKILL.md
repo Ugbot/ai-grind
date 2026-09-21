@@ -45,8 +45,13 @@ runs appear on refresh; no restart needed.
   (status columns of task cards + the "what needs to happen" plan with ready
   and blocked highlighted), **`/tracker/task/<KEY>`** full task detail
   (criteria checklist, commits, dependencies, children).
-- `/api/crdt/*` is the JSON sync API other tracker replicas pull from /
-  push to (`tracker_sync` on another machine points here).
+- **`/api/crdt/*`**: the JSON sync API other tracker replicas pull from /
+  push to (`tracker_sync` on another machine points here). The dashboard binds
+  **127.0.0.1 by default**, so this is loopback-only until you deliberately
+  share it: `--dashboard-host 0.0.0.0` (or `DEVTOOLS_MCP_DASHBOARD_HOST`), which
+  also admits this machine's own IPs / `<hostname>.local` to the Host allowlist.
+  Extra names (DNS aliases, an SSH-tunnel `127.0.0.1:8766`) go in
+  `DEVTOOLS_MCP_DASHBOARD_ALLOWED_HOSTS`. Full recipe: [[tracker-usage]].
 
 ## Typical flow
 

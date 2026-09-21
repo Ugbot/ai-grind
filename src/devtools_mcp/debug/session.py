@@ -53,6 +53,7 @@ class DebugSession(ABC):
     for free; the abstract methods are the per-protocol surface."""
 
     def __init__(self, session_id: str, adapter_name: str) -> None:
+        self.node: SessionNode | None = None
         self.session_id = session_id
         self.adapter_name = adapter_name
         self.state: SessionState = SessionState.created

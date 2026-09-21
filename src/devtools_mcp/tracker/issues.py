@@ -247,9 +247,7 @@ def sync_issue(
     if parse_task_ref(issue.body)[1] != task.uid:
         footer = build_issue_footer(task.key, task.uid)
         stripped = strip_issue_footer(issue.body)
-        issue = provider.update_issue(
-            issue.repo, issue.ref_id, body=f"{stripped}\n\n{footer}" if stripped else footer
-        )
+        issue = provider.update_issue(issue.repo, issue.ref_id, body=f"{stripped}\n\n{footer}" if stripped else footer)
         notes.append(f"stamped the canonical uid marker into {provider_name} #{issue.ref_id}")
     with db.transaction() as conn:
         conn.execute(

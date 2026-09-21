@@ -200,3 +200,31 @@ class TestUtcNow:
         stamp = utc_now_iso()
         assert stamp.endswith("+00:00")
         assert "T" in stamp
+
+
+def test_graph_link_migration_preserves_existing_links(tmp_path):
+    import sqlite3
+
+    from devtools_mcp.station import links
+
+    path = tmp_path / "legacy-links.db"
+    conn = sqlite3.connect(path)
+    for _version, statements in MIGRATIONS[:6]:
+        for statement in statements:
+            conn.execute(statement)
+        # apply_migrations owns bookkeeping; install that separately below.
+    conn.execute("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)")
+    conn.executemany("INSERT INTO schema_migrations VALUES (?, 'before')", [(v,) for v, _ in MIGRATIONS[:6]])
+    conn.execute(
+        "INSERT INTO station_links(domain,local_id,remote_id,org_id,created_at,updated_at) "
+        "VALUES ('task','local','remote','org','before','before')"
+    )
+    conn.commit()
+    conn.close()
+    db = open_tracker(path)
+    try:
+        assert links.get_link(db.conn, "task", "local")["remote_id"] == "remote"
+        links.insert_link(db, "codegraph", "graph", "graph-remote", "org", None, "a" * 64)
+        assert links.get_link(db.conn, "codegraph", "graph")["state"] == "ok"
+    finally:
+        db.close()

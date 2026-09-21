@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from devtools_mcp.models import RunBase
@@ -31,6 +32,15 @@ async def run(
     **kwargs: Any,
 ) -> tuple[str | None, RunBase | None, str]:
     """Run a Node profile via the runner."""
+    engine = os.environ.get("DEVTOOLS_MCP_NODE_ENGINE", "python")
+    if engine == "station":
+        from devtools_mcp.node.station_core import run_station_node
+
+        return await run_station_node(
+            tool, binary, args, extra_args, timeout, kwargs.get("working_dir", ""), kwargs.get("env")
+        )
+    if engine != "python":
+        return f"Unknown Node engine {engine!r}; choose python or station.", None, ""
     return await run_node(tool=tool, binary=binary, args=args, extra_args=extra_args, timeout=timeout, **kwargs)
 
 

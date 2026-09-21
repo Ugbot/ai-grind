@@ -50,17 +50,15 @@ class TestFunctionFrame:
     def test_self_vs_total_split(self):
         df = function_frame(self._samples())
         parse = df.filter(pl.col("function") == "parse").row(0, named=True)
-        assert parse["self"] == 5      # the stack ending at parse
-        assert parse["total"] == 15    # plus the lex child
+        assert parse["self"] == 5  # the stack ending at parse
+        assert parse["total"] == 15  # plus the lex child
         probe = df.filter(pl.col("function") == "probe").row(0, named=True)
         assert probe["self"] == probe["total"] == 85
 
     def test_pct_normalized_per_run(self):
         # Same shape, 10x the weight: percentages must be identical.
         small = function_frame(self._samples())
-        big = function_frame(
-            [StackSample(frames=s.frames, weight=s.weight * 10) for s in self._samples()]
-        )
+        big = function_frame([StackSample(frames=s.frames, weight=s.weight * 10) for s in self._samples()])
         a = small.sort("function").select(["function", "self_pct", "total_pct"])
         b = big.sort("function").select(["function", "self_pct", "total_pct"])
         assert a.equals(b)
@@ -90,17 +88,13 @@ class TestDtraceOffsetNormalization:
         assert probe.row(0, named=True)["total"] == 12
 
     def test_reversal_to_root_first(self):
-        result = _dtrace_result(
-            [DTraceStackTrace(frames=["leaf", "mid", "root"], count=1)]
-        )
+        result = _dtrace_result([DTraceStackTrace(frames=["leaf", "mid", "root"], count=1)])
         (sample,) = dtrace_stack_samples(result)
         assert sample.frames == ["root", "mid", "leaf"]
 
     def test_non_offset_plus_preserved(self):
         # A '+' that is not a trailing hex offset (e.g. operator+) must survive.
-        result = _dtrace_result(
-            [DTraceStackTrace(frames=["mod`op::operator+(int)+0x1c"], count=1)]
-        )
+        result = _dtrace_result([DTraceStackTrace(frames=["mod`op::operator+(int)+0x1c"], count=1)])
         (sample,) = dtrace_stack_samples(result)
         assert sample.frames == ["mod`op::operator+(int)"]
 
@@ -110,18 +104,14 @@ class TestCompareJoinMath:
         # Mirrors the devtools_compare join: full outer on function, nulls -> 0,
         # normalized-percent deltas. A function present in only one run must
         # appear with the other side zeroed, not vanish.
-        fa = function_frame([StackSample(frames=["m", "old_path"], weight=80),
-                             StackSample(frames=["m", "shared"], weight=20)]).rename(
-            {"self": "self_a", "total": "total_a",
-             "self_pct": "self_pct_a", "total_pct": "total_pct_a"})
-        fb = function_frame([StackSample(frames=["m", "new_path"], weight=40),
-                             StackSample(frames=["m", "shared"], weight=60)]).rename(
-            {"self": "self_b", "total": "total_b",
-             "self_pct": "self_pct_b", "total_pct": "total_pct_b"})
+        fa = function_frame(
+            [StackSample(frames=["m", "old_path"], weight=80), StackSample(frames=["m", "shared"], weight=20)]
+        ).rename({"self": "self_a", "total": "total_a", "self_pct": "self_pct_a", "total_pct": "total_pct_a"})
+        fb = function_frame(
+            [StackSample(frames=["m", "new_path"], weight=40), StackSample(frames=["m", "shared"], weight=60)]
+        ).rename({"self": "self_b", "total": "total_b", "self_pct": "self_pct_b", "total_pct": "total_pct_b"})
         df = fa.join(fb, on="function", how="full", coalesce=True).fill_null(0)
-        df = df.with_columns(
-            (pl.col("total_pct_b") - pl.col("total_pct_a")).round(2).alias("total_pct_delta")
-        )
+        df = df.with_columns((pl.col("total_pct_b") - pl.col("total_pct_a")).round(2).alias("total_pct_delta"))
         by = {r["function"]: r for r in df.iter_rows(named=True)}
         assert by["old_path"]["total_pct_delta"] == -80.0
         assert by["new_path"]["total_pct_delta"] == 40.0
@@ -142,34 +132,33 @@ class TestAggregateAcrossRuns:
         # 3 "queries": `broad` is present everywhere at ~10%; `spiky` is
         # absent from two and dominant in one.
         runs = [
-            [StackSample(frames=["m", "broad"], weight=10),
-             StackSample(frames=["m", "other"], weight=90)],
-            [StackSample(frames=["m", "broad"], weight=12),
-             StackSample(frames=["m", "other"], weight=88)],
-            [StackSample(frames=["m", "broad"], weight=11),
-             StackSample(frames=["m", "spiky"], weight=50),
-             StackSample(frames=["m", "other"], weight=39)],
+            [StackSample(frames=["m", "broad"], weight=10), StackSample(frames=["m", "other"], weight=90)],
+            [StackSample(frames=["m", "broad"], weight=12), StackSample(frames=["m", "other"], weight=88)],
+            [
+                StackSample(frames=["m", "broad"], weight=11),
+                StackSample(frames=["m", "spiky"], weight=50),
+                StackSample(frames=["m", "other"], weight=39),
+            ],
         ]
         return [function_frame(r) for r in runs]
 
     def _agg(self, frames, col="self_pct"):
         stacked = pl.concat(
-            [f.select(["function", col]).with_columns(pl.lit(f"r{i}").alias("run"))
-             for i, f in enumerate(frames)],
+            [f.select(["function", col]).with_columns(pl.lit(f"r{i}").alias("run")) for i, f in enumerate(frames)],
             how="vertical",
         )
         n = len(frames)
         return (
             stacked.group_by("function")
-            .agg([
-                pl.len().alias("runs"),
-                pl.col(col).mean().round(2).alias("mean_pct"),
-                pl.col(col).max().round(2).alias("max_pct"),
-                pl.col("run").sort_by(col, descending=True).first().alias("top_run"),
-            ])
-            .with_columns(
-                (pl.col("mean_pct") * pl.col("runs") / n).round(2).alias("total_share")
+            .agg(
+                [
+                    pl.len().alias("runs"),
+                    pl.col(col).mean().round(2).alias("mean_pct"),
+                    pl.col(col).max().round(2).alias("max_pct"),
+                    pl.col("run").sort_by(col, descending=True).first().alias("top_run"),
+                ]
             )
+            .with_columns((pl.col("mean_pct") * pl.col("runs") / n).round(2).alias("total_share"))
             .sort("total_share", descending=True)
         )
 
@@ -187,8 +176,8 @@ class TestAggregateAcrossRuns:
     def test_top_run_points_at_the_worst_workload(self):
         agg = self._agg(self._frames())
         by = {r["function"]: r for r in agg.iter_rows(named=True)}
-        assert by["spiky"]["top_run"] == "r2"      # the only run it appears in
-        assert by["broad"]["top_run"] == "r1"      # 12% > 10%
+        assert by["spiky"]["top_run"] == "r2"  # the only run it appears in
+        assert by["broad"]["top_run"] == "r1"  # 12% > 10%
 
     def test_min_runs_isolates_cross_cutting_costs(self):
         agg = self._agg(self._frames()).filter(pl.col("runs") >= 3)
@@ -201,13 +190,13 @@ class TestAggregateAcrossRuns:
         # the aggregate identical to the equal-length case.
         base = self._frames()
         scaled_runs = [
-            [StackSample(frames=["m", "broad"], weight=10),
-             StackSample(frames=["m", "other"], weight=90)],
-            [StackSample(frames=["m", "broad"], weight=1200),
-             StackSample(frames=["m", "other"], weight=8800)],
-            [StackSample(frames=["m", "broad"], weight=11),
-             StackSample(frames=["m", "spiky"], weight=50),
-             StackSample(frames=["m", "other"], weight=39)],
+            [StackSample(frames=["m", "broad"], weight=10), StackSample(frames=["m", "other"], weight=90)],
+            [StackSample(frames=["m", "broad"], weight=1200), StackSample(frames=["m", "other"], weight=8800)],
+            [
+                StackSample(frames=["m", "broad"], weight=11),
+                StackSample(frames=["m", "spiky"], weight=50),
+                StackSample(frames=["m", "other"], weight=39),
+            ],
         ]
         scaled = self._agg([function_frame(r) for r in scaled_runs])
         assert scaled.sort("function").equals(self._agg(base).sort("function"))

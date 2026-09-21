@@ -219,6 +219,8 @@ def launch_template(config: LaunchConfig) -> dict:
         )
     class_paths = config.extra.get("classpath") or config.extra.get(_RESOLVED_CLASSPATH_KEY) or []
     module_paths = config.extra.get("modulepaths") or config.extra.get(_RESOLVED_MODULEPATH_KEY) or []
+    if not isinstance(class_paths, list) or not isinstance(module_paths, list):
+        raise ValueError("classpath and modulepaths must be lists")
     if not class_paths and not module_paths:
         raise ValueError(
             "java launch needs a classpath: pass extra={'classpath': [...]} "
@@ -229,12 +231,12 @@ def launch_template(config: LaunchConfig) -> dict:
         "request": "launch",
         "name": "devtools-mcp",
         "mainClass": main_class,
-        "classPaths": [str(p) for p in class_paths],  # type: ignore[union-attr]
+        "classPaths": [str(p) for p in class_paths],
         "console": "internalConsole",  # default integratedTerminal would runInTerminal
         "stopOnEntry": config.stop_on_entry,
     }
     if module_paths:
-        args["modulePaths"] = [str(p) for p in module_paths]  # type: ignore[union-attr]
+        args["modulePaths"] = [str(p) for p in module_paths]
     project_name = str(config.extra.get("project_name", "") or config.extra.get(_RESOLVED_PROJECT_KEY, ""))
     if project_name:
         args["projectName"] = project_name

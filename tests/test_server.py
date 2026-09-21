@@ -842,6 +842,26 @@ class TestCorrelateRuns:
         assert not result.is_empty()
         assert "function" in result.columns
 
+    @pytest.mark.parametrize("persisted", [False, True])
+    @pytest.mark.parametrize("empty", [False, True])
+    def test_correlate_cached_frames(self, app_ctx, persisted, empty):
+        from devtools_mcp.index import correlate_runs
+
+        ws = app_ctx.get_workspace()
+        first, second = _make_memcheck_result(), _make_callgrind_result()
+        ws.store_run(first)
+        ws.store_run(second)
+        frame = pl.DataFrame(
+            {"function": [] if empty else ["shared"], "value": [] if empty else [1]},
+            schema={"function": pl.String, "value": pl.Int64},
+        )
+        ws.cache_dataframe(first.run_id, frame)
+        ws.cache_dataframe(second.run_id, frame)
+        if persisted:
+            ws._dataframes.clear()
+        result = correlate_runs(ws, first.run_id, second.run_id)
+        assert result.height == (0 if empty else 1)
+
     def test_correlate_no_overlap(self, app_ctx):
         from devtools_mcp.index import correlate_runs
 

@@ -262,7 +262,7 @@ async def devtools_aggregate(
     if tag is not None:
         required_tags.append(tag)
 
-    frames: list[tuple[str, object]] = []
+    frames: list[tuple[str, pl.DataFrame]] = []
     skipped: list[str] = []
     # Each run is stack-filtered on its own, then %-normalized; the per-run cuts
     # accumulate into one header line so the reader sees how much was dropped.
@@ -307,23 +307,22 @@ async def devtools_aggregate(
 
     col = "self_pct" if metric == "self" else "total_pct"
     stacked = pl.concat(
-        [f.select(["function", col]).with_columns(pl.lit(name).alias("run"))
-         for name, f in frames],
+        [f.select(["function", col]).with_columns(pl.lit(name).alias("run")) for name, f in frames],
         how="vertical",
     )
     n_runs = len(frames)
     agg = (
         stacked.group_by("function")
-        .agg([
-            pl.len().alias("runs"),
-            pl.col(col).mean().round(2).alias("mean_pct"),
-            pl.col(col).max().round(2).alias("max_pct"),
-            pl.col("run").sort_by(col, descending=True).first().alias("top_run"),
-        ])
-        .filter(pl.col("runs") >= min_runs)
-        .with_columns(
-            (pl.col("mean_pct") * pl.col("runs") / n_runs).round(2).alias("total_share")
+        .agg(
+            [
+                pl.len().alias("runs"),
+                pl.col(col).mean().round(2).alias("mean_pct"),
+                pl.col(col).max().round(2).alias("max_pct"),
+                pl.col("run").sort_by(col, descending=True).first().alias("top_run"),
+            ]
         )
+        .filter(pl.col("runs") >= min_runs)
+        .with_columns((pl.col("mean_pct") * pl.col("runs") / n_runs).round(2).alias("total_share"))
         .sort("total_share", descending=True)
     )
 
@@ -333,10 +332,7 @@ async def devtools_aggregate(
         limit=top_n,
     )
     agg = apply_filters(agg, spec)
-    title = (
-        f"Aggregate across {n_runs} run(s) · metric={metric} "
-        f"(%-normalized per run, then combined)"
-    )
+    title = f"Aggregate across {n_runs} run(s) · metric={metric} " f"(%-normalized per run, then combined)"
     if cut.active:
         title += f" · {cut.describe()}"
     if skipped:
@@ -388,6 +384,11 @@ async def devtools_compare(
     if run_a.suite != run_b.suite or run_a.tool != run_b.tool:
         return f"Cannot compare {run_a.suite}:{run_a.tool} with {run_b.suite}:{run_b.tool}"
 
+    if run_a.suite == "node" and getattr(run_a, "stack_format", "v8-name-v0") != getattr(
+        run_b, "stack_format", "v8-name-v0"
+    ):
+        return "Cannot compare different Node frame formats; capture both runs with the same engine."
+
     # Try suite-specific comparison first
     if run_a.suite == "valgrind":
         from devtools_mcp.valgrind import analysis as vg_analysis
@@ -437,10 +438,7 @@ async def devtools_compare(
         samples_a = backend.stacks(run_a)
         samples_b = backend.stacks(run_b)
         if not samples_a or not samples_b:
-            return (
-                f"One of the runs has no stack samples "
-                f"(A: {len(samples_a or [])}, B: {len(samples_b or [])})."
-            )
+            return f"One of the runs has no stack samples " f"(A: {len(samples_a or [])}, B: {len(samples_b or [])})."
         try:
             samples_a, cut_a = filter_samples(samples_a, stack_include, stack_exclude)
             samples_b, cut_b = filter_samples(samples_b, stack_include, stack_exclude)
@@ -453,25 +451,35 @@ async def devtools_compare(
                 "nothing left to compare."
             )
         fa = function_frame(samples_a).rename(
-            {"self": "self_a", "total": "total_a",
-             "self_pct": "self_pct_a", "total_pct": "total_pct_a"})
+            {"self": "self_a", "total": "total_a", "self_pct": "self_pct_a", "total_pct": "total_pct_a"}
+        )
         fb = function_frame(samples_b).rename(
-            {"self": "self_b", "total": "total_b",
-             "self_pct": "self_pct_b", "total_pct": "total_pct_b"})
+            {"self": "self_b", "total": "total_b", "self_pct": "self_pct_b", "total_pct": "total_pct_b"}
+        )
         df = fa.join(fb, on="function", how="full", coalesce=True).fill_null(0)
-        df = df.with_columns([
-            (pl.col("self_b") - pl.col("self_a")).alias("self_delta"),
-            (pl.col("total_b") - pl.col("total_a")).alias("total_delta"),
-            (pl.col("total_pct_b") - pl.col("total_pct_a"))
-                .round(2).alias("total_pct_delta"),
-        ])
+        df = df.with_columns(
+            [
+                (pl.col("self_b") - pl.col("self_a")).alias("self_delta"),
+                (pl.col("total_b") - pl.col("total_a")).alias("total_delta"),
+                (pl.col("total_pct_b") - pl.col("total_pct_a")).round(2).alias("total_pct_delta"),
+            ]
+        )
         # Column order: the story first (function, normalized shares, delta),
         # raw counts last for magnitude.
-        df = df.select([
-            "function", "total_pct_a", "total_pct_b", "total_pct_delta",
-            "self_a", "self_b", "self_delta", "total_a", "total_b",
-            "total_delta",
-        ])
+        df = df.select(
+            [
+                "function",
+                "total_pct_a",
+                "total_pct_b",
+                "total_pct_delta",
+                "self_a",
+                "self_b",
+                "self_delta",
+                "total_a",
+                "total_b",
+                "total_delta",
+            ]
+        )
         if min_delta is not None:
             df = df.filter(pl.col("total_delta").abs() >= min_delta)
         spec = build_filter_spec(

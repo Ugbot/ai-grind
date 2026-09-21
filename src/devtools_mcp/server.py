@@ -29,6 +29,11 @@ def _maybe_start_dashboard(ctx: AppContext) -> None:
     instance is always visible at DEVTOOLS_MCP_DASHBOARD_PORT (default 8765).
     Failure to bind is reported on stderr, never fatal, the MCP server is the
     primary service.
+
+    DEVTOOLS_MCP_DASHBOARD_HOST (set by `--dashboard-host`) chooses the bind
+    address, defaulting to 127.0.0.1. The dashboard serves the CRDT sync API,
+    so exposing it to the network is always a deliberate act: set it to 0.0.0.0
+    to let a second machine's `tracker_sync` reach this replica.
     """
     import os
     import sys
@@ -41,15 +46,17 @@ def _maybe_start_dashboard(ctx: AppContext) -> None:
 
     port = int(os.environ.get("DEVTOOLS_MCP_DASHBOARD_PORT", "8765"))
     assert 0 <= port <= 65535, f"dashboard port out of range: {port}"
+    host = os.environ.get("DEVTOOLS_MCP_DASHBOARD_HOST", "127.0.0.1").strip() or "127.0.0.1"
     srv = VizServer(ctx)
     try:
-        url = srv.start(port=port)
+        url = srv.start(host=host, port=port)
     except OSError as exc:
-        print(f"devtools-mcp: dashboard failed to bind port {port}: {exc}", file=sys.stderr)
+        print(f"devtools-mcp: dashboard failed to bind {host}:{port}: {exc}", file=sys.stderr)
         return
     ctx.viz_server = srv
     assert ctx.viz_server.running, "dashboard reported started but is not running"
-    print(f"devtools-mcp: dashboard at {url} (tracker at {url}/tracker)", file=sys.stderr)
+    shared = "" if host in ("127.0.0.1", "localhost", "::1") else f" [bound {host} — reachable off-box]"
+    print(f"devtools-mcp: dashboard at {url} (tracker at {url}/tracker){shared}", file=sys.stderr)
 
 
 def _launch_dbos() -> None:
@@ -184,7 +191,12 @@ def main() -> None:
       stdio (default)         : MCP over stdin/stdout, for editor/CLI clients.
       sse / http              : network transports bound to --host/--port.
 
-    Env: DEVTOOLS_MCP_TRANSPORT, DEVTOOLS_MCP_HOST, DEVTOOLS_MCP_PORT.
+    --host/--port bind the MCP transport; --dashboard-host/--dashboard-port are
+    a separate knob for the browser dashboard (which also serves the CRDT sync
+    API). Both default to loopback.
+
+    Env: DEVTOOLS_MCP_TRANSPORT, DEVTOOLS_MCP_HOST, DEVTOOLS_MCP_PORT,
+    DEVTOOLS_MCP_DASHBOARD_HOST, DEVTOOLS_MCP_DASHBOARD_PORT.
     """
     import argparse
     import os
@@ -197,13 +209,26 @@ def main() -> None:
         default=os.environ.get("DEVTOOLS_MCP_TRANSPORT", "stdio"),
         help="Transport: stdio (pipes, default), sse, or http (streamable-http).",
     )
-    ap.add_argument("--host", default=os.environ.get("DEVTOOLS_MCP_HOST", "127.0.0.1"))
+    ap.add_argument(
+        "--host",
+        default=os.environ.get("DEVTOOLS_MCP_HOST", "127.0.0.1"),
+        help="Bind address for the MCP transport itself (sse/http). Not the dashboard.",
+    )
     ap.add_argument("--port", type=int, default=int(os.environ.get("DEVTOOLS_MCP_PORT", "8000")))
     ap.add_argument(
         "--dashboard",
         action=argparse.BooleanOptionalAction,
         default=None,
         help="Also serve the browser dashboard (default: on for http/sse, off for stdio).",
+    )
+    ap.add_argument(
+        "--dashboard-host",
+        default=os.environ.get("DEVTOOLS_MCP_DASHBOARD_HOST", "127.0.0.1"),
+        help=(
+            "Bind address for the browser dashboard and its CRDT sync API "
+            "(default 127.0.0.1, loopback-only). Use 0.0.0.0 to let another "
+            "machine's tracker_sync reach this replica. Separate from --host."
+        ),
     )
     ap.add_argument(
         "--dashboard-port",
@@ -219,6 +244,9 @@ def main() -> None:
     dashboard = args.dashboard if args.dashboard is not None else transport != "stdio"
     os.environ["DEVTOOLS_MCP_DASHBOARD"] = "1" if dashboard else "0"
     os.environ["DEVTOOLS_MCP_DASHBOARD_PORT"] = str(args.dashboard_port)
+    # Re-export so _maybe_start_dashboard sees the resolved value on both paths
+    # (eager service-mode start below, and the lazy lifespan start).
+    os.environ["DEVTOOLS_MCP_DASHBOARD_HOST"] = str(args.dashboard_host)
 
     if transport != "stdio":
         # Never write to stdout in stdio mode (it is the transport); for network

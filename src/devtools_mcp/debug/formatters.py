@@ -104,8 +104,8 @@ def format_variables_summary(variables: list[Variable], title: str = "Variables"
 
 
 def format_capabilities(adapter: str, caps: DebugCapabilities) -> str:
-    supported = []
-    missing = []
+    supported: list[str] = []
+    missing: list[str] = []
     for name, value in caps.model_dump().items():
         if name == "exception_filters":
             continue

@@ -126,7 +126,7 @@ def _pull(
             _pull_update(db, local, remote, remote_hash)
         report["pulled"] += 1
     if not truncated and not dry_run:
-        _mark_disappeared(db, org_id, seen_remote_ids, report)
+        _mark_disappeared(db, org_id, project_key, seen_remote_ids, report)
     elif truncated:
         report["notes"].append(f"remote page at cap ({TASKS_PAGE_MAX}), disappearance check skipped")
 
@@ -169,10 +169,16 @@ def _pull_update(db: TrackerDB, local: sqlite3.Row, remote: dict, remote_hash: s
     links.update_hash(db, "task", local["uid"], remote_hash)
 
 
-def _mark_disappeared(db: TrackerDB, org_id: str, seen_remote_ids: set[str], report: dict) -> None:
+def _mark_disappeared(db: TrackerDB, org_id: str, project_key: str, seen_remote_ids: set[str], report: dict) -> None:
     """Remote rows gone from a full page: mark links deleted, local untouched."""
     gone = 0
-    for link in links.links_for_domain(db.conn, "task", org_id):  # bounded by LINKS_MAX
+    project_links = db.conn.execute(
+        "SELECT l.* FROM station_links l JOIN tasks t ON t.uid = l.local_id "
+        "JOIN projects p ON p.id = t.project_id "
+        "WHERE l.domain = 'task' AND l.org_id = ? AND p.key = ? LIMIT ?",
+        (org_id, project_key, links.LINKS_MAX),
+    ).fetchall()
+    for link in project_links:
         if link["state"] != "ok" or link["remote_id"].startswith(links.PENDING_PREFIX):
             continue
         if link["remote_id"] not in seen_remote_ids:

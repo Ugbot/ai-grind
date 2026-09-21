@@ -304,3 +304,56 @@ def test_no_llm_station_import() -> None:
     for file in files:  # bounded
         text = file.read_text(encoding="utf-8")
         assert forbidden.search(text) is None, f"{file} imports platform code"
+
+
+def test_pull_disappearance_is_project_scoped(db, cfg, platform, linked):
+    from devtools_mcp.station.domains.tasks import _mark_disappeared
+
+    tasks_mod.create_project(db, "OTHER", "Other")
+    other, _ = tasks_mod.create_task(db, "OTHER", "Keep linked")
+    own, _ = tasks_mod.create_task(db, "GRIND", "Actually disappeared")
+    for task, remote in [(other, "other-id"), (own, "gone-id")]:
+        links.insert_link(db, "task", task.uid, remote, ORG, None, "a" * 64)
+    report = {"notes": []}
+    _mark_disappeared(db, ORG, "GRIND", set(), report)
+    assert links.get_link(db.conn, "task", other.uid)["state"] == "ok"
+    assert links.get_link(db.conn, "task", own.uid)["state"] == "deleted"
+
+
+def test_graph_sync_through_engine(db, cfg, linked, tmp_path, monkeypatch):
+    import json
+
+    cfg.domains["codegraph"] = DomainRule(enabled=True)
+    with db.transaction() as conn:
+        conn.execute("UPDATE station_projects SET config_hash = ?", (cfg.config_hash(),))
+    graph = tmp_path / "graph.json"
+    graph.write_text(json.dumps({"project": "demo", "nodes": [], "edges": []}))
+    monkeypatch.setenv("DEVTOOLS_MCP_CODEGRAPH_JSON", str(graph))
+    uploads = []
+
+    def handler(request):
+        assert request.method == "POST"
+        assert request.url.path == f"/orgs/{ORG}/code-graphs"
+        uploads.append(json.loads(request.content))
+        return httpx.Response(201, json={"id": "graph-id"})
+
+    with httpx.Client(base_url=BASE, transport=httpx.MockTransport(handler)) as http:
+        client = StationClient(BASE, "lls_test", ORG, client=http)
+        first = engine.run_sync(db, cfg, ("codegraph",), client=client)
+        again = engine.run_sync(db, cfg, ("codegraph",), client=client)
+    assert first[0]["pushed"] == 1
+    assert again[0]["skipped"] == 1
+    assert len(uploads) == 1
+    assert uploads[0]["project"] == REMOTE_PROJECT
+
+
+@pytest.mark.parametrize("content", ["[]", "null", "{invalid", '{"nodes": 1, "edges": []}'])
+def test_graph_sync_rejects_bad_shape(db, cfg, linked, tmp_path, monkeypatch, content):
+    from devtools_mcp.station.domains import codegraph
+    from devtools_mcp.station.project_link import get_project_link
+
+    graph = tmp_path / "graph.json"
+    graph.write_text(content)
+    monkeypatch.setenv("DEVTOOLS_MCP_CODEGRAPH_JSON", str(graph))
+    report = codegraph.sync(db, None, cfg, get_project_link(db.conn, "GRIND"), None, False)
+    assert report["errors"] == 1

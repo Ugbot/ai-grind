@@ -220,3 +220,62 @@ class TestFrames:
         assert steps_df.height == 1 and steps_df["status"][0] == "passed"
         for frame in (recipes_df, runs_df, steps_df):
             assert frame.height <= FRAME_MAX_ROWS
+
+
+class TestExecutionSnapshot:
+    async def test_cache_uses_effective_explicit_environment(self, db):
+        store.register_recipe(db, _spec(env_axes={"AXIS": "one"}))
+        first = await run_recipe(db, "demo")
+        same = await run_recipe(db, "demo", env_extra={"AXIS": "one"})
+        assert same.cached and same.run_id == first.run_id
+        changed = await run_recipe(db, "demo", env_extra={"AXIS": "two"})
+        assert not changed.cached and changed.run_id != first.run_id
+        repeated = await run_recipe(db, "demo", env_extra={"AXIS": "two"})
+        assert repeated.cached and repeated.run_id == changed.run_id
+
+    def test_snapshot_freezes_cwd_and_explicit_inputs_only(self, db, tmp_path, monkeypatch):
+        import sqlite3
+
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("AMBIENT_SECRET", "must-not-persist")
+        recipe = store.register_recipe(db, _spec(env_axes={"AXIS": "original"}))
+        run_id = store.record_run_start(db, recipe, {"EXTRA": "override"})
+        snapshot = store.get_execution_snapshot(db.conn, run_id)
+        assert snapshot["steps"][0]["cwd"] == str(tmp_path)
+        assert snapshot["env"] == {"AXIS": "original", "EXTRA": "override"}
+        with pytest.raises(sqlite3.IntegrityError, match="immutable"):
+            db.conn.execute("UPDATE recipe_runs SET execution_snapshot = '{}' WHERE id = ?", (run_id,))
+
+    def test_execution_after_edit_uses_original_snapshot(self, db, tmp_path, monkeypatch):
+        from devtools_mcp.recipes.runner import _invoke_workflow
+
+        original_dir = tmp_path / "original"
+        original_dir.mkdir()
+        other_dir = tmp_path / "other"
+        other_dir.mkdir()
+        monkeypatch.chdir(original_dir)
+        recipe = store.register_recipe(
+            db, _spec(steps=[{"command": 'printf "%s" "$AXIS/$EXTRA" > result'}], env_axes={"AXIS": "old"})
+        )
+        run_id = store.record_run_start(db, recipe, {"EXTRA": "saved"})
+        store.register_recipe(db, _spec(steps=[{"command": "exit 9"}], env_axes={"AXIS": "new"}))
+        monkeypatch.chdir(other_dir)
+        result = _invoke_workflow(str(db.path), "demo", run_id, {"EXTRA": "changed"})
+        assert result["status"] == "passed"
+        assert (original_dir / "result").read_text() == "old/saved"
+        assert not (other_dir / "result").exists()
+
+    def test_fork_after_edit_preserves_remaining_original_steps(self, db, tmp_path):
+        from dbos import DBOS
+
+        marker = tmp_path / "original.log"
+        store.register_recipe(
+            db,
+            _spec(steps=[{"command": "true"}, {"command": f'echo "$VALUE" >> {marker}'}]),
+        )
+        first = asyncio.run(run_recipe(db, "demo", env_extra={"VALUE": "original"}))
+        store.register_recipe(db, _spec(steps=[{"command": "exit 99"}]))
+        result = DBOS.fork_workflow(_workflow_id(str(db.path), first.run_id), 2).get_result()
+        assert result["status"] == "passed"
+        assert marker.read_text().splitlines() == ["original", "original"]
+        assert db.conn.execute("SELECT COUNT(*) FROM run_steps WHERE run_id = ?", (first.run_id,)).fetchone()[0] == 2

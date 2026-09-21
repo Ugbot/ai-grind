@@ -15,8 +15,20 @@ recipe's env_axes + any per-run overrides. Full output is persisted once via
 `write_raw`; only a bounded `tail` is kept per step.
 
 Caching: if the recipe already has a passed run against its *current* spec_hash
+and effective explicit environment and resolved working directories match,
 and `force` is False, that prior run is returned untouched, the steps are not
 re-executed. Dry runs report the plan without creating a run row.
+
+At run creation, commands, timeouts, resolved cwd and merged explicit environment
+are stored immutably. Recovery reads that snapshot, even after recipe edits.
+Inherited os.environ is read at execution time and is never persisted as input.
+Caching is execution-spec reuse, not source freshness: source is descriptive
+metadata; source files, input files, ambient environment and tool versions are
+not hashed. Use force=True after those change, or encode an input/version digest
+in an explicit environment axis. Explicit environment values are persisted; do
+not use them to pass secrets that should not be retained in the local database.
+A shell effect can repeat after a crash before DBOS checkpoints its result;
+this runner does not provide exactly-once shell side effects.
 
 The DBOS orchestrator (`_recipe_workflow`) and per-step activity
 (`_exec_step_activity`) are SYNCHRONOUS on purpose: an async DBOS workflow binds
@@ -42,7 +54,7 @@ from devtools_mcp.build.exec import run_capture, tail, write_raw
 from devtools_mcp.recipes import store
 from devtools_mcp.recipes.db import RecipesDB, open_recipes
 from devtools_mcp.recipes.dbos_app import launch_dbos
-from devtools_mcp.recipes.models import MAX_STEPS, Recipe, Run, RunResult, RunStep
+from devtools_mcp.recipes.models import MAX_STEPS, Recipe, Run, RunResult, RunStep, Step
 
 _POSIX = os.name != "nt"
 _TAIL_LINES = 80  # bounded preview kept per step
@@ -82,8 +94,9 @@ def _workflow_id(db_path: str, run_id: int) -> str:
 
 # --- DBOS durable units -----------------------------------------------------
 # All external side effects (shell execution, domain-DB writes, raw-log file
-# writes) live INSIDE @DBOS.step so they are checkpointed exactly once and are
-# not repeated when the workflow replays a completed step on recovery/resume.
+# writes) live INSIDE @DBOS.step so completed checkpoints are reused on replay.
+# Shell effects and these writes are NOT atomic with DBOS checkpointing: a crash before the checkpoint can
+# repeat a command. Recipes with external effects must tolerate that retry.
 
 
 @DBOS.step()
@@ -145,8 +158,9 @@ def _finalize_activity(
 ) -> str | None:
     """Record any skipped steps, write the combined raw log, finalize the run row.
 
-    A single DBOS step so the whole finalization is checkpointed atomically and
-    not repeated on replay. Returns the raw-log path (or None).
+    A single DBOS step whose completed checkpoint is reused on replay. Domain
+    writes and raw files are not atomic with the DBOS checkpoint. Returns the
+    raw-log path (or None).
     """
     assert run_id > 0, f"bad run id {run_id}"
     raw_path = write_raw("recipe-", "\n".join(chunks)) or None
@@ -172,9 +186,13 @@ def _recipe_workflow(db_path: str, key: str, run_id: int, env_extra: dict[str, s
     """
     db = open_recipes(Path(db_path))
     try:
-        recipe = store.get_recipe(db.conn, key)
-        env_axes = recipe.env_axes
-        steps = recipe.steps
+        snapshot = store.get_execution_snapshot(db.conn, run_id)
+        env_axes = snapshot["env"]
+        env_extra = None  # legacy workflow arguments cannot override the immutable snapshot
+        steps = [Step.from_dict(s, i) for i, s in enumerate(snapshot["steps"])]
+    except Exception as exc:
+        _finalize_crashed_run(db, run_id, exc)
+        raise
     finally:
         db.close()
     assert len(steps) <= MAX_STEPS, "recipe step count over bound"
@@ -213,11 +231,13 @@ def _invoke_workflow(db_path: str, key: str, run_id: int, env_extra: dict[str, s
 # --- Public API -------------------------------------------------------------
 
 
-def _prepare(db: RecipesDB, key: str, force: bool) -> tuple[Recipe, Run | None]:
+def _prepare(
+    db: RecipesDB, key: str, force: bool, env_extra: dict[str, str] | None = None
+) -> tuple[Recipe, Run | None]:
     """Look up the recipe and its cache-hit run (None when forcing / no hit)."""
     assert db.conn is not None, "_prepare on closed db"
     recipe = store.get_recipe(db.conn, key)  # raises RecipesError if missing
-    cached = None if force else store.cached_run(db, key)
+    cached = None if force else store.cached_run(db, key, env_extra)
     return recipe, cached
 
 
@@ -255,14 +275,13 @@ async def run_recipe(
 
     The step sequence runs as a durable DBOS workflow (see module docstring): an
     interrupted run resumes from its last completed step. Returns a RunResult. On
-    a cache hit (a prior passed run against the current spec_hash, and `force` is
-    False) the prior run is returned flagged `cached` without re-executing
-    anything. With `dry_run=True` nothing runs and no run row is created, the
-    planned steps are returned flagged `dry_run`.
+    a cache hit (matching spec, explicit environment and cwd, with `force=False`)
+    the prior run is returned flagged `cached` without re-executing anything.
+    With `dry_run=True` nothing runs and no run row is created; the planned steps are returned flagged `dry_run`.
     """
     assert db.conn is not None, "run_recipe on closed db"
     assert isinstance(key, str) and key.strip(), "key must be a non-empty string"
-    recipe, cached = _prepare(db, key, force)
+    recipe, cached = _prepare(db, key, force, env_extra)
     if dry_run:
         planned = [RunStep(i, s.label, s.command, "pending") for i, s in enumerate(recipe.steps)]  # bounded
         return RunResult(run_id=0, recipe_key=recipe.key, status="dry-run", exit_code=None, dry_run=True, steps=planned)
@@ -276,7 +295,7 @@ async def run_recipe(
             raw_path=cached.raw_path,
             steps=_load_run_steps(db, cached.id),
         )
-    run_id = store.record_run_start(db, recipe)
+    run_id = store.record_run_start(db, recipe, env_extra)
     try:
         await asyncio.to_thread(_invoke_workflow, str(db.path), key, run_id, env_extra)
     except Exception as exc:  # noqa: BLE001  # DBOS launch/workflow crash must not leak
@@ -324,10 +343,10 @@ def start_background_run(key: str, env_extra: dict[str, str] | None = None, forc
     assert isinstance(key, str) and key.strip(), "key must be a non-empty string"
     db = open_recipes()
     try:
-        recipe, cached = _prepare(db, key, force)
+        recipe, cached = _prepare(db, key, force, env_extra)
         if cached is not None:
             return cached.id, True
-        run_id = store.record_run_start(db, recipe)
+        run_id = store.record_run_start(db, recipe, env_extra)
         db_path = str(db.path)
     finally:
         db.close()

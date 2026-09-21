@@ -10,7 +10,7 @@ _TOP = 15
 
 
 def format_node_summary(result: NodeResult) -> str:
-    parts = [format_run_header(result), ""]
+    parts = [format_run_header(result), f"Engine: {result.engine}", ""]
     if not result.stack_samples:
         parts.append("No profile data captured.")
         return "\n".join(parts)

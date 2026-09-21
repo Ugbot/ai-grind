@@ -35,7 +35,7 @@ DEFAULT_API_KEY_ENV: str = "LLM_STATION_API_KEY"
 CONFIG_FILENAME: str = "station.toml"
 CONFIG_DIRNAME: str = ".devtools-mcp"
 WALK_UP_MAX: int = 10
-DOMAINS: tuple[str, ...] = ("tasks", "sessions", "collab", "skills", "perf")
+DOMAINS: tuple[str, ...] = ("tasks", "sessions", "collab", "skills", "perf", "codegraph")
 LEAK_SCAN_MAX_VALUES: int = 500
 
 Direction = Literal["push", "pull", "both"]

@@ -190,8 +190,12 @@ def correlate_runs(
     if not builder_a or not builder_b:
         return pl.DataFrame(schema={join_on: pl.Utf8})
 
-    df_a = workspace.get_dataframe(run_id_a) or builder_a(run_a)
-    df_b = workspace.get_dataframe(run_id_b) or builder_b(run_b)
+    df_a = workspace.get_dataframe(run_id_a)
+    if df_a is None:
+        df_a = builder_a(run_a)
+    df_b = workspace.get_dataframe(run_id_b)
+    if df_b is None:
+        df_b = builder_b(run_b)
 
     if df_a.is_empty() or df_b.is_empty():
         return pl.DataFrame(schema={join_on: pl.Utf8})

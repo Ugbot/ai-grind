@@ -14,6 +14,8 @@ Endpoints (served by the viz server):
 
 from __future__ import annotations
 
+from urllib.parse import urlencode
+
 import httpx
 
 from devtools_mcp.tracker import crdt
@@ -39,39 +41,89 @@ def _get_json(client: httpx.Client, path: str) -> dict:
     return body
 
 
-def sync_once(db: TrackerDB, peer_url: str, client: httpx.Client | None = None) -> dict:
-    """One full bidirectional exchange with a peer replica. Returns counters."""
-    assert db.conn is not None, "sync on closed TrackerDB"
-    http = _client(peer_url, client)
-    remote = _get_json(http, "/api/crdt/ops")
-    remote_site = remote.get("site_id", "")
-    if remote_site == db.site_id:
-        raise TrackerError("peer reports our own site_id, refusing to sync with self")
-    pulled = crdt.merge_ops(db, remote.get("ops", []))
+MAX_SYNC_PAGES = 10_000
 
-    local_ops = crdt.ops_after(db.conn)
-    try:
-        response = http.post("/api/crdt/push", json={"site_id": db.site_id, "ops": local_ops})
-    except httpx.HTTPError as exc:
-        raise TrackerError(f"peer push failed: {exc}") from exc
-    if response.status_code != 200:
-        raise TrackerError(f"peer POST /api/crdt/push -> {response.status_code}")
-    pushed = response.json()
+
+def _exchange(db: TrackerDB, peer_url: str, http: httpx.Client) -> dict:
+    """Scan bounded pages from the beginning to include transitive older ops."""
+    remote_site = ""
+    after: str | None = None
+    pulled = {"new": 0, "applied": 0, "deferred": 0}
+    for _ in range(MAX_SYNC_PAGES):
+        path = "/api/crdt/ops" + ("?" + urlencode({"after": after}) if after else "")
+        remote = _get_json(http, path)
+        site = remote.get("site_id")
+        if not isinstance(site, str) or not site:
+            raise TrackerError("peer did not report a site_id")
+        if site == db.site_id:
+            raise TrackerError("peer reports our own site_id; refusing to sync with self")
+        if remote_site and remote_site != site:
+            raise TrackerError("peer identity changed during sync")
+        remote_site = site
+        ops = remote.get("ops")
+        if not isinstance(ops, list) or len(ops) > crdt.MAX_OPS_PER_BATCH:
+            raise TrackerError("invalid peer op page")
+        if not ops:
+            break
+        cursor = after
+        for op in ops:
+            stamp = op.get("hlc") if isinstance(op, dict) else None
+            if not isinstance(stamp, str) or not stamp or (cursor is not None and stamp <= cursor):
+                raise TrackerError("peer op cursor did not advance")
+            cursor = stamp
+        result = crdt.merge_ops(db, ops)
+        for key in pulled:
+            pulled[key] += result[key]
+        after = cursor
+    else:
+        raise TrackerError("peer sync page limit reached; exchange incomplete")
+
+    pushed_count = pushed_new = 0
+    push_after: str | None = None
+    for _ in range(MAX_SYNC_PAGES):
+        local_ops = crdt.ops_after(db.conn, push_after)
+        if not local_ops:
+            break
+        try:
+            response = http.post("/api/crdt/push", json={"site_id": db.site_id, "ops": local_ops})
+        except httpx.HTTPError as exc:
+            raise TrackerError(f"peer push failed: {exc}") from exc
+        if response.status_code != 200:
+            raise TrackerError(f"peer POST /api/crdt/push -> {response.status_code}")
+        pushed = response.json()
+        pushed_count += len(local_ops)
+        pushed_new += int(pushed.get("new", 0))
+        push_after = local_ops[-1]["hlc"]
+    else:
+        raise TrackerError("peer sync page limit reached; exchange incomplete")
 
     with db.transaction() as conn:
         conn.execute(
             "INSERT INTO crdt_peers (url, last_pulled_hlc, last_synced) VALUES (?, ?, ?) "
             "ON CONFLICT(url) DO UPDATE SET last_pulled_hlc = excluded.last_pulled_hlc, "
             "last_synced = excluded.last_synced",
-            (peer_url, crdt.latest_hlc(db.conn), utc_now_iso()),
+            (peer_url, after, utc_now_iso()),
         )
-    counters = {
+    return {
         "peer_site": remote_site,
         "pulled_new": pulled["new"],
         "pulled_applied": pulled["applied"],
         "pulled_deferred": pulled["deferred"],
-        "pushed": len(local_ops),
-        "pushed_new_on_peer": int(pushed.get("new", 0)),
+        "pushed": pushed_count,
+        "pushed_new_on_peer": pushed_new,
     }
-    assert counters["pulled_applied"] <= counters["pulled_new"], "applied exceeds new"
-    return counters
+
+
+def sync_once(db: TrackerDB, peer_url: str, client: httpx.Client | None = None) -> dict:
+    """Exchange all pages; retry interrupted exchanges safely via idempotent merge.
+
+    Only a completed exchange updates the peer success watermark. A new exchange
+    scans from the beginning because a peer can acquire older ops transitively.
+    """
+    assert db.conn is not None, "sync on closed TrackerDB"
+    http = _client(peer_url, client)
+    try:
+        return _exchange(db, peer_url, http)
+    finally:
+        if client is None:
+            http.close()

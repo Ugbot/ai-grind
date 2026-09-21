@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from typing import Literal
 
 from mcp.server.fastmcp import Context
 
@@ -44,6 +45,7 @@ from devtools_mcp.debug.session import DebugSession, DebugSessionManager, Sessio
 from devtools_mcp.debug.snapshot import StopProcessor, diff_snapshots, expand_variables
 from devtools_mcp.models import StackSample
 from devtools_mcp.server import get_app_ctx, mcp
+from devtools_mcp.workspace import Workspace
 
 _RUN_STATES = {SessionState.stopped, SessionState.terminated}
 
@@ -315,7 +317,7 @@ async def _dap_action(  # noqa: PLR0911  # pLR0912  # one flat verb table by des
     plan: dict | None,
     timeout: float,
 ) -> str:
-    granularity = "instruction" if instruction else "statement"
+    granularity: Literal["statement", "instruction"] = "instruction" if instruction else "statement"
 
     if action in ("run", "continue"):
         await session.continue_(thread_id)
@@ -977,7 +979,7 @@ def _store_session_summary(app, session_id: str) -> str:
     one root-first stack per stop, so devtools_flamegraph renders 'where
     this session stopped'. Best-effort. Never fails debug_stop."""
     try:
-        stops: list[tuple[int, object, DebugSnapshot]] = []
+        stops: list[tuple[int, Workspace, DebugSnapshot]] = []
         for ws in app.workspaces.values():
             for run in ws.runs.values():
                 if isinstance(run, DebugSnapshot) and run.batch_id == session_id and run.tool == "stop":

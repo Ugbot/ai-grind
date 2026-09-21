@@ -64,7 +64,16 @@ MIGRATION_V1: tuple[str, ...] = (
     "CREATE INDEX idx_run_steps_run ON run_steps(run_id)",
 )
 
-MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = ((1, MIGRATION_V1),)
+# Existing runs deliberately retain NULL: their original execution inputs cannot
+# be reconstructed safely from a mutable recipe.
+MIGRATION_V2: tuple[str, ...] = (
+    "ALTER TABLE recipe_runs ADD COLUMN execution_snapshot TEXT",
+    "ALTER TABLE recipe_runs ADD COLUMN execution_hash TEXT",
+    """CREATE TRIGGER immutable_run_execution BEFORE UPDATE OF execution_snapshot, execution_hash
+       ON recipe_runs BEGIN SELECT RAISE(ABORT, 'run execution snapshot is immutable'); END""",
+)
+
+MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = ((1, MIGRATION_V1), (2, MIGRATION_V2))
 
 assert 0 < len(MIGRATIONS) <= MIGRATIONS_MAX, "migration count out of bounds"
 assert all(

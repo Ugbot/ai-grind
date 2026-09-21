@@ -10,6 +10,8 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
+import polars as pl
+
 from devtools_mcp.models import StackSample
 
 MAX_DEPTH = 256  # bound: frames deeper than this are folded into the leaf
@@ -138,7 +140,7 @@ def focus(root: CallNode, name: str) -> CallNode | None:
     return focused if found else None
 
 
-def function_frame(samples: list) -> object:
+def function_frame(samples: list[StackSample]) -> pl.DataFrame:
     """Per-function DataFrame from stack samples: self/total counts + % share.
 
     The universal function-level view for any sampling backend that produces
@@ -146,8 +148,6 @@ def function_frame(samples: list) -> object:
     stacks). Percent columns are normalized by the run's own total weight so
     two runs with different sample counts compare fairly.
     """
-    import polars as pl
-
     root = build_call_tree(samples, root_name="all")
     stats = function_stats(root)
     stats.pop("all", None)
@@ -164,6 +164,12 @@ def function_frame(samples: list) -> object:
     ]
     if not rows:
         return pl.DataFrame(
-            schema={"function": pl.Utf8, "self": pl.Int64, "total": pl.Int64,
-                    "self_pct": pl.Float64, "total_pct": pl.Float64})
+            schema={
+                "function": pl.Utf8,
+                "self": pl.Int64,
+                "total": pl.Int64,
+                "self_pct": pl.Float64,
+                "total_pct": pl.Float64,
+            }
+        )
     return pl.DataFrame(rows).sort("total", descending=True)

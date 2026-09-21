@@ -437,6 +437,32 @@ MIGRATION_V6: tuple[str, ...] = (
     """,
 )
 
+# Rebuild the identity map to admit graph links without changing existing rows.
+MIGRATION_V7: tuple[str, ...] = (
+    "ALTER TABLE station_links RENAME TO station_links_v6",
+    "DROP INDEX idx_station_links_remote",
+    """
+    CREATE TABLE station_links (
+        domain TEXT NOT NULL CHECK (domain IN
+            ('task', 'criterion', 'dep', 'commit', 'session', 'handoff',
+             'claim', 'skill', 'perf_run', 'codegraph')),
+        local_id TEXT NOT NULL,
+        remote_id TEXT NOT NULL,
+        org_id TEXT NOT NULL,
+        remote_key TEXT,
+        synced_hash TEXT,
+        state TEXT NOT NULL DEFAULT 'ok' CHECK (state IN ('ok', 'pending', 'error', 'deleted')),
+        last_error TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (domain, local_id)
+    )
+    """,
+    "INSERT INTO station_links SELECT * FROM station_links_v6",
+    "DROP TABLE station_links_v6",
+    "CREATE UNIQUE INDEX idx_station_links_remote ON station_links(domain, org_id, remote_id)",
+)
+
 MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
     (1, MIGRATION_V1),
     (2, MIGRATION_V2),
@@ -444,6 +470,7 @@ MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
     (4, MIGRATION_V4),
     (5, MIGRATION_V5),
     (6, MIGRATION_V6),
+    (7, MIGRATION_V7),
 )
 
 assert 0 < len(MIGRATIONS) <= MIGRATIONS_MAX, "migration count out of bounds"
