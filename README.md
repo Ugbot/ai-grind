@@ -208,6 +208,19 @@ Python deps (`uv sync` runs on first launch). To iterate on bundled skills, edit
 python skills/sync.py --target plugin   # rebuild plugin/{skills,commands,agents}
 ```
 
+The marketplace also ships **project-map** (`plugins/project-map/`), which
+templates any repository for coding agents: a root `CLAUDE.md`, an `AGENTS.md`
+pointer, a `PROJECT_MAP.md` that says what lives where and why, a `CLAUDE.md`
+per area, engineering principles, and a local SQLite BM25 index with MCP tools.
+
+```
+/plugin install project-map@ai-grind
+```
+
+Then ask Claude to "map this project", or run
+`python3 plugins/project-map/skills/project-map/scripts/kb.py template` from the
+target repo. See [`plugins/project-map/README.md`](plugins/project-map/README.md).
+
 ## Usage
 
 ### As a shared local service (recommended)
