@@ -221,6 +221,39 @@ Then ask Claude to "map this project", or run
 `python3 plugins/project-map/skills/project-map/scripts/kb.py template` from the
 target repo. See [`plugins/project-map/README.md`](plugins/project-map/README.md).
 
+### As a Codex plugin
+
+The same marketplace works in Codex CLI (it reads
+`.claude-plugin/marketplace.json`), but Codex does not substitute
+`${CLAUDE_PLUGIN_ROOT}` — so the repo also ships Codex-native manifests
+(`.codex-plugin/plugin.json` + `.codex-plugin/mcp.json`, using
+`${PLUGIN_ROOT}`), which Codex prefers when present:
+
+```bash
+codex plugin marketplace add Ugbot/ai-grind
+codex plugin add devtools-mcp@ai-grind
+codex plugin add project-map@ai-grind
+```
+
+This installs the stdio `devtools-mcp` server and the skills library.
+Codex does not support Claude-style hooks or project-scoped agent
+definitions through plugins, so the agent-collab hooks and `agents/` bundle are
+Claude Code only. The project-map MCP server (`project-kb`) needs to index the
+project you are working in, so register it per project instead:
+
+```bash
+cd your-project
+codex mcp add project-kb -- python3 /path/to/ai-grind/plugins/project-map/skills/project-map/scripts/kb_mcp.py
+```
+
+To use the skills inside this repo without installing the plugin, generate the
+`.agents/skills` mirror (picked up by clients that follow the agents.md
+convention — Codex, Amp, Aider and friends):
+
+```bash
+python skills/sync.py --target agents   # writes .agents/skills (gitignored)
+```
+
 ## Usage
 
 ### As a shared local service (recommended)
@@ -329,6 +362,45 @@ MCP client to the HTTP server instead of spawning stdio:
     "devtools-mcp": { "type": "http", "url": "http://127.0.0.1:8010/mcp" }
   }
 }
+```
+
+### Other clients (Goose, Windsurf, Claude Desktop, Zed, …)
+
+Any MCP client works: give it either the stdio spawn command or the HTTP URL.
+
+Stdio — in the client's `mcpServers` config (Windsurf `mcp_config.json`, Claude
+Desktop `claude_desktop_config.json`, Zed `context_servers`, Cline, …):
+
+```json
+{
+  "mcpServers": {
+    "devtools-mcp": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/ai-grind", "devtools-mcp"]
+    }
+  }
+}
+```
+
+HTTP — start the shared service first (`devtools-service.ps1 start` or
+`devtools-service.sh start`), then point the client at
+`http://127.0.0.1:8010/mcp`. Goose, in `~/.config/goose/config.yaml`:
+
+```yaml
+extensions:
+  devtools-mcp:
+    name: devtools-mcp
+    type: streamable_http
+    uri: http://127.0.0.1:8010/mcp
+    enabled: true
+```
+
+Codex without the plugin, per project in `.codex/config.toml` (this repo ships
+one as an example):
+
+```toml
+[mcp_servers.devtools-mcp]
+url = "http://127.0.0.1:8010/mcp"
 ```
 
 ### Standalone (Python)

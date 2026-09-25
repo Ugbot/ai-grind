@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "devtools-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "${PLUGIN_ROOT}", "devtools-mcp"]
+    }
+  }
+}
