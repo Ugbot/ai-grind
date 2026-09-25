@@ -32,8 +32,19 @@ def _dbos_singleton(tmp_path_factory):
     the singleton does not leak across test runs. The recipe workflow/step
     decorators are registered by importing the runner before launch."""
     os.environ["DEVTOOLS_MCP_DBOS_DB"] = str(tmp_path_factory.mktemp("dbos") / "dbos.sqlite")
-    from devtools_mcp.recipes.dbos_app import destroy_dbos, launch_dbos
+    import sqlite3
 
+    from devtools_mcp.recipes.dbos_app import (
+        MIN_SQLITE_FOR_DBOS,
+        destroy_dbos,
+        launch_dbos,
+    )
+
+    if sqlite3.sqlite_version_info < MIN_SQLITE_FOR_DBOS:
+        pytest.skip(
+            f"DBOS requires SQLite >= {'.'.join(map(str, MIN_SQLITE_FOR_DBOS))} "
+            f"(unixepoch); sqlite3 is {sqlite3.sqlite_version}",
+        )
     launch_dbos()
     try:
         yield

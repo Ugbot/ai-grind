@@ -29,9 +29,26 @@ from devtools_mcp.recipes.db import resolve_dbos_db_path
 
 DBOS_APP_NAME: str = "devtools-mcp"
 
+# DBOS's system-DB schema calls unixepoch(), which SQLite added in 3.38.
+MIN_SQLITE_FOR_DBOS: tuple[int, int, int] = (3, 38, 0)
+
 _lock = threading.Lock()
 _instance: DBOS | None = None
 _launched: bool = False
+
+
+def check_sqlite_for_dbos() -> None:
+    """Raise a clear error when the bundled sqlite3 predates unixepoch()."""
+    import sqlite3
+
+    if sqlite3.sqlite_version_info < MIN_SQLITE_FOR_DBOS:
+        required = ".".join(map(str, MIN_SQLITE_FOR_DBOS))
+        raise RuntimeError(
+            f"DBOS requires SQLite >= {required} (unixepoch()); the sqlite3 "
+            f"module is {sqlite3.sqlite_version}. Upgrade Python's SQLite "
+            "(a newer distro, python.org build, or `pip install "
+            "pysqlite3-binary`) to enable durable recipes."
+        )
 
 
 def _system_database_url(path: Path) -> str:
@@ -70,6 +87,7 @@ def launch_dbos() -> DBOS:
     decorators) must happen before launch so the workflow is registered.
     """
     global _launched
+    check_sqlite_for_dbos()
     dbos = get_dbos()
     with _lock:
         if not _launched:
