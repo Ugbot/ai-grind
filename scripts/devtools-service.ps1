@@ -68,10 +68,14 @@ function Show-Status {
 }
 
 function Start-Service-Instance {
-    if (Test-Dashboard) {
+    if (Test-Dashboard -and Test-Mcp) {
         Write-Host "Already running."
         Show-Status
         return
+    }
+    if (Test-Dashboard -and -not (Test-Mcp)) {
+        Write-Host "Dashboard is up on $DashboardPort but MCP is not responding on $Port."
+        Write-Host "An instance on a different port may be running — check 'status', 'stop -Port <old port>', or update the login shortcut with 'install'."
     }
     $args = @(
         'run', '--directory', $repo, 'devtools-mcp',
@@ -80,7 +84,7 @@ function Start-Service-Instance {
     Start-Process -FilePath 'uv' -ArgumentList $args -WindowStyle Hidden
     $deadline = (Get-Date).AddSeconds(30)
     while ((Get-Date) -lt $deadline) {
-        if (Test-Dashboard) { Show-Status; return }
+        if (Test-Mcp) { Show-Status; return }
         Start-Sleep -Milliseconds 500
     }
     Write-Error "Service did not become healthy within 30s. Run manually to see errors: uv run --directory `"$repo`" devtools-mcp --transport http"
