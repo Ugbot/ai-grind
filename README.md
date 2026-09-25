@@ -229,20 +229,20 @@ Run one instance on the machine, and every project and client talks to it over
 HTTP. The dashboard comes up with it, so the UI is always there:
 
 ```powershell
-.\scripts\devtools-service.ps1 start     # MCP at http://127.0.0.1:8000/mcp, dashboard at :8765
+.\scripts\devtools-service.ps1 start     # MCP at http://127.0.0.1:8010/mcp, dashboard at :8765
 .\scripts\devtools-service.ps1 status    # is it up?
 .\scripts\devtools-service.ps1 install   # also start automatically at login
 ```
 
 The equivalent manual command is `uv run devtools-mcp --transport http --port
-8000`. Network transports auto-start the dashboard; pass `--no-dashboard` to opt
+8010`. Network transports auto-start the dashboard; pass `--no-dashboard` to opt
 out.
 
 Then point clients at the URL once, at user scope, so all projects get it:
 
 ```bash
 # Claude Code (all projects):
-claude mcp add --transport http devtools-mcp http://127.0.0.1:8000/mcp --scope user
+claude mcp add --transport http devtools-mcp http://127.0.0.1:8010/mcp --scope user
 ```
 
 Or per project, in `.mcp.json` (Claude Code) and `.cursor/mcp.json` (Cursor),
@@ -250,10 +250,10 @@ both already in this repo:
 
 ```json
 // .mcp.json (Claude Code)
-{ "mcpServers": { "devtools-mcp": { "type": "http", "url": "http://127.0.0.1:8000/mcp" } } }
+{ "mcpServers": { "devtools-mcp": { "type": "http", "url": "http://127.0.0.1:8010/mcp" } } }
 
 // .cursor/mcp.json (Cursor)
-{ "mcpServers": { "devtools-mcp": { "type": "streamable-http", "url": "http://127.0.0.1:8000/mcp" } } }
+{ "mcpServers": { "devtools-mcp": { "type": "streamable-http", "url": "http://127.0.0.1:8010/mcp" } } }
 ```
 
 Why this shape: one process owns the tracker DB and the run workspace, so every
@@ -266,7 +266,7 @@ Code retries it once you've started the service.
 
 1. `uv sync` (once)
 2. `.\scripts\devtools-service.ps1 start`
-3. Open Cursor, then Settings, then MCP. Project [`.cursor/mcp.json`](.cursor/mcp.json) registers `devtools-mcp` at `http://127.0.0.1:8000/mcp`
+3. Open Cursor, then Settings, then MCP. Project [`.cursor/mcp.json`](.cursor/mcp.json) registers `devtools-mcp` at `http://127.0.0.1:8010/mcp`
 4. Reload MCP if the service was started after Cursor opened
 5. Smoke test: ask the agent to run `devtools_check`
 6. Optional login autostart: `.\scripts\devtools-service.ps1 install`
@@ -309,8 +309,8 @@ The server speaks three transports. Pick one with `--transport`, or with env var
 
 ```bash
 uv run devtools-mcp                              # stdio (pipes), the default
-uv run devtools-mcp --transport http --port 8000 # streamable HTTP at /mcp
-uv run devtools-mcp --transport sse  --port 8000 # SSE at /sse
+uv run devtools-mcp --transport http --port 8010 # streamable HTTP at /mcp
+uv run devtools-mcp --transport sse  --port 8010 # SSE at /sse
 ```
 
 - `stdio` carries MCP over stdin and stdout, which is how editor and CLI clients
@@ -320,13 +320,13 @@ uv run devtools-mcp --transport sse  --port 8000 # SSE at /sse
 - `sse` is the legacy Server-Sent-Events transport at `/sse`, for older clients.
 
 Host/port/transport can also come from env: `DEVTOOLS_MCP_TRANSPORT`,
-`DEVTOOLS_MCP_HOST`, `DEVTOOLS_MCP_PORT` (default `127.0.0.1:8000`). To connect an
+`DEVTOOLS_MCP_HOST`, `DEVTOOLS_MCP_PORT` (default `127.0.0.1:8010`). To connect an
 MCP client to the HTTP server instead of spawning stdio:
 
 ```json
 {
   "mcpServers": {
-    "devtools-mcp": { "type": "http", "url": "http://127.0.0.1:8000/mcp" }
+    "devtools-mcp": { "type": "http", "url": "http://127.0.0.1:8010/mcp" }
   }
 }
 ```

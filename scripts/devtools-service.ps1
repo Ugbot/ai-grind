@@ -3,7 +3,7 @@
 Run devtools-mcp as a single shared local service (MCP over HTTP + dashboard).
 
 One instance serves every project: point Claude Code / Cursor at
-http://127.0.0.1:8000/mcp and open the dashboard at http://127.0.0.1:8765.
+http://127.0.0.1:8010/mcp and open the dashboard at http://127.0.0.1:8765.
 
 .EXAMPLE
 .\scripts\devtools-service.ps1 start      # launch detached (idempotent)
@@ -16,7 +16,7 @@ param(
     [Parameter(Position = 0)]
     [ValidateSet('start', 'stop', 'status', 'install', 'uninstall')]
     [string]$Action = 'start',
-    [int]$Port = 8000,
+    [int]$Port = 8010,
     [int]$DashboardPort = 8765
 )
 

@@ -198,7 +198,7 @@ def main() -> None:
         help="Transport: stdio (pipes, default), sse, or http (streamable-http).",
     )
     ap.add_argument("--host", default=os.environ.get("DEVTOOLS_MCP_HOST", "127.0.0.1"))
-    ap.add_argument("--port", type=int, default=int(os.environ.get("DEVTOOLS_MCP_PORT", "8000")))
+    ap.add_argument("--port", type=int, default=int(os.environ.get("DEVTOOLS_MCP_PORT", "8010")))
     ap.add_argument(
         "--dashboard",
         action=argparse.BooleanOptionalAction,
