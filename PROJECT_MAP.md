@@ -62,8 +62,8 @@ Claude loads). Two scripts and one map drive it:
   derived mirrors and `DEVTOOLS_MCP_SKILLS_ROOT` overrides the library location.
   See the `skills-sync` skill
 
-Contents: 112 loadable skills, being 83 harvested plus 29 authored. The
-harvested set is 4 local skills (debug, profiling, project-drivers) plus a
+Contents: 111 loadable skills, being 82 harvested plus 29 authored. The
+harvested set is 3 local skills (debug, profiling) plus a
 79-skill external superset (MIT and Apache) under
 `planning/ build/ review/ ship/ web/ meta/ writing/ understanding/ principles/`
 from addyosmani/agent-skills, obra/superpowers, mattpocock/skills,
@@ -71,7 +71,7 @@ anthropics/skills, and cursor/plugins. Clones live in
 `C:/code/vendor-skills/`, attribution in `skills/THIRD_PARTY_SKILLS.md`.
 Authored: `powershell/` (5.1 and 7), `profiling/`, `devtools/` including
 `skills-sync`, `tracker/`, `collab/`, and `meta/skill-router.rules.md`. Plus 5
-commands and 6 agents.
+command and 4 agents.
 
 Sidelined skills are harvested into `catalog/` for reference but never synced to
 the mirrors or indexed by the router, which `sync.sidelined()` enforces:

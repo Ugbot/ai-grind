@@ -33,7 +33,7 @@
     {
       "name": "bench-rdtsc-profile",
       "type": "skill",
-      "category": "profiling",
+      "category": "_disabled",
       "origin": "C:\\code\\marbledb\\.claude\\skills\\bench-rdtsc-profile.md",
       "dest": "catalog\\skills\\profiling\\bench-rdtsc-profile\\SKILL.md",
       "sha256": "4e754a149e622702415352fcd119cefdafeb614fb69f1492c712b1f558a5227b"
@@ -65,7 +65,7 @@
     {
       "name": "chukonu-dev",
       "type": "skill",
-      "category": "project-drivers",
+      "category": "_disabled",
       "origin": "C:\\code\\chukonu\\.claude\\skills\\chukonu-dev",
       "dest": "catalog\\skills\\project-drivers\\chukonu-dev\\SKILL.md",
       "sha256": "059c4de9e9ebca5433f2d6f676b371cc846c281046bf9f5978093c935a4f99c4"
@@ -201,7 +201,7 @@
     {
       "name": "build-windows",
       "type": "command",
-      "category": "build",
+      "category": "_disabled",
       "origin": "C:\\code\\chukonu\\.claude\\commands\\build-windows.md",
       "dest": "catalog\\commands\\build\\build-windows.md",
       "sha256": "83c46ddcabe3f2393390f0bd624fa9bae8507ea0d3ac3a40987f9898058b0050"
@@ -209,7 +209,7 @@
     {
       "name": "build-macos",
       "type": "command",
-      "category": "build",
+      "category": "_disabled",
       "origin": "C:\\code\\chukonu\\.claude\\commands\\build-macos.md",
       "dest": "catalog\\commands\\build\\build-macos.md",
       "sha256": "91d7233e60dcae4eac0aca57267def13b4d8fa6170cd38677ab65839b47625fc"
@@ -217,7 +217,7 @@
     {
       "name": "build-linux",
       "type": "command",
-      "category": "build",
+      "category": "_disabled",
       "origin": "C:\\code\\chukonu\\.claude\\commands\\build-linux.md",
       "dest": "catalog\\commands\\build\\build-linux.md",
       "sha256": "ab3252424bed04630e5a2dbdfd7b0391e871ddb7eb0d4c4288821e7a5a85e933"
@@ -313,7 +313,7 @@
     {
       "name": "sync-to-ai-grind",
       "type": "command",
-      "category": "dev-tools",
+      "category": "_disabled",
       "origin": "C:\\Users\\Capta\\.claude\\commands\\sync-to-ai-grind.md",
       "dest": "catalog\\commands\\dev-tools\\sync-to-ai-grind.md",
       "sha256": "1e9358e2639fabc776dfcc2baabdd4dda630974473e8c7294ef1fa58c97ba492"
@@ -321,7 +321,7 @@
     {
       "name": "living-docs-writer",
       "type": "agent",
-      "category": "docs",
+      "category": "_disabled",
       "origin": "C:\\code\\Gestalt\\.claude\\agents\\living-docs-writer.md",
       "dest": "catalog\\agents\\docs\\living-docs-writer.md",
       "sha256": "2f2bb88d731d9f3a2e72d0ece83d9a4f2a6c1c25183f53febd8208db8c82f1a6"
@@ -329,7 +329,7 @@
     {
       "name": "test-bench-runner",
       "type": "agent",
-      "category": "testing",
+      "category": "_disabled",
       "origin": "C:\\code\\Gestalt\\.claude\\agents\\test-bench-runner.md",
       "dest": "catalog\\agents\\testing\\test-bench-runner.md",
       "sha256": "d0f9a6778427621e0674cf4a89b8572d09739b7bc161cdc9addffccb1edea55b"

@@ -14,7 +14,7 @@ The same problem applies to the plan itself. Plans made in chat evaporate betwee
 
 1. `devtools-mcp`, the MCP server. 17 backends spanning profilers (VTune, ETW/PerfView, perf, DTrace, Valgrind, JFR/async-profiler, py-spy, V8, RenderDoc), debuggers (LLDB, CDB), and build/package systems (Maven, Gradle, npm, pnpm, yarn, Cargo), all behind one normalized vocabulary, with flame graphs and a local browser dashboard for the human in the loop.
 2. The tracker, persistent project management driven entirely through MCP tools: tasks with `PROJ-123` keys, hierarchy, status workflow with an acceptance-test close gate, commit linking, auto-tagging, GitHub issue sync, and a dependency resolver.
-3. The skills library (`skills/`), 112 skills that teach the assistant how to use all of this and more: driving each profiler and reading its output, interpreting flame graphs, the tracker workflows, making PowerShell behave on Windows (5.1 vs 7), uv for Python, and project-specific drivers.
+3. The skills library (`skills/`), 111 skills that teach the assistant how to use all of this and more: driving each profiler and reading its output, interpreting flame graphs, the tracker workflows, making PowerShell behave on Windows (5.1 vs 7), uv for Python, and project-specific drivers.
 
 > **Design rule (everywhere):** the LLM is never flooded with raw, symbol-heavy tool output. Every run is stored as a queryable Polars DataFrame; tools return only bounded summaries (top-N, percentages, a `run_id`) and large artifacts (flame-graph SVGs, raw traces) are written to disk and returned as a path. Drill in on demand with `devtools_analyze` / `devtools_query`.
 
@@ -167,7 +167,7 @@ rewrites both survive a CRDT merge (that's the point) and duplicate content.
 ### Skills library
 
 `skills/` is the other half of the toolkit: the knowledge that makes the tools
-usable. 112 Claude Code skills covering how to drive each profiler and read its
+usable. 111 Claude Code skills covering how to drive each profiler and read its
 output (etw-profiling, vtune-profiling, flamegraph-reading, jvm /
 python / node profiling), the tracker workflows (tracker-usage, -breakdown,
 -acceptance, -github-sync), build tooling, a full set of
@@ -191,8 +191,8 @@ uv sync
 
 This repo is a self-contained Claude Code **plugin marketplace**
 (`.claude-plugin/marketplace.json`) shipping one plugin, `devtools-mcp`, that
-bundles the MCP server and the full skills library (112 skills, 5 commands,
-6 agents), plus the agent-collab hooks. Install it in Claude Code:
+bundles the MCP server and the full skills library (111 skills, 1 command,
+4 agents), plus the agent-collab hooks. Install it in Claude Code:
 
 ```
 /plugin marketplace add Ugbot/ai-grind
