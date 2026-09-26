@@ -1,12 +1,12 @@
 ---
 name: venus-falsifier
-description: How to write a Venus negative control (falsifier) that actually discriminates — explicit atomic setter lever called from main(), one printed sentinel line, PASS_REGULAR_EXPRESSION-only ctest registration (never bare WILL_FAIL), the CTest inversion semantics, and the MSVC env-lever trap. Use when adding a WILL_FAIL twin, when a control passes vacuously, or when a reviewer says "not discriminating".
+description: How to write a Venus negative control (falsifier) that actually discriminates, explicit atomic setter lever called from main(), one printed sentinel line, PASS_REGULAR_EXPRESSION-only ctest registration (never bare WILL_FAIL), the CTest inversion semantics, and the MSVC env-lever trap. Use when adding a WILL_FAIL twin, when a control passes vacuously, or when a reviewer says "not discriminating".
 ---
 
 # The rule
 
 A gate is trusted only when its negative control goes red **for the intended
-reason** — a different line than the positive, switched by a lever the engine
+reason**, a different line than the positive, switched by a lever the engine
 actually reads. 13 of the Stage A wave controls were vacuous on first pass
 (doc 34 s2). Every one of them had one of these shapes:
 
@@ -25,7 +25,7 @@ or server exists.** Precedents: `venus_physics_set_force_serial(bool)`,
 `job_system_set_legacy_retry(bool)`, `wyrd_net_server_set_phase_tally_enabled`,
 `wyrd_catalogue_set_ceiling_extra_layers`. Store in `_Atomic` with
 `VENUS_ASSERT(atomic_is_lock_free(...))`. The test's `main()` may read an env
-var or argv to decide whether to call the setter — that read happens in the
+var or argv to decide whether to call the setter, that read happens in the
 test, never in the engine.
 
 **2. One sentinel line, printed once, after the soak, with the numbers:**
@@ -38,7 +38,7 @@ LOG_ERROR(TAG, "FALSIFY_NO_RETRY inline_fallbacks=%u legacy_calls=%u", ...);
 log_flush();
 ```
 
-**3. Registration — regex only, no WILL_FAIL:**
+**3. Registration, regex only, no WILL_FAIL:**
 
 ```cmake
 venus_add_test(NAME physics_mesh_edges_falsify_face_only
@@ -49,7 +49,7 @@ set_tests_properties(physics_mesh_edges_falsify_face_only PROPERTIES
 ```
 
 CTest evaluates `PASS_REGULAR_EXPRESSION` first, then `WILL_FAIL` INVERTS the
-verdict — combining them makes a red-for-the-right-reason run report Failed.
+verdict, combining them makes a red-for-the-right-reason run report Failed.
 Use the regex alone; the exit code is irrelevant to the verdict. Live
 examples: `cmake/tests_platform.cmake` (venus_jobs_admission_falsify_no_retry),
 `cmake/tests_physics_units.cmake` (physics_mesh_edges_falsify_*),
@@ -68,6 +68,6 @@ positive's, and that the positive prints the sentinel with the green values.
   changes; use `[1-9][0-9]*` / `[0-9]+`.
 - Where a real fixture cannot make the knob visible (e.g. a face-only mover
   still stops on two wall planes), add the leg that does (edge-on approach to
-  a lone wall) — a knob that no leg reddens is an unfalsified claim.
+  a lone wall), a knob that no leg reddens is an unfalsified claim.
 - The falsifier's own `main()` prints "lever X set to <value> (falsification
   lever)" so a log reader can see it was armed.
