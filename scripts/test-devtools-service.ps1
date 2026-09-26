@@ -21,6 +21,17 @@ foreach ($status in @(200, 401, 404, 500, 406)) {
     $script:responseCode = $status
     Assert-Equal (Test-Mcp) ($status -eq 406) "MCP response $status"
 }
+function Invoke-WebRequest { throw [System.Exception]::new('connection refused') }
+Assert-Equal (Test-Mcp) $false 'connection failure without Response property'
+function Invoke-WebRequest {
+    $failure = [System.Exception]::new('HTTP error')
+    $failure | Add-Member -NotePropertyName Response -NotePropertyValue ([pscustomobject]@{StatusCode=$script:responseCode})
+    throw $failure
+}
+foreach ($status in @(404, 406, 500)) {
+    $script:responseCode = $status
+    Assert-Equal (Test-Mcp) ($status -eq 406) "HTTP exception $status"
+}
 function Test-Dashboard { $script:dashHealthy }
 function Test-Mcp { $script:mcpHealthy }
 function Show-Status {}
