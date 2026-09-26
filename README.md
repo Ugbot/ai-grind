@@ -221,6 +221,51 @@ Then ask Claude to "map this project", or run
 `python3 plugins/project-map/skills/project-map/scripts/kb.py template` from the
 target repo. See [`plugins/project-map/README.md`](plugins/project-map/README.md).
 
+### As a Codex plugin
+
+The marketplace can be installed in Codex CLI. The repository ships
+Codex manifests under `.codex-plugin/`. Its MCP configuration sets `cwd` to the
+plugin root and runs `uv run devtools-mcp`, so it does not depend on
+Claude-only variable substitution:
+
+```bash
+codex plugin marketplace add Ugbot/ai-grind
+codex plugin add devtools-mcp@ai-grind
+codex plugin add project-map@ai-grind
+```
+
+This installs the stdio `devtools-mcp` server and the skills library.
+The Claude-specific hooks and agent definitions remain in the Claude bundle.
+The Codex project-map manifest explicitly declares no MCP servers, which prevents
+fallback to the Claude `.mcp.json`. Its skills remain available.
+
+For the optional `project-kb` MCP server, put this in the target project's
+`.codex/config.toml`, using absolute paths. The explicit root prevents a plugin
+cache or another working directory from being indexed:
+
+```toml
+[mcp_servers.project-kb]
+command = "python3"
+args = ["/path/to/ai-grind/plugins/project-map/skills/project-map/scripts/kb_mcp.py"]
+cwd = "/path/to/your-project"
+
+[mcp_servers.project-kb.env]
+CLAUDE_PROJECT_DIR = "/path/to/your-project"
+```
+
+Codex loads project configuration for trusted projects. `codex mcp add` writes
+user configuration; running that command after `cd` does not make it
+project-scoped. Install either the plugin's stdio server or the shared HTTP
+server configuration for devtools-mcp to avoid duplicate registrations.
+
+To use the skills inside this repo without installing the plugin, generate the
+`.agents/skills` mirror (picked up by clients that follow the agents.md
+convention, including Codex):
+
+```bash
+python skills/sync.py --target agents   # writes .agents/skills (gitignored)
+```
+
 ## Usage
 
 ### As a shared local service (recommended)
@@ -312,7 +357,7 @@ Then in Claude Code:
 
 > Profile ./app with VTune hotspots and show me a flame graph
 
-> Plan this feature in the tracker: epic, stories, subtasks with dependencies — then tell me what to do first
+> Plan this feature in the tracker: epic, stories, subtasks with dependencies, then tell me what to do first
 ```
 
 ### As an MCP server (Cursor and other clients)
@@ -341,6 +386,45 @@ MCP client to the HTTP server instead of spawning stdio:
     "devtools-mcp": { "type": "http", "url": "http://127.0.0.1:8010/mcp" }
   }
 }
+```
+
+### Other clients (Goose, Windsurf, Claude Desktop, Zed, …)
+
+Any MCP client works: give it either the stdio spawn command or the HTTP URL.
+
+Stdio, in the client's `mcpServers` config (Windsurf `mcp_config.json`, Claude
+Desktop `claude_desktop_config.json`, or Cline):
+
+```json
+{
+  "mcpServers": {
+    "devtools-mcp": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/ai-grind", "devtools-mcp"]
+    }
+  }
+}
+```
+
+HTTP, start the shared service first (`devtools-service.ps1 start` or
+`devtools-service.sh start`), then point the client at
+`http://127.0.0.1:8010/mcp`. Goose, in `~/.config/goose/config.yaml`:
+
+```yaml
+extensions:
+  devtools-mcp:
+    name: devtools-mcp
+    type: streamable_http
+    uri: http://127.0.0.1:8010/mcp
+    enabled: true
+```
+
+Codex without the plugin, per project in `.codex/config.toml` (this repo ships
+one as an example):
+
+```toml
+[mcp_servers.devtools-mcp]
+url = "http://127.0.0.1:8010/mcp"
 ```
 
 ### Standalone (Python)
@@ -423,7 +507,7 @@ Factory functions randomize all test data. No hardcoded fixtures.
 ```
 src/devtools_mcp/
 ├── server.py              # FastMCP server, lifespan, shared helpers
-├── models.py              # RunBase — shared base for all results
+├── models.py              # RunBase, shared base for all results
 ├── registry.py            # Backend auto-registration and tool detection
 ├── workspace.py           # Run storage, caching, temp file management
 ├── index.py               # Unified cross-run search index
@@ -435,7 +519,7 @@ src/devtools_mcp/
 │   ├── search_tools.py    # search, correlate
 │   ├── flame_tools.py     # devtools_flamegraph
 │   ├── viz_tools.py       # devtools_dashboard
-│   ├── tracker_tools.py   # tracker_* — the progress tracker (mini-JIRA)
+│   ├── tracker_tools.py   # tracker_*, the progress tracker (mini-JIRA)
 │   └── debug_tools.py     # start, debug, inspect, stop
 ├── tracker/               # Tracker domain layer (SQLite, WAL, migrations)
 │   ├── schema.py db.py    # versioned DDL + connection/transactions
@@ -458,14 +542,14 @@ src/devtools_mcp/
 ├── lldb/                  # LLDB backend (PTY sessions + parsers)
 ├── dtrace/                # DTrace backend (3 tools)
 ├── perf/                  # perf backend (3 tools)
-├── etw/                   # Windows ETW backend (PerfView) — CPU hotspots + stacks
-├── vtune/                 # Intel VTune backend — hotspots/threading/memory/uarch + flame graph
-├── jvm/                   # JVM backend — JFR, threads, heap, async-profiler
+├── etw/                   # Windows ETW backend (PerfView), CPU hotspots + stacks
+├── vtune/                 # Intel VTune backend, hotspots/threading/memory/uarch + flame graph
+├── jvm/                   # JVM backend, JFR, threads, heap, async-profiler
 ├── cdb/                   # Windows debugger backend (batch CDB)
-├── py/                    # Python backend — py-spy, thread dumps, cProfile
-├── node/                  # Node/JS backend — V8 --cpu-prof / --heap-prof
-├── renderdoc/             # RenderDoc backend — GPU frame capture/analyze/counters/resources/thumb
-├── build/                 # shared build core — models, JUnit, JS dep/audit parsers, frames
+├── py/                    # Python backend, py-spy, thread dumps, cProfile
+├── node/                  # Node/JS backend, V8 --cpu-prof / --heap-prof
+├── renderdoc/             # RenderDoc backend, GPU frame capture/analyze/counters/resources/thumb
+├── build/                 # shared build core, models, JUnit, JS dep/audit parsers, frames
 ├── maven/ gradle/         # JVM build backends
 ├── npm/ pnpm/ yarn/       # JS package-manager backends
 ├── cargo/                 # Rust/Cargo backend
