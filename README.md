@@ -238,6 +238,18 @@ The equivalent manual command is `uv run devtools-mcp --transport http --port
 8010`. Network transports auto-start the dashboard; pass `--no-dashboard` to opt
 out.
 
+If an older Windows login shortcut still starts port 8000, migrate it explicitly
+before starting the new service. This rewrites the shortcut and stops the old
+listener so the MCP endpoint and dashboard belong to the same process:
+
+```powershell
+.\scripts\devtools-service.ps1 uninstall
+.\scripts\devtools-service.ps1 stop -Port 8000
+.\scripts\devtools-service.ps1 install -Port 8010
+```
+
+Keep a custom port if needed, but use that same port in each client config.
+
 Then point clients at the URL once, at user scope, so all projects get it:
 
 ```bash
