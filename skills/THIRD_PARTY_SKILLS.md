@@ -150,7 +150,7 @@ the flag upstream rather than in `catalog/`, because `harvest.py` re-copies.
 `comment-sicko`'s agent name contains a space, so `no-comments` spawns it as
 `subagent_type: "Comment Sicko"`.
 
-### rudybear/renderdoc-skill — Alexey Medvedev — MIT
+### rudybear/renderdoc-skill, Alexey Medvedev, MIT
 Source: https://github.com/rudybear/renderdoc-skill
 `renderdoc-gpu-debug`. Vendored at `C:/code/vendor-skills/renderdoc-skill`.
 
@@ -158,7 +158,7 @@ Wraps [`rdc-cli`](https://github.com/BANANASJIM/rdc-cli) (66 commands over
 RenderDoc's **Python** API): pixel history, shader debugging, mesh output,
 render-target export, frame comparison.
 
-**Complements — does not replace — the authored `renderdoc-frame-analysis`
+**Complements, does not replace, the authored `renderdoc-frame-analysis`
 skill.** They use different backends, and that difference decides which to reach
 for:
 
@@ -171,14 +171,14 @@ for:
 with every check `[ok]`, including `renderdoc-module: version=1.45` and
 `replay-support: renderdoc replay API surface found`.
 
-### The working configuration — use exactly this
+### The working configuration, use exactly this
 
 ```
 rdc.exe                 C:\Users\Capta\AppData\Roaming\Python\Python312\Scripts\rdc.exe
 RENDERDOC_PYTHON_PATH   C:\Users\Capta\AppData\Local\rdc\renderdoc
 ```
 
-`rdc.exe`'s directory is **not on PATH** — add it, or invoke by full path.
+`rdc.exe`'s directory is **not on PATH**, add it, or invoke by full path.
 
 ### Three traps found getting here. Do not re-discover them.
 
@@ -201,7 +201,7 @@ C:\Users\Capta\.rdc-build-venv\Scripts\rdc.exe setup-renderdoc --version v1.45 -
 ```
 Build took **10m34s, 0 warnings, 0 errors**, and needed ~5 GB of disk.
 
-**2. That build venv CRASHES rdc at runtime — use it ONLY to run the build.**
+**2. That build venv CRASHES rdc at runtime, use it ONLY to run the build.**
 `rdc.exe` from `.rdc-build-venv` segfaults (`0xC0000005`) on *any* invocation,
 including `--help`, independent of `RENDERDOC_PYTHON_PATH`. The `rdc.exe` on the
 stock Program Files Python works fine. The fault is in the uv standalone
@@ -213,7 +213,7 @@ venv; run everything else with the normal install.
 `HKCU\SOFTWARE\Khronos\Vulkan\ImplicitLayers` →
 `C:\Users\Capta\AppData\Local\rdc\renderdoc\renderdoc.json`, while the stock
 install already has one in HKLM. Two `VK_LAYER_RENDERDOC_Capture` layers make
-capture ambiguous — `rdc doctor` flags it explicitly, and it is a machine-wide
+capture ambiguous, `rdc doctor` flags it explicitly, and it is a machine-wide
 hazard affecting every Vulkan app, not just RenderDoc's own tooling.
 
 Resolved by deleting the **HKCU** value and keeping the stock HKLM registration:
@@ -225,7 +225,7 @@ that a Venus VK target still runs clean (exit 0).
 
 ### Still true
 `renderdoc-gpu-debug` complements rather than replaces `renderdoc-frame-analysis`
-— the devtools-mcp suite is the headless capture/analyze/counters path, this is
+,  the devtools-mcp suite is the headless capture/analyze/counters path, this is
 the deep interactive surface (pixel history, shader debug, mesh output).
 
 **Note that GPU frame CAPTURE itself is a separate problem** and neither skill

@@ -3,7 +3,7 @@
 Run devtools-mcp as a single shared local service (MCP over HTTP + dashboard).
 
 One instance serves every project: point Claude Code / Cursor at
-http://127.0.0.1:8000/mcp and open the dashboard at http://127.0.0.1:8765.
+http://127.0.0.1:8010/mcp and open the dashboard at http://127.0.0.1:8765.
 
 .EXAMPLE
 .\scripts\devtools-service.ps1 start      # launch detached (idempotent)
@@ -16,7 +16,9 @@ param(
     [Parameter(Position = 0)]
     [ValidateSet('start', 'stop', 'status', 'install', 'uninstall')]
     [string]$Action = 'start',
-    [int]$Port = 8000,
+    [ValidateRange(1, 65535)]
+    [int]$Port = 8010,
+    [ValidateRange(1, 65535)]
     [int]$DashboardPort = 8765
 )
 
@@ -36,12 +38,16 @@ function Test-Dashboard {
 function Test-Mcp {
     try {
         $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/mcp" -UseBasicParsing -TimeoutSec 2 -Method GET
-        return ($r.StatusCode -lt 500)
+        return ($r.StatusCode -eq 406)
     } catch {
         # 5.1 throws on 4xx: a plain GET to a streamable-http MCP endpoint is
-        # 406 Not Acceptable by design — any HTTP status < 500 means alive.
-        $resp = $_.Exception.Response
-        if ($null -ne $resp -and [int]$resp.StatusCode -lt 500) { return $true }
+        # 406 Not Acceptable by design. A 404/401 from another server is not MCP.
+        # PowerShell 7 connection failures have no Response property.
+        $responseProperty = $_.Exception.PSObject.Properties['Response']
+        if ($null -ne $responseProperty) {
+            $resp = $responseProperty.Value
+            if ($null -ne $resp -and [int]$resp.StatusCode -eq 406) { return $true }
+        }
         return $false
     }
 }
@@ -68,22 +74,28 @@ function Show-Status {
 }
 
 function Start-Service-Instance {
-    if (Test-Dashboard) {
+    $dash = Test-Dashboard
+    $mcp = Test-Mcp
+    if ($dash -and $mcp) {
         Write-Host "Already running."
         Show-Status
         return
     }
-    $args = @(
-        'run', '--directory', $repo, 'devtools-mcp',
+    if ($dash -or $mcp) {
+        throw "Only one service endpoint is healthy (MCP $Port, dashboard $DashboardPort). Stop the old instance before starting another. For the 8000 migration: uninstall; stop -Port 8000; install -Port 8010."
+    }
+    # Start-Process joins ArgumentList into a command line on Windows.
+    $launchArgs = @(
+        'run', '--directory', "`"$repo`"", 'devtools-mcp',
         '--transport', 'http', '--port', "$Port", '--dashboard-port', "$DashboardPort"
     )
-    Start-Process -FilePath 'uv' -ArgumentList $args -WindowStyle Hidden
+    Start-Process -FilePath 'uv' -ArgumentList $launchArgs -WindowStyle Hidden -ErrorAction Stop
     $deadline = (Get-Date).AddSeconds(30)
     while ((Get-Date) -lt $deadline) {
-        if (Test-Dashboard) { Show-Status; return }
+        if ((Test-Mcp) -and (Test-Dashboard)) { Show-Status; return }
         Start-Sleep -Milliseconds 500
     }
-    Write-Error "Service did not become healthy within 30s. Run manually to see errors: uv run --directory `"$repo`" devtools-mcp --transport http"
+    throw "Service did not become healthy within 30s. Run manually: uv run --directory `"$repo`" devtools-mcp --transport http --port $Port --dashboard-port $DashboardPort"
 }
 
 function Stop-Service-Instance {
