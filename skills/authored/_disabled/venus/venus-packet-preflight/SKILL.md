@@ -1,13 +1,13 @@
 ---
 name: venus-packet-preflight
-description: Implementer pre-flight for a Venus wave packet — the checklist and the tools/check_packet.py script that catch the defect classes reviewers rejected in every Stage A wave (bare assert() in Release, engine getenv levers, vacuous WILL_FAIL controls, unmeasured numbers, 70-line functions, comment terminators). Run BEFORE handing off any packet; paste its block into the handoff.
+description: Implementer pre-flight for a Venus wave packet, the checklist and the tools/check_packet.py script that catch the defect classes reviewers rejected in every Stage A wave (bare assert() in Release, engine getenv levers, vacuous WILL_FAIL controls, unmeasured numbers, 70-line functions, comment terminators). Run BEFORE handing off any packet; paste its block into the handoff.
 ---
 
 # Why this exists
 
 Doc 34 (`docs/design/game/34-stage-a-retrospective-20260908.md`): 141 reviewer
 findings over four waves; three classes recurred in EVERY wave after being
-called out — bare `assert()` (16), non-discriminating WILL_FAIL controls (13),
+called out, bare `assert()` (16), non-discriminating WILL_FAIL controls (13),
 numbers written before measurement (11). Implementers fixed only the lines a
 reviewer enumerated. This skill makes the checks mechanical.
 
@@ -35,7 +35,7 @@ paste the `PRE-FLIGHT` block into the handoff's `notes`.
    exists (precedent `venus_physics_set_force_serial`,
    `venus_mesh_active_mask_force`, `job_system_set_legacy_retry`,
    `wyrd_net_server_set_phase_tally_enabled`). MSVC trap: `uv_os_setenv` /
-   `SetEnvironmentVariable` never refreshes the CRT copy `getenv()` reads —
+   `SetEnvironmentVariable` never refreshes the CRT copy `getenv()` reads,
    an env var set in-process is invisible to the engine. ctest `ENVIRONMENT`
    is fine (it is in the initial process block).
 3. **Cross-thread globals**: `_Atomic` with a live

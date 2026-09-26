@@ -22,13 +22,13 @@
 [[item]]
 src = "C:/Users/Capta/.claude/skills/debug-windows-msvc"
 type = "skill"
-category = "debug"
+category = "_disabled"
 note = "MSVC step-through debugging of chukonu test exes (global-only)"
 
 [[item]]
 src = "C:/Users/Capta/.claude/skills/debug-linux-lldb"
 type = "skill"
-category = "debug"
+category = "_disabled"
 note = "LLDB + ASAN debugging in a Linux container (global-only)"
 
 [[item]]

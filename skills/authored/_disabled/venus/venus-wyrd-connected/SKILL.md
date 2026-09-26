@@ -1,6 +1,6 @@
 ---
 name: venus-wyrd-connected
-description: Run WYRDHOLM connected — build the Linux server / headless-client Docker images from a SHA with a build label, keep Docker disk under control, drive the real dedicated server + headless witnesses + graphical review, run the join probe legs L1-L6, and write the connected receipt. Use for any Stage A/B connected evidence (join, reconnect, encounter, crate, route), never for a Windows server exe.
+description: Run WYRDHOLM connected, build the Linux server / headless-client Docker images from a SHA with a build label, keep Docker disk under control, drive the real dedicated server + headless witnesses + graphical review, run the join probe legs L1-L6, and write the connected receipt. Use for any Stage A/B connected evidence (join, reconnect, encounter, crate, route), never for a Windows server exe.
 ---
 
 # Rules that already bit us
@@ -11,7 +11,7 @@ description: Run WYRDHOLM connected — build the Linux server / headless-client
   `docker system df`; `docker builder prune -a -f`; remove superseded
   `venus-*` images/containers by name (never `system prune -a`, other
   projects' images live there). The vhdx only shrinks with an elevated
-  `wsl --shutdown` + `diskpart compact vdisk` — Ben's call.
+  `wsl --shutdown` + `diskpart compact vdisk`, Ben's call.
 - Pre-pull `debian:bookworm` and build with `--pull=false`.
 - A receipt names the image's build SHA; `images_pin` must tolerate
   `"Labels": null` (`((info.get("Config") or {}).get("Labels") or {})`).
@@ -67,4 +67,4 @@ Store under `build-msvc/stage-a-<date>/<run>/` and cite from the MAP.
 One receipt per gate per SHA; a red receipt beside a later green one is
 superseded explicitly (`superseded_by`), never left side by side. A client
 log that prints a pre-rewrite string (e.g. the old far-tier line) is proof the
-binary predates the change — check the SHA line before trusting a run.
+binary predates the change, check the SHA line before trusting a run.

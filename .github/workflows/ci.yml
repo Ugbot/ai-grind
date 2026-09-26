@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
   test:
@@ -21,7 +20,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --frozen
 
       - name: Run tests
         run: uv run pytest -q
@@ -36,3 +35,4 @@ jobs:
         run: |
           uv run python skills/sync.py --target plugin
           git diff --exit-code plugin/
+          test -z "$(git ls-files --others --exclude-standard plugin/)"

@@ -14,7 +14,7 @@ The same problem applies to the plan itself. Plans made in chat evaporate betwee
 
 1. `devtools-mcp`, the MCP server. 17 backends spanning profilers (VTune, ETW/PerfView, perf, DTrace, Valgrind, JFR/async-profiler, py-spy, V8, RenderDoc), debuggers (LLDB, CDB), and build/package systems (Maven, Gradle, npm, pnpm, yarn, Cargo), all behind one normalized vocabulary, with flame graphs and a local browser dashboard for the human in the loop.
 2. The tracker, persistent project management driven entirely through MCP tools: tasks with `PROJ-123` keys, hierarchy, status workflow with an acceptance-test close gate, commit linking, auto-tagging, GitHub issue sync, and a dependency resolver.
-3. The skills library (`skills/`), 111 skills that teach the assistant how to use all of this and more: driving each profiler and reading its output, interpreting flame graphs, the tracker workflows, making PowerShell behave on Windows (5.1 vs 7), uv for Python, and project-specific drivers.
+3. The skills library (`skills/`), 109 skills that teach the assistant how to use all of this and more: driving each profiler and reading its output, interpreting flame graphs, the tracker workflows, making PowerShell behave on Windows (5.1 vs 7), uv for Python, and general debugging workflows.
 
 > **Design rule (everywhere):** the LLM is never flooded with raw, symbol-heavy tool output. Every run is stored as a queryable Polars DataFrame; tools return only bounded summaries (top-N, percentages, a `run_id`) and large artifacts (flame-graph SVGs, raw traces) are written to disk and returned as a path. Drill in on demand with `devtools_analyze` / `devtools_query`.
 
@@ -191,7 +191,7 @@ uv sync
 
 This repo is a self-contained Claude Code **plugin marketplace**
 (`.claude-plugin/marketplace.json`) shipping one plugin, `devtools-mcp`, that
-bundles the MCP server and the full skills library (111 skills, 1 command,
+bundles the MCP server and the full skills library (109 skills, 1 command,
 4 agents), plus the agent-collab hooks. Install it in Claude Code:
 
 ```
@@ -223,11 +223,10 @@ target repo. See [`plugins/project-map/README.md`](plugins/project-map/README.md
 
 ### As a Codex plugin
 
-The same marketplace works in Codex CLI (it reads
-`.claude-plugin/marketplace.json`), but Codex does not substitute
-`${CLAUDE_PLUGIN_ROOT}` — so the repo also ships Codex-native manifests
-(`.codex-plugin/plugin.json` + `.codex-plugin/mcp.json`, using
-`${PLUGIN_ROOT}`), which Codex prefers when present:
+The marketplace can be installed in Codex CLI. The repository ships
+Codex manifests under `.codex-plugin/`. Its MCP configuration sets `cwd` to the
+plugin root and runs `uv run devtools-mcp`, so it does not depend on
+Claude-only variable substitution:
 
 ```bash
 codex plugin marketplace add Ugbot/ai-grind
@@ -236,19 +235,32 @@ codex plugin add project-map@ai-grind
 ```
 
 This installs the stdio `devtools-mcp` server and the skills library.
-Codex does not support Claude-style hooks or project-scoped agent
-definitions through plugins, so the agent-collab hooks and `agents/` bundle are
-Claude Code only. The project-map MCP server (`project-kb`) needs to index the
-project you are working in, so register it per project instead:
+The Claude-specific hooks and agent definitions remain in the Claude bundle.
+The Codex project-map manifest explicitly declares no MCP servers, which prevents
+fallback to the Claude `.mcp.json`. Its skills remain available.
 
-```bash
-cd your-project
-codex mcp add project-kb -- python3 /path/to/ai-grind/plugins/project-map/skills/project-map/scripts/kb_mcp.py
+For the optional `project-kb` MCP server, put this in the target project's
+`.codex/config.toml`, using absolute paths. The explicit root prevents a plugin
+cache or another working directory from being indexed:
+
+```toml
+[mcp_servers.project-kb]
+command = "python3"
+args = ["/path/to/ai-grind/plugins/project-map/skills/project-map/scripts/kb_mcp.py"]
+cwd = "/path/to/your-project"
+
+[mcp_servers.project-kb.env]
+CLAUDE_PROJECT_DIR = "/path/to/your-project"
 ```
+
+Codex loads project configuration for trusted projects. `codex mcp add` writes
+user configuration; running that command after `cd` does not make it
+project-scoped. Install either the plugin's stdio server or the shared HTTP
+server configuration for devtools-mcp to avoid duplicate registrations.
 
 To use the skills inside this repo without installing the plugin, generate the
 `.agents/skills` mirror (picked up by clients that follow the agents.md
-convention — Codex, Amp, Aider and friends):
+convention, including Codex):
 
 ```bash
 python skills/sync.py --target agents   # writes .agents/skills (gitignored)
@@ -270,6 +282,18 @@ HTTP. The dashboard comes up with it, so the UI is always there:
 The equivalent manual command is `uv run devtools-mcp --transport http --port
 8010`. Network transports auto-start the dashboard; pass `--no-dashboard` to opt
 out.
+
+If an older Windows login shortcut still starts port 8000, migrate it explicitly
+before starting the new service. This rewrites the shortcut and stops the old
+listener so the MCP endpoint and dashboard belong to the same process:
+
+```powershell
+.\scripts\devtools-service.ps1 uninstall
+.\scripts\devtools-service.ps1 stop -Port 8000
+.\scripts\devtools-service.ps1 install -Port 8010
+```
+
+Keep a custom port if needed, but use that same port in each client config.
 
 Then point clients at the URL once, at user scope, so all projects get it:
 
@@ -333,7 +357,7 @@ Then in Claude Code:
 
 > Profile ./app with VTune hotspots and show me a flame graph
 
-> Plan this feature in the tracker: epic, stories, subtasks with dependencies — then tell me what to do first
+> Plan this feature in the tracker: epic, stories, subtasks with dependencies, then tell me what to do first
 ```
 
 ### As an MCP server (Cursor and other clients)
@@ -368,8 +392,8 @@ MCP client to the HTTP server instead of spawning stdio:
 
 Any MCP client works: give it either the stdio spawn command or the HTTP URL.
 
-Stdio — in the client's `mcpServers` config (Windsurf `mcp_config.json`, Claude
-Desktop `claude_desktop_config.json`, Zed `context_servers`, Cline, …):
+Stdio, in the client's `mcpServers` config (Windsurf `mcp_config.json`, Claude
+Desktop `claude_desktop_config.json`, or Cline):
 
 ```json
 {
@@ -382,7 +406,7 @@ Desktop `claude_desktop_config.json`, Zed `context_servers`, Cline, …):
 }
 ```
 
-HTTP — start the shared service first (`devtools-service.ps1 start` or
+HTTP, start the shared service first (`devtools-service.ps1 start` or
 `devtools-service.sh start`), then point the client at
 `http://127.0.0.1:8010/mcp`. Goose, in `~/.config/goose/config.yaml`:
 
@@ -483,7 +507,7 @@ Factory functions randomize all test data. No hardcoded fixtures.
 ```
 src/devtools_mcp/
 ├── server.py              # FastMCP server, lifespan, shared helpers
-├── models.py              # RunBase — shared base for all results
+├── models.py              # RunBase, shared base for all results
 ├── registry.py            # Backend auto-registration and tool detection
 ├── workspace.py           # Run storage, caching, temp file management
 ├── index.py               # Unified cross-run search index
@@ -495,7 +519,7 @@ src/devtools_mcp/
 │   ├── search_tools.py    # search, correlate
 │   ├── flame_tools.py     # devtools_flamegraph
 │   ├── viz_tools.py       # devtools_dashboard
-│   ├── tracker_tools.py   # tracker_* — the progress tracker (mini-JIRA)
+│   ├── tracker_tools.py   # tracker_*, the progress tracker (mini-JIRA)
 │   └── debug_tools.py     # start, debug, inspect, stop
 ├── tracker/               # Tracker domain layer (SQLite, WAL, migrations)
 │   ├── schema.py db.py    # versioned DDL + connection/transactions
@@ -518,14 +542,14 @@ src/devtools_mcp/
 ├── lldb/                  # LLDB backend (PTY sessions + parsers)
 ├── dtrace/                # DTrace backend (3 tools)
 ├── perf/                  # perf backend (3 tools)
-├── etw/                   # Windows ETW backend (PerfView) — CPU hotspots + stacks
-├── vtune/                 # Intel VTune backend — hotspots/threading/memory/uarch + flame graph
-├── jvm/                   # JVM backend — JFR, threads, heap, async-profiler
+├── etw/                   # Windows ETW backend (PerfView), CPU hotspots + stacks
+├── vtune/                 # Intel VTune backend, hotspots/threading/memory/uarch + flame graph
+├── jvm/                   # JVM backend, JFR, threads, heap, async-profiler
 ├── cdb/                   # Windows debugger backend (batch CDB)
-├── py/                    # Python backend — py-spy, thread dumps, cProfile
-├── node/                  # Node/JS backend — V8 --cpu-prof / --heap-prof
-├── renderdoc/             # RenderDoc backend — GPU frame capture/analyze/counters/resources/thumb
-├── build/                 # shared build core — models, JUnit, JS dep/audit parsers, frames
+├── py/                    # Python backend, py-spy, thread dumps, cProfile
+├── node/                  # Node/JS backend, V8 --cpu-prof / --heap-prof
+├── renderdoc/             # RenderDoc backend, GPU frame capture/analyze/counters/resources/thumb
+├── build/                 # shared build core, models, JUnit, JS dep/audit parsers, frames
 ├── maven/ gradle/         # JVM build backends
 ├── npm/ pnpm/ yarn/       # JS package-manager backends
 ├── cargo/                 # Rust/Cargo backend

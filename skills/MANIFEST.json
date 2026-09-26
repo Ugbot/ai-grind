@@ -9,17 +9,17 @@
     {
       "name": "debug-windows-msvc",
       "type": "skill",
-      "category": "debug",
+      "category": "_disabled",
       "origin": "C:\\Users\\Capta\\.claude\\skills\\debug-windows-msvc",
-      "dest": "catalog\\skills\\debug\\debug-windows-msvc\\SKILL.md",
+      "dest": "catalog\\skills\\_disabled\\debug-windows-msvc\\SKILL.md",
       "sha256": "69fae496d7b30b8c7fb4eadd665d7363b48dd8dec1502e340f28f5e726c0b65e"
     },
     {
       "name": "debug-linux-lldb",
       "type": "skill",
-      "category": "debug",
+      "category": "_disabled",
       "origin": "C:\\Users\\Capta\\.claude\\skills\\debug-linux-lldb",
-      "dest": "catalog\\skills\\debug\\debug-linux-lldb\\SKILL.md",
+      "dest": "catalog\\skills\\_disabled\\debug-linux-lldb\\SKILL.md",
       "sha256": "777ef75ce27e68919e329997aca01e401651fd6e193c8be1aac05c0176b43cb0"
     },
     {
