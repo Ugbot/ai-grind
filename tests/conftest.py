@@ -18,6 +18,7 @@ def _isolated_data_dir(tmp_path, monkeypatch):
     lifespan, which loads every persisted run at startup). Live skills
     likewise materialize into the temp tree, never ~/.claude/skills."""
     monkeypatch.setenv("DEVTOOLS_MCP_DATA", str(tmp_path / "devtools-data"))
+    monkeypatch.setenv("DEVTOOLS_MCP_STATION_AUTH", str(tmp_path / "station-auth.json"))
     monkeypatch.setenv("DEVTOOLS_MCP_LIVE_SKILLS_DIR", str(tmp_path / "live-skills"))
 
 
@@ -31,26 +32,33 @@ def _dbos_singleton(tmp_path_factory):
     (never the real ~/.devtools-mcp/dbos.sqlite), and torn down at session end so
     the singleton does not leak across test runs. The recipe workflow/step
     decorators are registered by importing the runner before launch."""
+    previous = os.environ.get("DEVTOOLS_MCP_DBOS_DB")
     os.environ["DEVTOOLS_MCP_DBOS_DB"] = str(tmp_path_factory.mktemp("dbos") / "dbos.sqlite")
-    import sqlite3
+    from devtools_mcp.recipes.dbos_app import check_sqlite_for_dbos, destroy_dbos, launch_dbos
 
-    from devtools_mcp.recipes.dbos_app import (
-        MIN_SQLITE_FOR_DBOS,
-        destroy_dbos,
-        launch_dbos,
-    )
-
-    if sqlite3.sqlite_version_info < MIN_SQLITE_FOR_DBOS:
-        pytest.skip(
-            f"DBOS requires SQLite >= {'.'.join(map(str, MIN_SQLITE_FOR_DBOS))} "
-            f"(unixepoch); sqlite3 is {sqlite3.sqlite_version}",
-        )
-    launch_dbos()
     try:
-        yield
+        try:
+            check_sqlite_for_dbos()
+        except RuntimeError as exc:
+            # An autouse skip here would suppress every test in the repository.
+            # Return the reason; only tests requesting dbos_runtime skip.
+            yield str(exc)
+            return
+        launch_dbos()
+        yield None
     finally:
         destroy_dbos()
-        os.environ.pop("DEVTOOLS_MCP_DBOS_DB", None)
+        if previous is None:
+            os.environ.pop("DEVTOOLS_MCP_DBOS_DB", None)
+        else:
+            os.environ["DEVTOOLS_MCP_DBOS_DB"] = previous
+
+
+@pytest.fixture
+def dbos_runtime(_dbos_singleton):
+    """Only tests executing durable workflows require a compatible SQLite."""
+    if _dbos_singleton is not None:
+        pytest.skip(_dbos_singleton)
 
 
 def _random_hex(n: int = 8) -> str:

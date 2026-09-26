@@ -46,8 +46,9 @@ def check_sqlite_for_dbos() -> None:
         raise RuntimeError(
             f"DBOS requires SQLite >= {required} (unixepoch()); the sqlite3 "
             f"module is {sqlite3.sqlite_version}. Upgrade Python's SQLite "
-            "(a newer distro, python.org build, or `pip install "
-            "pysqlite3-binary`) to enable durable recipes."
+            "by using a Python build linked against SQLite >= "
+            f"{required} to enable durable recipes. Installing pysqlite3-binary "
+            "alone does not replace the sqlite3 module used by this process."
         )
 
 

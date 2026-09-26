@@ -174,7 +174,7 @@ class TestRunnerErrorPaths:
         assert run.status == "failed" and run.finished_at is not None
         assert run.raw_path  # the error was captured to a raw log
 
-    async def test_step_crash_fails_step_not_run(self, db, monkeypatch):
+    async def test_step_crash_fails_step_not_run(self, db, monkeypatch, dbos_runtime):
         """An unexpected error inside a step becomes a failed step, run finalized."""
         import devtools_mcp.recipes.runner as runner_mod
 

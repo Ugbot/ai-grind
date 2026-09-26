@@ -69,7 +69,7 @@ class TestRegister:
 
 
 class TestRun:
-    async def test_runs_steps_in_order_and_persists(self, db):
+    async def test_runs_steps_in_order_and_persists(self, db, dbos_runtime):
         store.register_recipe(
             db,
             _spec(steps=[{"label": "first", "command": "true"}, {"label": "second", "command": "true"}]),
@@ -89,7 +89,7 @@ class TestRun:
         run = store.get_run(db.conn, result.run_id)
         assert run.status == "passed" and run.finished_at is not None
 
-    async def test_stops_on_first_failure(self, db):
+    async def test_stops_on_first_failure(self, db, dbos_runtime):
         store.register_recipe(
             db,
             _spec(
@@ -107,7 +107,7 @@ class TestRun:
         # the skipped step was never executed (no exit code recorded)
         assert result.steps[2].exit_code is None
 
-    async def test_cache_hit_does_not_rerun(self, db):
+    async def test_cache_hit_does_not_rerun(self, db, dbos_runtime):
         store.register_recipe(db, _spec(steps=[{"label": "one", "command": "true"}]))
         first = await run_recipe(db, "demo")
         assert not first.cached
@@ -117,7 +117,7 @@ class TestRun:
         # only one run row persisted, the second call reused the first
         assert db.conn.execute("SELECT COUNT(*) FROM recipe_runs").fetchone()[0] == 1
 
-    async def test_force_reruns(self, db):
+    async def test_force_reruns(self, db, dbos_runtime):
         store.register_recipe(db, _spec(steps=[{"label": "one", "command": "true"}]))
         first = await run_recipe(db, "demo")
         forced = await run_recipe(db, "demo", force=True)
@@ -125,14 +125,14 @@ class TestRun:
         assert forced.run_id != first.run_id
         assert db.conn.execute("SELECT COUNT(*) FROM recipe_runs").fetchone()[0] == 2
 
-    async def test_failed_run_is_not_cached(self, db):
+    async def test_failed_run_is_not_cached(self, db, dbos_runtime):
         store.register_recipe(db, _spec(steps=[{"label": "boom", "command": "exit 1"}]))
         await run_recipe(db, "demo")
         assert store.cached_run(db, "demo") is None
         again = await run_recipe(db, "demo")
         assert not again.cached  # a failed run is never a cache hit
 
-    async def test_spec_change_invalidates_cache(self, db):
+    async def test_spec_change_invalidates_cache(self, db, dbos_runtime):
         store.register_recipe(db, _spec(steps=[{"label": "one", "command": "true"}]))
         await run_recipe(db, "demo")
         assert store.cached_run(db, "demo") is not None
@@ -145,7 +145,7 @@ class TestRun:
         assert result.dry_run and result.run_id == 0
         assert db.conn.execute("SELECT COUNT(*) FROM recipe_runs").fetchone()[0] == 0
 
-    async def test_env_axes_and_extra_reach_the_shell(self, db):
+    async def test_env_axes_and_extra_reach_the_shell(self, db, dbos_runtime):
         store.register_recipe(
             db,
             _spec(steps=[{"label": "echo", "command": "echo axis=$AXIS extra=$EXTRA"}], env_axes={"AXIS": "yes"}),
@@ -171,7 +171,7 @@ class TestDurability:
     recovering an interrupted/crashed workflow. So forking past step 1 must leave
     step 1's marker untouched (not re-run) while step 2 runs again."""
 
-    def test_resume_does_not_rerun_completed_step(self, db, tmp_path):
+    def test_resume_does_not_rerun_completed_step(self, db, tmp_path, dbos_runtime):
         from dbos import DBOS
 
         m1 = tmp_path / "step1.log"
@@ -208,7 +208,7 @@ class TestDurability:
 
 
 class TestFrames:
-    async def test_frame_columns_and_bound(self, db):
+    async def test_frame_columns_and_bound(self, db, dbos_runtime):
         store.register_recipe(db, _spec(steps=[{"label": "one", "command": "true"}]))
         result = await run_recipe(db, "demo")
         recipes_df = frames.recipes_frame(db.conn)
