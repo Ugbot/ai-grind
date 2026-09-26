@@ -42,8 +42,12 @@ function Test-Mcp {
     } catch {
         # 5.1 throws on 4xx: a plain GET to a streamable-http MCP endpoint is
         # 406 Not Acceptable by design. A 404/401 from another server is not MCP.
-        $resp = $_.Exception.Response
-        if ($null -ne $resp -and [int]$resp.StatusCode -eq 406) { return $true }
+        # PowerShell 7 connection failures have no Response property.
+        $responseProperty = $_.Exception.PSObject.Properties['Response']
+        if ($null -ne $responseProperty) {
+            $resp = $responseProperty.Value
+            if ($null -ne $resp -and [int]$resp.StatusCode -eq 406) { return $true }
+        }
         return $false
     }
 }
