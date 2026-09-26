@@ -45,13 +45,12 @@ already living there survive.
 
 | Type | Count | Categories |
 |---|---|---|
-| Skills (harvested, local) | 4 | `debug/` `profiling/` `project-drivers/` |
-| Skills (harvested, vendored external) | 79 | `planning/` `build/` `review/` `ship/` `web/` `meta/` `writing/` `understanding/` `principles/`, listed below |
+| Skills (harvested, vendored external) | 80 | `planning/` `build/` `review/` `ship/` `web/` `meta/` `writing/` `understanding/` `principles/`, listed below |
 | Skills (authored) | 29 | `powershell/` (9), `profiling/` (7), `debugging/` (2), `devtools/` (5), `tracker/` (4), `collab/` (2) |
-| Commands | 5 | `build/` (3) `dev-tools/` (2) |
-| Agents | 6 | `docs/` `testing/` `integration/` `review/` (3) |
+| Commands | 1 | `dev-tools/` (`clean-test-data`) |
+| Agents | 4 | `integration/` `review/` (3) |
 
-Total loadable: 112 skills (83 harvested plus 29 authored).
+Total loadable: 109 skills (80 harvested plus 29 authored).
 
 Run `python ../scripts/unslop_check.py` before committing prose changes. It
 encodes the `unslop` skill's rules as a check over the markdown and Python this
@@ -74,18 +73,11 @@ is not.
 
 ### Skills (local harvest)
 
-- `debug/`: `debug-windows-msvc`, `debug-linux-lldb`
-- `profiling/`: `bench-rdtsc-profile`
-- `project-drivers/`: `chukonu-dev`
-- `experimental/narrative/` (sidelined): 14 `se-*` Story Engine skills plus
-  `start-engine`, kept for reference, never synced or indexed
-- `_disabled/` (sidelined): `llm-station-analyze`, `llm-station-search`,
-  `llm-station-patterns`, `llm-station-debug`
-
-These four active ones only fire where their checkout exists: `chukonu-dev` and
-both `debug-*` skills need the chukonu tree, `bench-rdtsc-profile` needs
-MarbleDB. Use `skill_live action="disable"` to drop them from a machine that
-lacks the repo.
+The local project-specific skills are no longer published.
+`debug-windows-msvc`, `debug-linux-lldb`, `bench-rdtsc-profile` and `chukonu-dev`
+are retained in `_disabled/`, alongside the retired `llm-station-*` skills.
+Story Engine skills remain in `experimental/narrative/`; authored Venus skills
+are retained under `authored/_disabled/`. None are published in generated mirrors.
 
 ## Vendored external skills (borrowed with thanks)
 
@@ -124,15 +116,14 @@ The cursor/plugins harvest added three categories:
 
 ### Commands
 
-- `build/`: `build-windows`, `build-macos`, `build-linux`
-- `dev-tools/`: `clean-test-data`, `sync-to-ai-grind`
+- `_disabled/`: `build-windows`, `build-macos`, `build-linux`, `sync-to-ai-grind`
+- `dev-tools/`: `clean-test-data`
 - `llm-station/` (sidelined): `build callers grep refs rename search start status
   stop task` plus the `ned-*` variants, kept in `catalog/`, never synced
 
 ### Agents
 
-- `docs/`: `living-docs-writer`
-- `testing/`: `test-bench-runner`
+- `_disabled/`: `living-docs-writer`, `test-bench-runner` (retained, not published)
 - `integration/`: `frontend-backend-connectivity-checker`
 - `review/`: `comment-sicko`, `thermo-nuclear-review-subagent`,
   `thermo-nuclear-code-quality-review-subagent` (cursor/plugins, MIT)

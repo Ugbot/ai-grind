@@ -1,6 +1,6 @@
 ---
 name: venus-map-record
-description: How to write a Venus area MAP.md record (and the MAP.waveN-<packet>.md note that becomes one) — newest-first dated section with the ticket key, the three completion states named separately, measured numbers cited to logs, production consumer file:line, open owner questions by doc 33 §6.5 number, remaining known defects. Use when closing a packet, folding wave notes, or when a MAP claim needs correcting.
+description: How to write a Venus area MAP.md record (and the MAP.waveN-<packet>.md note that becomes one), newest-first dated section with the ticket key, the three completion states named separately, measured numbers cited to logs, production consumer file:line, open owner questions by doc 33 §6.5 number, remaining known defects. Use when closing a packet, folding wave notes, or when a MAP claim needs correcting.
 ---
 
 # Placement

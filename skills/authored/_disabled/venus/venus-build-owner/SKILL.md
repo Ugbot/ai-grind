@@ -1,6 +1,6 @@
 ---
 name: venus-build-owner
-description: The single build owner's recipe for a Venus wave — one target per cmake invocation with a survivable tally, the plain-client boot check, serial gates (-j 1) with per-control raw rc + sentinel, the receipt JSON every wave must carry, disk/process hygiene, and what "NOT FINISHED" must say. Use when you are the only agent allowed to build/test after implementers hand off, or when producing the VENG-1583-style receipt for a SHA.
+description: The single build owner's recipe for a Venus wave, one target per cmake invocation with a survivable tally, the plain-client boot check, serial gates (-j 1) with per-control raw rc + sentinel, the receipt JSON every wave must carry, disk/process hygiene, and what "NOT FINISHED" must say. Use when you are the only agent allowed to build/test after implementers hand off, or when producing the VENG-1583-style receipt for a SHA.
 ---
 
 # Contract
@@ -11,7 +11,7 @@ MINIMAL correcting edits inside packet files and must list every one.
 `VENUS_NEON_AUDIO=0` for everything you launch. Not-run is never passed;
 built is not receipted until a log names the SHA, warning count and gate result.
 
-# 1. Build — one target per invocation, tally survives a cutoff
+# 1. Build, one target per invocation, tally survives a cutoff
 
 ```bash
 cd C:/code/Venus
@@ -46,7 +46,7 @@ before (the 2026-09-07 evaluation build died at 0 bytes free) and after.
 `python tools/check_mutex_free.py`, `python tools/check_packet.py --base <sha>`.
 Report remaining violations per file, not counts alone.
 
-# 4. Packet gates, then the receipt — SERIAL
+# 4. Packet gates, then the receipt, SERIAL
 
 ```bash
 cd build-msvc
@@ -69,7 +69,7 @@ run paths with total/passed/failed/not_run and each failure's first CHECK
 line; per control: raw rc, sentinel, `red_for_intended_reason`; every edit
 you made as its own list; free disk GB at the end; a **NOT FINISHED** list
 naming what was cut off (a forced structured-output cutoff mid-build must
-say which targets never built — never report them as green).
+say which targets never built, never report them as green).
 
 # 6. Hygiene
 

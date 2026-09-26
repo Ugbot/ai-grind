@@ -63,21 +63,21 @@ Claude loads). Two scripts and one map drive it:
   derived mirrors and `DEVTOOLS_MCP_SKILLS_ROOT` overrides the library location.
   See the `skills-sync` skill
 
-Contents: 111 loadable skills, being 82 harvested plus 29 authored. The
-harvested set is 3 local skills (debug, profiling) plus a
-79-skill external superset (MIT and Apache) under
+Contents: 109 loadable skills, being 80 harvested plus 29 authored. The
+harvested set is an 80-skill external collection (MIT and Apache) under
 `planning/ build/ review/ ship/ web/ meta/ writing/ understanding/ principles/`
 from addyosmani/agent-skills, obra/superpowers, mattpocock/skills,
 anthropics/skills, and cursor/plugins. Clones live in
 `C:/code/vendor-skills/`, attribution in `skills/THIRD_PARTY_SKILLS.md`.
 Authored: `powershell/` (5.1 and 7), `profiling/`, `devtools/` including
-`skills-sync`, `tracker/`, `collab/`, and `meta/skill-router.rules.md`. Plus 5
+`skills-sync`, `tracker/`, `collab/`, and `meta/skill-router.rules.md`. Plus 1
 command and 4 agents.
 
 Sidelined skills are harvested into `catalog/` for reference but never synced to
 the mirrors or indexed by the router, which `sync.sidelined()` enforces:
-`experimental/*` (the Story Engine `se-*` skills), the four retired
-`llm-station-*` skills under `_disabled/`, and `_archive`. Harvested items are
+`experimental/*` (the Story Engine `se-*` skills), the retired
+`llm-station-*` and project-specific debugger/benchmark skills under `_disabled/`,
+`_archive`, and authored Venus skills in `authored/_disabled/`. Harvested items are
 copied from upstream, never moved. Full breakdown in `skills/README.md`.
 
 ## Conventions

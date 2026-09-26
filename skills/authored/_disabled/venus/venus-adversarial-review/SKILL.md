@@ -1,6 +1,6 @@
 ---
 name: venus-adversarial-review
-description: The adversarial reviewer's checklist for a Venus wave packet — refute the handoff from the diff and the build report: knob and red line per gate, numbers diffed against logs, production-consumer grep, prior findings ledger, Tiger Style greps, lever plumbing, and the structured verdict. Use when reviewing any packet before its per-ticket commit.
+description: The adversarial reviewer's checklist for a Venus wave packet, refute the handoff from the diff and the build report: knob and red line per gate, numbers diffed against logs, production-consumer grep, prior findings ledger, Tiger Style greps, lever plumbing, and the structured verdict. Use when reviewing any packet before its per-ticket commit.
 ---
 
 # Stance
@@ -28,7 +28,7 @@ and its logs); the previous round's findings for this packet.
    named log or it is a finding. Cross-run ratios (control count over the
    positive's denominator) are a finding. Triage figures repeated after a
    build measured something else are a finding.
-3. **Production consumer.** `grep -rn <new symbol> src/ cmake/` — is it called
+3. **Production consumer.** `grep -rn <new symbol> src/ cmake/`, is it called
    from the shipping client/server/headless path, or only tests/examples?
    "harness only" / "no consumer" is a verdict the MAP must carry; a claimed
    consumer that is test-only is a major.
@@ -37,7 +37,7 @@ and its logs); the previous round's findings for this packet.
 5. **Lever plumbing.** The lever is an explicit setter from `main()`; no
    `getenv` added in engine TUs; not `uv_os_setenv` read by `getenv` in-process
    (MSVC trap). Cross-thread globals are `_Atomic` with a lock-free assert.
-6. **Tiger Style greps.** `grep -n "assert(" <files>` — bare asserts in
+6. **Tiger Style greps.** `grep -n "assert(" <files>`, bare asserts in
    engine/game code are compiled out in Release (a finding, with the line).
    >= 2 asserts per new function including negative space; no tautologies
    (store/readback, `bool == true || false`); data conditions are error paths.
