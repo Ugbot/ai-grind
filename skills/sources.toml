@@ -22,13 +22,13 @@
 [[item]]
 src = "C:/Users/Capta/.claude/skills/debug-windows-msvc"
 type = "skill"
-category = "debug"
+category = "_disabled"
 note = "MSVC step-through debugging of chukonu test exes (global-only)"
 
 [[item]]
 src = "C:/Users/Capta/.claude/skills/debug-linux-lldb"
 type = "skill"
-category = "debug"
+category = "_disabled"
 note = "LLDB + ASAN debugging in a Linux container (global-only)"
 
 [[item]]
@@ -40,7 +40,7 @@ note = "Valgrind/perf via LLM Station devtools"
 [[item]]
 src = "C:/code/marbledb/.claude/skills/bench-rdtsc-profile.md"
 type = "skill"
-category = "profiling"
+category = "_disabled"
 note = "Inline-RDTSC micro-profiling of MarbleDB benchmarks"
 
 [[item]]
@@ -64,7 +64,7 @@ note = "GoF + crystallized action templates"
 [[item]]
 src = "C:/code/chukonu/.claude/skills/chukonu-dev"
 type = "skill"
-category = "project-drivers"
+category = "_disabled"
 note = "Build/test/fuzz chukonu via tools/ckdev.py"
 
 # narrative -- Story Engine 3 (single-file skills)
@@ -155,17 +155,17 @@ note = "Old MCP-era story skills; kept for reference, never synced"
 [[item]]
 src = "C:/code/chukonu/.claude/commands/build-windows.md"
 type = "command"
-category = "build"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/chukonu/.claude/commands/build-macos.md"
 type = "command"
-category = "build"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/chukonu/.claude/commands/build-linux.md"
 type = "command"
-category = "build"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/llm-station/.claude/commands/build.md"
@@ -233,7 +233,7 @@ note = "Remove ephemeral test databases and scratch files from any project root"
 [[item]]
 src = "C:/Users/Capta/.claude/commands/sync-to-ai-grind.md"
 type = "command"
-category = "dev-tools"
+category = "_disabled"
 note = "Register a project's skills/commands in ai-grind sources.toml and rebuild the loadable mirror"
 
 # ---------------------------------------------------------------- agents ----
@@ -241,12 +241,12 @@ note = "Register a project's skills/commands in ai-grind sources.toml and rebuil
 [[item]]
 src = "C:/code/Gestalt/.claude/agents/living-docs-writer.md"
 type = "agent"
-category = "docs"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/Gestalt/.claude/agents/test-bench-runner.md"
 type = "agent"
-category = "testing"
+category = "_disabled"
 
 [[item]]
 src = "C:/code/Enterprise-data-platform/enterprise-data-platform-management/.claude/agents/frontend-backend-connectivity-checker.md"
