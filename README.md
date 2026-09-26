@@ -178,7 +178,15 @@ mirror by `skills/sync.py`. See `skills/README.md`.
 
 ## Install
 
-Requires Python 3.12+.
+Requires Python 3.12+. Durable recipes also require that Python's `sqlite3`
+module is linked against SQLite 3.38 or newer. Check the active interpreter with
+`uv run python -c "import sqlite3; print(sqlite3.sqlite_version)"`. On older
+SQLite, the server reports that durable recipes are unavailable; other tools
+remain available. Upgrade to a Python build with a newer SQLite library.
+Installing `pysqlite3-binary` alone does not change the standard-library module.
+
+Tests requiring durable workflows are skipped on older SQLite; unrelated tests
+still run.
 
 ```bash
 # Clone and install
