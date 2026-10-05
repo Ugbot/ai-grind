@@ -24,6 +24,70 @@ def _kill_group(proc: asyncio.subprocess.Process) -> None:
         proc.kill()
 
 
+def _target_pred(pid: int | None, binary: str) -> str:
+    """Restrict a convenience probe to the profiled process.
+
+    With -p PID the PID is known; with -c the launched child is $target. Without
+    a predicate the cpu/syscall verbs sample the whole machine.
+    """
+    if pid:
+        return f" /pid == {pid}/"
+    if binary:
+        return " /pid == $target/"
+    return ""
+
+
+def build_dtrace_cmd(
+    tool: str = "trace",
+    binary: str = "",
+    args: list[str] | None = None,
+    extra_args: list[str] | None = None,
+    script: str | None = None,
+    one_liner: str | None = None,
+    pid: int | None = None,
+    sudo: bool = True,
+    env: dict[str, str] | None = None,
+) -> tuple[list[str], str]:
+    """Build the dtrace argv. Returns (cmd, error); error is "" on success."""
+    if tool == "profile":  # legacy alias for the canonical CPU-profiling verb
+        tool = "cpu"
+    cmd: list[str] = []
+    if sudo:
+        # -n: never prompt. A headless MCP server has no tty, so an interactive
+        # sudo would hang until timeout; fail fast with a clear message instead.
+        cmd.extend(["sudo", "-n"])
+    cmd.append("dtrace")
+    if extra_args:
+        cmd.extend(extra_args)
+
+    # `trace` has no built-in probe, so devtools_run callers pass the D program
+    # via args (or direct callers via script/one_liner) — otherwise it's unusable.
+    program = one_liner or (" ".join(args) if tool == "trace" and args else "")
+    pred = _target_pred(pid, binary)
+    if script:
+        cmd.extend(["-s", script])
+    elif program:
+        cmd.extend(["-n", program])
+    elif tool == "syscall":
+        cmd.extend(["-n", f"syscall:::entry{pred} {{ @[probefunc] = count(); }}"])
+    elif tool == "cpu":
+        hz = 97
+        cmd.extend(["-n", f"profile-{hz}{pred} {{ @[ustack()] = count(); }}"])
+    else:
+        return [], ('dtrace tool=trace needs a D program via args (e.g. args=["syscall:::entry '
+                    '{ @[probefunc]=count(); }"]), or use tool=syscall / tool=cpu.')
+
+    # Attach to process or command (quote each token — dtrace -c splits on spaces)
+    if pid and "-p" not in cmd:
+        cmd.extend(["-p", str(pid)])
+    elif binary and tool != "trace" and "-c" not in cmd:
+        # dtrace -c runs the child with dtrace's own environment, which sudo has
+        # reset; run_dtrace therefore launches env-carrying targets itself and
+        # attaches with -p instead (see _spawn_for_attach).
+        cmd.extend(["-c", " ".join(shlex.quote(part) for part in [binary, *(args or [])])])
+    return cmd, ""
+
+
 async def run_dtrace(
     tool: str = "trace",
     binary: str = "",
@@ -47,53 +111,25 @@ async def run_dtrace(
 
     Returns (error_msg, parsed_result, raw_output_path).
     """
-    if tool == "profile":  # legacy alias for the canonical CPU-profiling verb
-        tool = "cpu"
-    cmd: list[str] = []
-
-    if sudo:
-        # -n: never prompt. A headless MCP server has no tty, so an interactive
-        # sudo would hang until timeout; fail fast with a clear message instead.
-        cmd.extend(["sudo", "-n"])
-
-    cmd.append("dtrace")
-
-    # Add extra args (e.g. -x bufsize=4m)
-    if extra_args:
-        cmd.extend(extra_args)
-
-    # `trace` has no built-in probe, so devtools_run callers pass the D program
-    # via args (or direct callers via script/one_liner), otherwise it's unusable.
-    program = one_liner or (" ".join(args) if tool == "trace" and args else "")
-
-    # Script file or one-liner
-    if script:
-        cmd.extend(["-s", script])
-    elif program:
-        cmd.extend(["-n", program])
-    elif tool == "syscall":
-        # Convenience: trace syscalls
-        probe = f"syscall:::entry /pid == {pid}/" if pid else "syscall:::entry"
-        cmd.extend(["-n", f"{probe} {{ @[probefunc] = count(); }}"])
-    elif tool == "cpu":
-        # Convenience: CPU profiling (sampled user stacks)
-        hz = 97
-        probe = f"profile-{hz} /pid == {pid}/" if pid else f"profile-{hz}"
-        cmd.extend(["-n", f"{probe} {{ @[ustack()] = count(); }}"])
-    else:
-        return (
-            'dtrace tool=trace needs a D program via args (e.g. args=["syscall:::entry '
-            '{ @[probefunc]=count(); }"]), or use tool=syscall / tool=cpu.',
-            None,
-            "",
-        )
-
-    # Attach to process or command (quote each token, dtrace -c splits on spaces)
-    if pid and "-p" not in cmd:
-        cmd.extend(["-p", str(pid)])
-    elif binary and tool != "trace" and "-c" not in cmd:
-        cmd_str = " ".join(shlex.quote(part) for part in [binary, *(args or [])])
-        cmd.extend(["-c", cmd_str])
+    child = None
+    run_binary = binary  # what the run records, even when we attach by pid
+    if env and binary and not pid and tool != "trace":
+        # sudo resets the environment (env_reset, no SETENV for dtrace) and SIP
+        # stops dtrace -c from exec'ing env(1), so a -c child can never see
+        # `env`. Launch the target ourselves - as the calling user, with the
+        # requested environment - and attach to it. The first few ms before the
+        # attach are not sampled.
+        child = await asyncio.create_subprocess_exec(
+            binary, *(args or []), env={**os.environ, **env},
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+            start_new_session=True)
+        pid, binary = child.pid, ""
+    cmd, err = build_dtrace_cmd(tool, binary=binary, args=args, extra_args=extra_args, script=script,
+                                one_liner=one_liner, pid=pid, sudo=sudo, env=env)
+    if err:
+        if child is not None:
+            _kill_group(child)
+        return (err, None, "")
 
     # Output file
     fd, raw_path = tempfile.mkstemp(prefix="dtrace-", suffix=".out")
@@ -120,6 +156,15 @@ async def run_dtrace(
             await proc.wait()
             stdout_bytes = b""
             stderr_bytes = b"DTrace timed out"
+
+        if child is not None:
+            # dtrace -p returns when the target exits; reap it, and never leave
+            # a profiled program running past a timeout or an attach failure.
+            try:
+                await asyncio.wait_for(child.wait(), timeout=5)
+            except TimeoutError:
+                _kill_group(child)
+                await child.wait()
 
         duration = time.monotonic() - start
         stdout = stdout_bytes.decode("utf-8", errors="replace")
@@ -148,7 +193,7 @@ async def run_dtrace(
         run_base = create_run_base(
             suite="dtrace",
             tool=tool,
-            binary=binary,
+            binary=run_binary,
             args=args,
             duration_seconds=duration,
             exit_code=proc.returncode or 0,
