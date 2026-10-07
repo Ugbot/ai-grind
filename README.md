@@ -167,7 +167,7 @@ rewrites both survive a CRDT merge (that's the point) and duplicate content.
 ### Skills library
 
 `skills/` is the other half of the toolkit: the knowledge that makes the tools
-usable. 111 Claude Code skills covering how to drive each profiler and read its
+usable. 109 Claude Code skills covering how to drive each profiler and read its
 output (etw-profiling, vtune-profiling, flamegraph-reading, jvm /
 python / node profiling), the tracker workflows (tracker-usage, -breakdown,
 -acceptance, -github-sync), build tooling, a full set of
