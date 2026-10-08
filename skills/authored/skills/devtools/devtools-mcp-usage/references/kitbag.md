@@ -1,6 +1,6 @@
 # Kitbag reference
 
-Schema/source snapshot: devtools-mcp 0.2.0, 2026-10-08. Refresh from the connected server when versions change. All 39 tool names and 18 suites below were also verified over a real MCP stdio session. This is a routing reference, not a claim that every tool has been executed.
+Schema/source snapshot: devtools-mcp 0.2.0, 2026-10-08. Refresh from the connected server when versions change. All 39 tool names and 18 suites below were also verified over a real MCP stdio session. The same tool signatures, suite declarations and verbs were verified read-only against upstream `c6fc8ab`. Both report version 0.2.0, but upstream contains DTrace fixes in `15d2d0e` that the audited local runner lacks. This is a routing reference, not a claim that every tool has been executed.
 
 
 | Family | Registered tools |
@@ -58,7 +58,7 @@ All suites derive `detect`, `run`, `frames`, `summary`. Optional tags below are 
 
 | Question | First collection or inspection | Useful follow-up and limits |
 |---|---|---|
-| Where does lookup CPU time go on this Mac? | Target-scoped DTrace user stacks; local `debug_start(adapter="lldb-dap", program=..., breakpoints=[...])` for state/correctness. | `devtools_flamegraph(..., stack_include=...)`, then schema-first query. DTrace detection means executable exists, not that sudo/probes can run. Built-in CPU target attribution caveat below matters. |
+| Where does lookup CPU time go on macOS? | Fixed upstream: `dtrace:cpu` with target; older runners/custom probes: target-scoped `dtrace:trace`; local `debug_start(adapter="lldb-dap", program=..., breakpoints=[...])` for state/correctness. | `devtools_flamegraph(..., stack_include=...)`, then schema-first query. DTrace detection means executable exists, not that sudo/probes can run. Built-in CPU target attribution caveat below matters. |
 | Where does lookup CPU time go on Linux? | `perf:cpu`; `perf:stat` for cycles, cache and branch evidence; `perf:annotate` for existing perf.data instruction view. | Flame/compare use collected call stacks. Cachegrind/callgrind can diagnose work counts but instrumentation is not a production latency measurement. |
 | Where does lookup CPU time go on Windows? | `etw:cpu` with matching symbols/PDBs, or `vtune:cpu`; VTune uarch/memory for Intel pipeline/cache causes. | ETW is CPU-only in this kitbag: there is no registered `etw:alloc` or `etw:io`. |
 | Unexpected allocations / retained heap? | Linux `valgrind:massif` for heap growth and `valgrind:memcheck` for errors/leaks; supported VTune `alloc` maps to memory-consumption. On Mac use custom DTrace allocation aggregation or LLDB malloc breakpoints. | CPU sampling in malloc is not allocation bytes/count proof. DTrace allocation scripts need explicit probes/aggregation units; `agg_type` currently labels parsed numeric rows as count even for a custom sum. |
@@ -76,12 +76,13 @@ All suites derive `detect`, `run`, `frames`, `summary`. Optional tags below are 
 5. **Frame schemas differ by suite.** ETW columns are `function,module,exc_pct,inc_pct,exc,inc,value`; perf CPU uses `symbol,function,shared_object,command,overhead_pct`; DTrace CPU uses `function,module,count,frame_count,top_frame`; DTrace aggregation uses `value,agg_type,key_N,function`. Do not prescribe a universal `exclusive_pct`/`self_pct` to `devtools_query`; request schema first. `self_pct/total_pct` appear in flame/campaign-derived function frames.
 6. **`devtools_analyze(group_by=...)` ranks by group row count**, and sums up to five numeric columns; it does not rank by requested cost after grouping. Use ungrouped sort by the real metric or a dedicated flame/aggregate view when cost ranking is intended.
 7. **Legacy LLDB suite is session-only despite `run` capability.** Registered `lldb:lldb` differs from detector name `lldb:lldb-dap`; its backend run explicitly redirects to `debug_start`. `debug` suite similarly redirects batch callers. Use the four debugger tools, not `devtools_run(suite="lldb",...)`. Kotlin detection name differs from adapter name too.
-8. **DTrace built-in target selection requires care.** Runner constructs `profile-97` / `syscall:::entry` without a PID predicate when its internal pid argument is absent. `devtools_run` has no pid field, and passing a binary adds `-c` but does not add `/pid == $target/`; therefore built-in CPU/syscall captures can count other processes. For attribution use `dtrace:trace` with a target predicate in its D program and `extra_args=["-c", <properly quoted target command>]` (trace uses `args` for the D program). Runner emits sudo -n and returns explicit permission errors.
+8. **DTrace older-runner caveat:** the installed 2026-10-08 audited runner lacked target predicates for built-in CPU/syscall when launching a binary. Upstream commit `15d2d0e` fixes those predicates and nonempty target environment propagation for built-in verbs. Confirm the connected source, since package version remains 0.2.0. Custom trace D programs still require their own target predicate and launch/attach arguments; custom trace plus `-c` does not use the fixed direct-launch environment path. With no target, built-in whole-machine capture remains possible. The runner uses noninteractive sudo and reports permission failures.
+
 9. **Native raw cap remains valid:** `devtools_raw` reads/truncates at 200,000 characters; it is not a schema-first substitute. General statements that every result is a frame need qualification: pipeline/tracker/planner/plugin tools return domain summaries; run/profiler outputs are the Polars workflow.
 10. **Console entrypoint matters.** Protocol audit found `python -m devtools_mcp.server` may create a separate `__main__` FastMCP instance with zero attached tools through circular imports. Use the installed `devtools-mcp` console script (or import the canonical module for offline registration), not `-m`, until fixed.
 
 
-## Targeted DTrace command shape
+## Custom / older-runner DTrace command shape
 
 ```json
 {
@@ -102,8 +103,10 @@ program can therefore have an empty query/analyze frame while
 Quote executable/argument paths for the tool's command parser when they contain
 spaces. Avoid launching SIP-protected wrappers such as `/usr/bin/env` on macOS.
 The runner uses noninteractive sudo; permissions/SIP can reject a probe family
-even when CPU sampling works. Environment settings may be stripped by sudo, so
-verify the target's effective settings. Do not weaken system security to collect
+even when CPU sampling works. For this custom `trace -c` shape, sudo may strip environment settings; verify
+the target configuration. On fixed runners prefer built-in `cpu`/`syscall`
+with nonempty `env` for environment-gated targets: they launch as the calling
+user and attach by PID, possibly missing early startup work. Do not weaken system security to collect
 a profile.
 
 ## MCP and offline discovery
@@ -134,3 +137,15 @@ Use the dedicated `tracker-usage` / `agent-collab`, `build-tools`,
 `jvm-profiling`, `jvm-threads-heap`, `cdb-windows-debug`, and
 `renderdoc-frame-analysis` skills when available and relevant. Their presence
 does not establish the corresponding tool is installed.
+
+## Target and metadata details
+
+- JVM: `binary` is the JVM PID (or `--pid N` in `extra_args`); `--duration N`
+  controls the sampling window.
+- CDB: a live executable, or `--dump path.dmp` for crash analysis.
+- ETW: `--decode-only --etl path.etl` reprocesses an existing trace.
+- RenderDoc: capture takes an executable; replay verbs take the `.rdc` artifact.
+- Tracker project/task descriptions should state what, why and done-when; run
+  labels/notes/tags/task links populate dashboard cards.
+- If an installation is explicitly requested, server-side execution also needs
+  `DEVTOOLS_MCP_ALLOW_INSTALL=1`; default `execute=false` only gives guidance.

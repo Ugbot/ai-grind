@@ -60,10 +60,13 @@ makes that connector part of this server.
 
 ## Targeted native work
 
-- **macOS CPU:** `dtrace:trace` with an explicit `/pid == $target/` predicate.
-  The current built-in `dtrace:cpu` and `dtrace:syscall` can collect all processes
-  when no internal PID is supplied; launching `binary` alone does not prove
-  attribution. See the target-scoped command shape in the reference.
+- **macOS CPU:** on runners containing `15d2d0e` (the `_target_pred` and
+  direct-attach fixes), use `dtrace:cpu` with `binary` and target arguments.
+  Built-in CPU/syscall probes then scope to the target; nonempty target `env`
+  uses direct launch followed by PID attach, which may miss early startup.
+  The local source audited on 2026-10-08 predates those fixes: use the explicitly
+  scoped custom trace in the reference and verify effective settings there.
+  Check the connected runner, not package version alone.
 - **Linux CPU/cache:** `perf:cpu`, `perf:stat`; callgrind/cachegrind for work-count
   attribution. Use memcheck for access errors/leaks, massif for heap growth,
   helgrind/drd for race investigation. Instrumented runtimes are not speed gates.
@@ -86,6 +89,8 @@ Use `plugins(action="list")` or `plugins(action="status")` for registered extens
 There are backend, MCP-tool, console-page and debug-adapter extension groups;
 the current plugin status tool does not expose the last group's failure map.
 Use `devtools_dashboard(action="status")` to inspect an existing console.
+Defaults are MCP `http://127.0.0.1:8010/mcp` and dashboard
+`http://127.0.0.1:8765`; configured endpoints take precedence.
 Tracker, recipe, Station and skill operations return domain summaries, not
 profiler frames. Route them using the reference; inspect mutation semantics
 before executing a recipe, sync, install, export, publish or deletion.
