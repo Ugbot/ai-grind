@@ -141,8 +141,11 @@ def _parse_quantize(lines: list[str], start: int) -> tuple[DTraceQuantization | 
 def _is_stack_start(line: str, lines: list[str], idx: int) -> bool:
     """Check if this looks like the start of a stack trace."""
     stripped = line.strip()
-    # Stack frames typically look like module`function+offset or just function names
-    if "`" in stripped and not stripped[0].isdigit():
+    # Numeric aggregation keys and probe arguments may also contain symbols.
+    if stripped[:1].isdigit() and (_parse_aggregation_line(line) or _parse_probe_hit(line)):
+        return False
+    # A module`function+offset frame may start with a digit (e.g. 651-bench).
+    if "`" in stripped:
         # Check if next few lines also look like frames
         frame_count = 0
         for j in range(idx, min(idx + 5, len(lines))):
