@@ -2,6 +2,16 @@
 
 **An AI toolkit for developers building high-performance code with an LLM in the loop.** It gives your coding assistant real performance tooling it can drive itself, a built-in project tracker so plans never get lost between sessions, and the discipline to never pollute the model's context with raw tool output. Built to work nicely with **Claude Code**; works just as well with **Cursor** or any other [MCP](https://modelcontextprotocol.io/) client.
 
+## Python callables
+
+Reusable helpers are available directly from `devtools_mcp.evidence` for bounded
+artifact inventory, content bindings and strict result parsing. The
+[mining report](docs/research/tmp-python-mining-20261012.md) documents their
+provenance and scope. Use the maintained [MCP client](docs/devtools-call.md)
+(`devtools-call`, or `python -m devtools_mcp.client` from the source checkout)
+for structured tool-call batches. The [integration roadmap](docs/research/python-callables-roadmap-20261012.md)
+tracks process supervision through existing recipes.
+
 ## Why this exists
 
 Serious performance tools — VTune, Valgrind, PerfView/ETW, perf, JFR, the debuggers — demand two kinds of expertise: the command-line incantations to run them, and the experience to read what comes back. An LLM actually has both. What it doesn't have is room: one raw profiler dump is tens of thousands of symbol-heavy lines, and pasting that into a conversation destroys the context you're working in. ai-grind handles that noise. Every run is parsed into a queryable [Polars](https://pola.rs/) DataFrame; the model gets a bounded summary and a `run_id`, then **queries for exactly what it needs** instead of getting everything thrown back at once.

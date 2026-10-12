@@ -24,6 +24,7 @@ build-backend = "uv_build"
 
 [project.scripts]
 devtools-mcp = "devtools_mcp.server:main"
+devtools-call = "devtools_mcp.client:main"
 
 [dependency-groups]
 dev = [
