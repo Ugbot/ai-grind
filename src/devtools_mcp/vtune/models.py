@@ -12,7 +12,7 @@ class VtuneFunction(BaseModel):
 
     VTune's columns vary by analysis type (hotspots has CPU times, memory-access
     has loads/stores/misses, ...), so numeric columns land in `metrics` keyed by
-    the normalized column name. `primary` is the first metric — the one the
+    the normalized column name. `primary` is the first metric, the one the
     report sorts by (e.g. cpu_time for hotspots).
     """
 

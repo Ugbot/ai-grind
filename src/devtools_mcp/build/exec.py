@@ -36,7 +36,7 @@ def _terminate(proc: asyncio.subprocess.Process) -> None:
 async def run_capture(cmd: list[str], cwd: str, timeout: int, env: dict[str, str] | None = None) -> tuple[int, str]:
     """Run `cmd` in `cwd`, merging stdout+stderr; return (returncode, text).
 
-    Never raises on a non-zero exit, a timeout, or a failed launch — the caller
+    Never raises on a non-zero exit, a timeout, or a failed launch. The caller
     decides what a failure means for that tool. Output is capped so a pathological
     build can't blow up memory.
 
@@ -71,7 +71,7 @@ async def run_capture(cmd: list[str], cwd: str, timeout: int, env: dict[str, str
 
 
 def tail(text: str, lines: int = TAIL_LINES) -> str:
-    """Last `lines` lines of `text` — a bounded preview for the result object."""
+    """Last `lines` lines of `text`, a bounded preview for the result object."""
     assert isinstance(text, str), "text must be str"
     assert lines > 0, f"lines must be positive: {lines}"
     parts = text.splitlines()

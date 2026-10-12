@@ -9,7 +9,7 @@ just the routing glue (GET subpaths, the POST that starts a run) that used to si
 inline in the server.
 
 Handlers open their own recipes DB (the server no longer threads one in) and
-return HTML strings or :class:`VizResponse` objects — the registry contract.
+return HTML strings or :class:`VizResponse` objects, the registry contract.
 """
 
 from __future__ import annotations
@@ -36,12 +36,12 @@ def _not_found() -> VizResponse:
 
 
 def render_index() -> str:
-    """GET /recipes — the recipe catalog."""
+    """GET /recipes, the recipe catalog."""
     return _with_recipes(recipes_data.recipes_overview)
 
 
 def handle_get(rest: list[str], query: dict[str, list[str]]) -> VizResponse | None:
-    """GET /recipes/<rest...> — run detail (/recipes/run/<id>) or one recipe."""
+    """GET /recipes/<rest...>. Run detail (/recipes/run/<id>) or one recipe."""
     if rest[:1] == ["run"] and len(rest) == 2:
         try:
             run_id = int(unquote(rest[1]))
@@ -57,7 +57,7 @@ def handle_get(rest: list[str], query: dict[str, list[str]]) -> VizResponse | No
 
 
 def handle_post(rest: list[str], body: str) -> VizResponse | None:
-    """POST /recipes/<key>/run — start a background run, then 303 to its detail.
+    """POST /recipes/<key>/run, start a background run, then 303 to its detail.
 
     A bad/missing recipe key (or any recipe-domain error) returns a clean 400
     page, never a 500. The run itself executes on the DBOS durable workflow; if

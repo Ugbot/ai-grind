@@ -85,7 +85,7 @@ class TestLoaderSkipsIncompatible:
         failed = reg.failed_tool_plugins()
         assert "tools:badplug" in failed
         assert "skipped" in failed["tools:badplug"] and "requires" in failed["tools:badplug"]
-        assert not bad.loaded  # gated BEFORE import — never executed
+        assert not bad.loaded  # gated BEFORE import. Never executed
         assert "tools:badplug" not in reg.loaded_tool_plugins()
 
     def test_broken_tool_plugin_degrades(self, monkeypatch):
@@ -174,7 +174,7 @@ class TestRunnerErrorPaths:
         assert run.status == "failed" and run.finished_at is not None
         assert run.raw_path  # the error was captured to a raw log
 
-    async def test_step_crash_fails_step_not_run(self, db, monkeypatch):
+    async def test_step_crash_fails_step_not_run(self, db, monkeypatch, dbos_runtime):
         """An unexpected error inside a step becomes a failed step, run finalized."""
         import devtools_mcp.recipes.runner as runner_mod
 

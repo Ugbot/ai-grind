@@ -3,7 +3,7 @@ platform's perf-runs API. Push-only and immutable.
 
 Idempotency: every upload is tagged `local-run:{run_id}` (run_ids are
 client-generated), so a crash between upload and link-commit is recovered
-by re-listing remote runs and rebuilding links from tags — no duplicate
+by re-listing remote runs and rebuilding links from tags. No duplicate
 uploads.
 """
 
@@ -97,7 +97,7 @@ def sync(
         data = json.dumps(meta, separators=(",", ":"))
         if len(data.encode("utf-8")) > PERF_DATA_MAX_BYTES:
             report["errors"] += 1
-            report["notes"].append(f"{run_id}: meta over {PERF_DATA_MAX_BYTES} bytes — skipped")
+            report["notes"].append(f"{run_id}: meta over {PERF_DATA_MAX_BYTES} bytes, skipped")
             continue
         if not dry_run:
             remote = client.perf_upload(

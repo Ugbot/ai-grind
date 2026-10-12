@@ -49,7 +49,7 @@ def format_snapshot_summary(snapshot: LldbSnapshot) -> str:
         shown = "\n".join(lines[:_RAW_MAX_LINES])
         parts.append(f"```\n{shown}\n```")
         if len(lines) > _RAW_MAX_LINES:
-            parts.append(f"_… {len(lines) - _RAW_MAX_LINES} more lines — see `devtools_raw`._")
+            parts.append(f"_… {len(lines) - _RAW_MAX_LINES} more lines. See `devtools_raw`._")
 
     parts.append("")
     parts.append(f'Query with `devtools_analyze(run_id="{snapshot.run_id}")` or `devtools_search()`')

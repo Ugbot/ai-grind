@@ -1,6 +1,6 @@
 """Tests for skills_discovery: frontmatter reading, scanning forms, dedup, adopt.
 
-Uses a synthetic library root + fake project tree in tmp_path — the real
+Uses a synthetic library root + fake project tree in tmp_path, the real
 library is only touched by the one integration test at the end.
 """
 

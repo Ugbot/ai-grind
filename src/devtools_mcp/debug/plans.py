@@ -1,7 +1,7 @@
 """DebugPlan executor: multi-stop capture in one tool call.
 
-A plan reuses the interactive machinery exactly — every stop flows through
-the same StopProcessor — the executor just decides which verb to issue
+A plan reuses the interactive machinery exactly. Every stop flows through
+the same StopProcessor, the executor just decides which verb to issue
 next and when to hand control back to the model. Waiting is tree-aware
 via DebugSessionManager.wait_for_stop, because multi-session adapters
 (js-debug) stop on child sessions, never the root.
@@ -82,7 +82,7 @@ async def run_plan(
             break
         node = await manager.wait_for_stop(session_id, timeout=min(remaining, _STOP_WAIT_SECONDS))
         if node is None:
-            continue  # still running inside the budget — keep waiting
+            continue  # still running inside the budget. Keep waiting
         session = node.session
         if session.state == SessionState.terminated:
             report.halted = "terminated"

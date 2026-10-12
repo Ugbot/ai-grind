@@ -1,4 +1,4 @@
-"""Polars frames over a BuildResult — the queryable surface for build runs.
+"""Polars frames over a BuildResult, the queryable surface for build runs.
 
 Every frame carries a `function` column (the row's primary name) and a `kind`
 column (its primary category) so the generic devtools_analyze/query/compare/

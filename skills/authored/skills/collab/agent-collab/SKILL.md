@@ -2,7 +2,7 @@
 name: agent-collab
 description: >
   Coordinate multiple AI agents working on the same machine and codebases via
-  the devtools-mcp local collaboration layer — file-touch reporting hooks,
+  the devtools-mcp local collaboration layer: file-touch reporting hooks,
   advisory file claims (leases), conflict checks, and the /collab dashboard
   page, all linked to tracker tasks. Use when running more than one agent at
   once (Claude Code, Cursor, Codex), when an edit warns that another agent is
@@ -14,12 +14,12 @@ description: >
 # Local agent collaboration
 
 Multiple agents on one machine share one tracker DB (`~/.devtools-mcp/tracker.db`).
-Every file touch and claim lands there, so each agent — and the human at the
-dashboard — can see who is working where. Nothing here blocks by default:
+Every file touch and claim lands there, so each agent, and the human at the
+dashboard, can see who is working where. Nothing here blocks by default:
 claims are **advisory** leases, surfaced as warnings.
 
 > Coming soon: a multi-user **team collab server** extends this across
-> machines and teammates. This local layer is its precursor — same data shapes,
+> machines and teammates. This local layer is its precursor, with the same data shapes,
 > same tracker linkage.
 
 ## Prerequisite
@@ -30,7 +30,7 @@ The shared devtools service must be running (hooks are silent no-ops otherwise):
 .\scripts\devtools-service.ps1 start   # MCP :8000, dashboard :8765
 ```
 
-## Identity — do this first
+## Set your identity first
 
 Set a stable, human-readable label per agent session so the dashboard doesn't
 show raw session ids, and link work to the task you're on:
@@ -47,21 +47,21 @@ Hooks attach both to every touch automatically.
 Installed with the plugin (`hooks/hooks.json`), or manually in `settings.json`.
 Two scripts, both stdlib-only and never blocking:
 
-- `hooks/report_touch.py` (PostToolUse on Edit/Write/MultiEdit/NotebookEdit) —
+- `hooks/report_touch.py` (PostToolUse on Edit/Write/MultiEdit/NotebookEdit):
   reports the touched file; if someone else is on it, a warning lands in the
   agent's context.
-- `hooks/check_conflict.py` (PreToolUse, optional strict layer) — checks for
+- `hooks/check_conflict.py` (PreToolUse, optional strict layer) checks for
   claims *before* the edit.
 
 Config via env:
 
 | Var | Meaning |
 |---|---|
-| `DEVTOOLS_MCP_COLLAB=0` | kill switch — hooks exit immediately |
+| `DEVTOOLS_MCP_COLLAB=0` | kill switch; hooks exit immediately |
 | `DEVTOOLS_MCP_COLLAB_MODE` | `warn` (default) / `ask` (claimed files prompt the human) / `off` |
 | `DEVTOOLS_MCP_COLLAB_URL` | service base, default `http://127.0.0.1:8765` |
 
-Minimum-overhead install: PostToolUse only — its response already carries conflicts.
+Minimum-overhead install: PostToolUse only, because its response already carries conflicts.
 
 ## Explicit coordination (tracker_files tool)
 
@@ -80,8 +80,8 @@ file you hold gets a clear error naming you and your task.
 
 ## Queries and the dashboard
 
-- `tracker_query(view="activity")` / `view="claims"` — bounded tables.
-- **`http://127.0.0.1:8765/collab`** — sessions, active claims, recent touches;
+- `tracker_query(view="activity")` and `view="claims"` return bounded tables.
+- `http://127.0.0.1:8765/collab` shows sessions, active claims, recent touches;
   contested files (two+ sessions) are highlighted.
 - Task detail pages (`/tracker/task/KEY`) show the file activity linked to that
   task via `DEVTOOLS_MCP_TASK` or `task_key=`.
@@ -93,5 +93,5 @@ file you hold gets a clear error naming you and your task.
 2. Partition work by task in the tracker (see tracker-breakdown skill).
 3. Before a wide-ranging change, `claim` the hot files; release when done.
 4. When a warning names another agent, check `tracker_files(action="status")`
-   and either pick a different file or coordinate through task comments —
+   and either pick a different file or coordinate through task comments,
    don't race the edit.

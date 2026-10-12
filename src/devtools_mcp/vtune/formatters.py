@@ -1,4 +1,4 @@
-"""VTune summary formatters — bounded top-N tables, never the full report."""
+"""VTune summary formatters. Bounded top-N tables, never the full report."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def format_vtune_summary(result: VtuneResult) -> str:
             name = fn.function if len(fn.function) <= 90 else fn.function[:87] + "..."
             parts.append(f"| {name} | {fn.module} | {cells} |")
     else:
-        parts.append("\nNo function rows parsed — see the summary below / check symbols.")
+        parts.append("\nNo function rows parsed. See the summary below / check symbols.")
 
     summary_lines = [line for line in result.summary_text.splitlines() if line.strip()]
     if summary_lines:

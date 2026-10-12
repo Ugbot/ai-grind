@@ -1,4 +1,4 @@
-"""Python summary formatters — bounded per tool."""
+"""Python summary formatters. Bounded per tool."""
 
 from __future__ import annotations
 

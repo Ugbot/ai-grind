@@ -1,4 +1,4 @@
-"""Tests for the OSV.dev client — canned responses via the injectable fetch, no network."""
+"""Tests for the OSV.dev client, canned responses via the injectable fetch, no network."""
 
 from __future__ import annotations
 

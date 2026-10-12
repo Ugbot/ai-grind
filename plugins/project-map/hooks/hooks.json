@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/project-map/scripts/kb.py\" --root \"${CLAUDE_PROJECT_DIR}\" index --quiet --if-initialized || true"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -15,7 +15,7 @@ _BAR_WIDTH = 20
 
 
 def _bar(pct: float) -> str:
-    # ASCII only — the tree may be written to non-UTF-8 streams on some hosts.
+    # ASCII only, the tree may be written to non-UTF-8 streams on some hosts.
     filled = int(round(pct / 100.0 * _BAR_WIDTH))
     filled = max(0, min(_BAR_WIDTH, filled))
     return "#" * filled + "." * (_BAR_WIDTH - filled)
@@ -52,7 +52,7 @@ def render_text_tree(
         for child in reversed(kids):
             stack.append((child, depth + 1))
     if truncated:
-        lines.append(f"… tree truncated at {cap} rows — narrow with min_pct/max_depth or use devtools_analyze")
+        lines.append(f"… tree truncated at {cap} rows, narrow with min_pct/max_depth or use devtools_analyze")
     return "\n".join(lines)
 
 

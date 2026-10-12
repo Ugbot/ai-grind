@@ -1,0 +1,25 @@
+{
+  "name": "project-map",
+  "version": "1.0.0",
+  "description": "Pre-map any project for coding agents: CLAUDE.md per area, a PROJECT_MAP.md that records what/where/why, engineering principles, and a local SQLite FTS5/BM25 index (optional embeddings) exposed as CLI + MCP tools, with agent notes that go stale when their files change.",
+  "keywords": [
+    "claude-md",
+    "agents-md",
+    "project-map",
+    "templating",
+    "bm25",
+    "sqlite",
+    "mcp",
+    "documentation"
+  ],
+  "skills": "./skills",
+  "interface": {
+    "displayName": "project-map",
+    "shortDescription": "Template any project for coding agents in one command",
+    "longDescription": "Pre-map any project for coding agents: CLAUDE.md per area, a PROJECT_MAP.md that records what/where/why, engineering principles, and a local SQLite FTS5/BM25 index (optional embeddings) exposed as CLI + MCP tools, with agent notes that go stale when their files change.",
+    "developerName": "Ugbot",
+    "category": "development",
+    "websiteUrl": "https://github.com/Ugbot/ai-grind"
+  },
+  "mcpServers": {}
+}

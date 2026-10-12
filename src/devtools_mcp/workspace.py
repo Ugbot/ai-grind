@@ -1,4 +1,4 @@
-"""Workspace state management — generalized for all tool suites."""
+"""Workspace state management, generalized for all tool suites."""
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ class Workspace:
                     setattr(result, key, val)
             result.workspace_id = self.workspace_id
             result.workspace_name = self.name
-            # tool version from registry if available — set by caller when known
+            # tool version from registry if available, set by caller when known
         if summary:
             result.stored_summary = summary
         self.runs[run_id] = result
@@ -254,7 +254,7 @@ class AppContext:
         return ws.hydrate_from_disk()
 
     def cleanup_all(self) -> None:
-        """Clean up session temp dirs, viz server, and the SQLite stores — not
+        """Clean up session temp dirs, viz server, and the SQLite stores, not
         persisted runs."""
         if self.viz_server is not None:
             with contextlib.suppress(Exception):
@@ -282,7 +282,7 @@ class AppContext:
         disconnects). In the server it is already awaited in app_lifespan right
         before cleanup_all, so here (a sync context, usually with the event loop
         still running) we only drop the reference. When cleanup_all is invoked
-        standalone with no running loop — e.g. a direct AppContext in a test — we
+        standalone with no running loop, e.g. a direct AppContext in a test. We
         best-effort drive stop_all() to completion so subprocesses are reaped.
         """
         mgr = self.debug_manager

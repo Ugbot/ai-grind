@@ -25,7 +25,7 @@ BUSY_TIMEOUT_MS: int = 5000
 class RecipesError(Exception):
     """Runtime recipes error (bad input, missing recipe, malformed spec).
 
-    An expected condition reported back to the caller — never a programmer-error
+    An expected condition reported back to the caller. Never a programmer-error
     invariant (those are asserts).
     """
 

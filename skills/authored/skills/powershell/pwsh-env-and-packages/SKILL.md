@@ -10,7 +10,7 @@ description: >
 
 # PowerShell environment & package management
 
-## Environment variables — session vs persistent
+## Environment variables: session vs persistent
 
 ```powershell
 $env:PATH                                  # read
@@ -33,7 +33,7 @@ and pick a scope:
 [Environment]::GetEnvironmentVariable('MY_VAR', 'User')
 ```
 
-**A persisted change does NOT affect already-open sessions** — only new ones. To
+A persisted change does NOT affect already-open sessions, only new ones. To
 use it immediately, also set `$env:MY_VAR` in the current session.
 
 ```powershell
@@ -48,7 +48,7 @@ then run the command (it inherits into children):
 $env:NODE_ENV = 'production'; npm run build
 ```
 
-## PATH — append safely, persistently
+## PATH: append safely and persistently
 
 ```powershell
 # Session only:
@@ -64,7 +64,7 @@ $env:PATH += ';C:\tools\bin'      # reflect immediately in this session
 
 Always read-modify-write the **same scope** (User or Machine). Reading
 `$env:PATH` and writing it back to `User` would merge Machine+User into User and
-corrupt it — read with `GetEnvironmentVariable(...,'User')` for the User scope.
+corrupt it. Read with `GetEnvironmentVariable(...,'User')` for the User scope.
 
 ## Special / useful built-in variables
 

@@ -12,7 +12,7 @@ description: >
 # PowerShell for non-interactive / automated execution
 
 In a headless context (CI, a scheduled task, an AI agent harness, `pwsh
--NonInteractive`) **any prompt is a hang** — there's no human to answer it. Write
+-NonInteractive`) any prompt is a hang, because there's no human to answer it. Write
 defensively.
 
 ## Never call these in automation (they block forever)
@@ -27,7 +27,7 @@ defensively.
 | `Wait-Event` with no source | a bounded `Wait-Job -Timeout` |
 | `-Confirm` prompts (implicit) | pass `-Confirm:$false` (see below) |
 
-## Destructive cmdlets prompt by default — suppress it
+## Destructive cmdlets prompt by default, so suppress it
 
 Cmdlets with a high `ConfirmImpact` (`Remove-Item` on read-only/hidden,
 `Stop-Process`, `Clear-Content`, `Stop-Service`, many `Remove-*`) may prompt.
@@ -53,10 +53,10 @@ powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -File .\task.ps1
 pwsh       -NonInteractive -NoProfile -ExecutionPolicy Bypass -File .\task.ps1
 ```
 
-- `-NonInteractive` — cmdlets that would prompt error out instead of hanging
-  (turns a silent hang into a visible, debuggable failure — strongly recommended).
-- `-NoProfile` — skip `$PROFILE`, so machine-specific profile code can't interfere.
-- `-ExecutionPolicy Bypass` — run unsigned scripts in this invocation only.
+- `-NonInteractive` makes cmdlets that would prompt error out instead of hanging
+  (turning a silent hang into a visible, debuggable failure; recommended).
+- `-NoProfile` skips `$PROFILE`, so machine-specific profile code can't interfere.
+- `-ExecutionPolicy Bypass` runs unsigned scripts in this invocation only.
 
 ## Make errors fail the run (don't hang or silently pass)
 
@@ -73,7 +73,7 @@ useless in logs).
 
 ## Native commands: pass their non-interactive flags
 
-Most tools have a "don't ask" flag — use it:
+Most tools have a "don't ask" flag. Use it:
 
 ```powershell
 git ... --no-edit          # don't open an editor
@@ -84,7 +84,7 @@ docker build -q ...
 ```
 
 Never invoke editor-driven git modes in automation: `git rebase -i`,
-`git commit` (no `-m`), `git add -i` — they open `$EDITOR` and hang.
+`git commit` (no `-m`) and `git add -i` open `$EDITOR` and hang.
 
 ## Inputs come from parameters/env, not prompts
 
@@ -97,7 +97,7 @@ if (-not $ApiKey) { Write-Error 'API_KEY not set'; exit 1 }
 ```
 
 `[Parameter(Mandatory)]` is safe in automation **only if the caller passes the
-value** — a missing mandatory param will itself prompt interactively. In strict
+value**. A missing mandatory param will itself prompt interactively. In strict
 headless flows, validate explicitly and `exit 1` rather than relying on Mandatory.
 
 ## Timeouts: never wait unbounded

@@ -1,4 +1,4 @@
-"""Node analysis — hotspots DataFrame + flame-graph stacks."""
+"""Node analysis, hotspots DataFrame + flame-graph stacks."""
 
 from __future__ import annotations
 

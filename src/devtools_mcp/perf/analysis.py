@@ -1,4 +1,4 @@
-"""perf analysis — convert results to Polars DataFrames."""
+"""perf analysis, convert results to Polars DataFrames."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def perf_counters_df(result: PerfStatResult) -> pl.DataFrame:
 
 
 def perf_hotspots_df(result: PerfRecordResult) -> pl.DataFrame:
-    """Sampling hotspots — symbol, shared object, overhead."""
+    """Sampling hotspots, symbol, shared object, overhead."""
     rows = []
     for sample in result.samples:
         rows.append(

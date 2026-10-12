@@ -6,7 +6,7 @@ reaper never expires it before the local lease does. Released/expired
 local claims release their checkouts.
 
 Pull (direction 'both'): other members' active checkouts are mirrored
-wholesale into station_remote_checkouts — never into file_claims, whose
+wholesale into station_remote_checkouts. Never into file_claims, whose
 unique active-claim index would let a remote row hard-block a local
 acquire and silently change advisory semantics.
 """
@@ -31,7 +31,7 @@ CHECKOUT_MIRROR_MAX: int = 500
 
 
 def config_repo_root(cfg: StationConfig) -> Path | None:
-    """The repo holding station.toml — None when the config is the global file."""
+    """The repo holding station.toml, None when the config is the global file."""
     assert cfg.source_path, "config must record its source"
     source = Path(cfg.source_path)
     root = source.parent.parent  # <root>/.devtools-mcp/station.toml
@@ -66,16 +66,16 @@ def sync(
     rule = cfg.rule("collab")
     repo_id = project_row["repo_id"]
     if not repo_id:
-        raise TrackerError("collab domain has no platform repo — re-run station_link action='link'")
+        raise TrackerError("collab domain has no platform repo, re-run station_link action='link'")
     repo_root = config_repo_root(cfg)
     if repo_root is None:
         raise TrackerError(
             "collab needs a repo-level station.toml (.devtools-mcp/station.toml in the repo), "
-            "not the global config — claims are scoped to one repo"
+            "not the global config, claims are scoped to one repo"
         )
     report = {"domain": "collab", "pushed": 0, "pulled": 0, "conflicts": 0, "skipped": 0, "errors": 0, "notes": []}
     if rule.direction in ("push", "both"):
-        # activity.normalize stores roots as resolved posix paths — match that form
+        # activity.normalize stores roots as resolved posix paths, match that form
         _push_claims(db, client, project_row, repo_root.resolve().as_posix(), rule.ttl_minutes, dry_run, report)
     if rule.direction in ("pull", "both") and not dry_run:
         _mirror_checkouts(db, client, project_row, report)
@@ -176,7 +176,7 @@ def _mirror_checkouts(db: TrackerDB, client: StationClient, project_row: sqlite3
 
 
 def remote_conflicts_for(conn: sqlite3.Connection, path: str) -> list[dict]:
-    """Other members' mirrored checkouts touching `path` — advisory display only."""
+    """Other members' mirrored checkouts touching `path`, advisory display only."""
     assert path, "path must be non-empty"
     normalized = path.replace("\\", "/")
     rows = conn.execute(

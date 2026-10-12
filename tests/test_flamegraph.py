@@ -109,7 +109,7 @@ class TestFocus:
         assert focus(tree, "nope") is None
 
     def test_merges_multiple_occurrences(self):
-        # 'lock' appears under two different parents — focus merges both subtrees.
+        # 'lock' appears under two different parents, focus merges both subtrees.
         samples = [
             StackSample(frames=["a", "lock", "spin"], weight=5),
             StackSample(frames=["b", "lock", "spin"], weight=7),

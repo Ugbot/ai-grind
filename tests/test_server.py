@@ -383,7 +383,7 @@ class TestDevtoolsList:
 
 
 class TestDevtoolsRun:
-    """Test running tools — we can test the unavailable path without requiring valgrind."""
+    """Test running tools. We can test the unavailable path without requiring valgrind."""
 
     async def test_run_nonexistent_suite(self):
         text = await _call_tool(
@@ -466,7 +466,7 @@ class TestDevtoolsSearch:
 
 
 # ---------------------------------------------------------------------------
-# Tests: Debug tools (error paths — no real LLDB needed)
+# Tests: Debug tools (error paths. No real LLDB needed)
 # ---------------------------------------------------------------------------
 
 
@@ -522,7 +522,7 @@ class TestDevtoolsRaw:
 
 
 class TestWorkspaceOps:
-    """Test workspace operations directly — store, retrieve, list, raw paths."""
+    """Test workspace operations directly, store, retrieve, list, raw paths."""
 
     def test_store_and_retrieve_run(self, app_ctx):
         ws = app_ctx.get_workspace()
@@ -769,7 +769,7 @@ class TestUnifiedIndex:
         ws.store_run(_make_memcheck_result())
         ws.store_run(_make_callgrind_result())
         index = build_index(ws)
-        # Filter to valgrind only — should still have rows
+        # Filter to valgrind only, should still have rows
         found = search_index(index, suite="valgrind")
         assert not found.is_empty()
         assert all(s == "valgrind" for s in found["suite"].to_list())
@@ -792,7 +792,7 @@ class TestUnifiedIndex:
         ws = app_ctx.get_workspace()
         ws.store_run(_make_callgrind_result())
         index = build_index(ws)
-        # Use a very low threshold — should still find rows
+        # Use a very low threshold, should still find rows
         found = search_index(index, min_value=0.0)
         if not index.filter(pl.col("value").is_not_null()).is_empty():
             assert not found.is_empty()

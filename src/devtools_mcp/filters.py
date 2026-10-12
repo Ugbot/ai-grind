@@ -22,7 +22,7 @@ import polars as pl
 class FilterSpec:
     """Declarative filter specification applicable to any analysis DataFrame.
 
-    All fields are optional — only specified filters are applied.
+    All fields are optional, only specified filters are applied.
     Filters are applied in order: include → exclude → thresholds → sort → sample → paginate.
     """
 

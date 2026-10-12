@@ -9,7 +9,7 @@ Migration v1 captures the schema that used to be created ad-hoc via scattered
 predate versioning, v1 keeps the ``IF NOT EXISTS`` guards: a pre-versioning
 skilldocs.db (no ``schema_migrations`` table) reports version 0, so v1 runs and
 the guards no-op over the already-present tables, then the version row is
-stamped — the DB upgrades cleanly. A fresh DB is created identically.
+stamped, the DB upgrades cleanly. A fresh DB is created identically.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ MIGRATIONS_MAX: int = 50
 
 # v1: the live-skill CRDT store + local control state.
 #   skill_docs     one row per live skill (created/updated bookkeeping).
-#   skill_updates  the CRDT update log — one blob per mutation, periodically
+#   skill_updates  the CRDT update log. One blob per mutation, periodically
 #                  compacted to a single snapshot (store.py::_compact).
 #   skill_control  small last-writer-wins key/value table for the active power
 #                  mode, per-skill overrides, and the disabled set.

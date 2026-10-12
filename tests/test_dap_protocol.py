@@ -242,7 +242,7 @@ async def test_out_of_order_responses_resolve_right_futures():
         seq_alpha, seq_beta = sent[0]["seq"], sent[1]["seq"]
         assert seq_alpha != seq_beta
 
-        # Answer beta first — it must resolve while alpha stays pending.
+        # Answer beta first. It must resolve while alpha stays pending.
         transport.reader.feed_data(
             encode_message(
                 {

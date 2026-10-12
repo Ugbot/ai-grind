@@ -74,7 +74,7 @@ class TestFunctionFrame:
 class TestDtraceOffsetNormalization:
     def test_offsets_stripped_and_merged(self):
         # The same function at three instruction offsets must aggregate as ONE
-        # function — with offsets kept, a hot function fragments into offset
+        # function, with offsets kept, a hot function fragments into offset
         # buckets and every per-function view under-reports it.
         result = _dtrace_result(
             [
@@ -133,7 +133,7 @@ class TestAggregateAcrossRuns:
     """The N-run aggregation math devtools_aggregate builds on.
 
     The point of aggregating is separating BROAD costs (present in most
-    workloads — optimize once, win everywhere) from SPIKY ones (huge in a
+    workloads, optimize once, win everywhere) from SPIKY ones (huge in a
     single workload). total_share = mean_pct * runs / n_runs encodes exactly
     that: a function at 10% in every run outranks one at 50% in a single run.
     """

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "devtools-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "devtools-mcp"
+      ],
+      "cwd": "."
+    }
+  }
+}

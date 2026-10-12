@@ -7,7 +7,7 @@ layers in which the remaining work can proceed (tasks in one layer are
 parallelizable).
 
 Hierarchy interacts with planning in one way: a task with open children is not
-"ready" itself — its punch cards are; it shows up as waiting on subtasks.
+"ready" itself, its punch cards are; it shows up as waiting on subtasks.
 """
 
 from __future__ import annotations
@@ -85,7 +85,7 @@ def dependents_of(conn: sqlite3.Connection, task_id: int) -> list[Task]:
 def unblocked_by_closing(conn: sqlite3.Connection, task_id: int) -> list[str]:
     """Keys of open dependents whose ONLY unsatisfied dependency is this task.
 
-    Call before (or after) closing `task_id` — the answer is the same because
+    Call before (or after) closing `task_id`, the answer is the same because
     the check excludes `task_id` from the unsatisfied set explicitly.
     """
     assert task_id > 0, f"bad task_id {task_id}"

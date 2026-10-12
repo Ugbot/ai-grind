@@ -3,14 +3,14 @@
 Multiple agents on one machine share the tracker DB; this module records which
 files each session touches (fed by Claude Code hooks or the tracker_files
 tool), grants short advisory leases ("claims") on files, and answers "who else
-is working here?". Everything is site-local — deliberately outside the CRDT
-sync set (see schema.py MIGRATION_V5) — because claims are transient
+is working here?". Everything is site-local, deliberately outside the CRDT
+sync set (see schema.py MIGRATION_V5), because claims are transient
 machine-local state; the upcoming team collab server owns the cross-machine
 story.
 
 Conventions match commits.py: writes take a TrackerDB (they own the
 transaction), reads take a sqlite3.Connection (they compose inside one).
-Claim acquisition is atomic via BEGIN IMMEDIATE — the partial unique index
+Claim acquisition is atomic via BEGIN IMMEDIATE, the partial unique index
 idx_claims_active is the backstop invariant.
 """
 

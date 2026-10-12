@@ -112,7 +112,7 @@ def sync(
             report["skipped"] += 1
             continue
         if pushed >= SKILLS_PUSH_MAX_PER_RUN:
-            report["notes"].append(f"push cap {SKILLS_PUSH_MAX_PER_RUN} hit — remainder next run")
+            report["notes"].append(f"push cap {SKILLS_PUSH_MAX_PER_RUN} hit, remainder next run")
             break
         if not dry_run:
             body = _skill_body(root, item)

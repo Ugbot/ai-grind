@@ -1,1 +1,1 @@
-"""Gradle backend — build, test, tasks, dependencies, refresh (sync)."""
+"""Gradle backend, build, test, tasks, dependencies, refresh (sync)."""

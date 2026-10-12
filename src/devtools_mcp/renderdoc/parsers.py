@@ -64,13 +64,13 @@ def classify_bridge_error(payload: dict, stderr_tail: str = "") -> str:
     stage = str(payload.get("stage", ""))
     lowered = error.lower()
     if "replaysupport" in lowered or "unsupported" in lowered or "incompatible" in lowered:
-        hint = "capture unsupported or RenderDoc version mismatch — recapture with the installed RenderDoc version"
+        hint = "capture unsupported or RenderDoc version mismatch, recapture with the installed RenderDoc version"
     elif "gpu" in lowered or "device" in lowered or "display" in lowered or "vulkan" in lowered:
-        hint = "replay needs a GPU + interactive session — run the MCP server in your user session, not a service"
+        hint = "replay needs a GPU + interactive session. Run the MCP server in your user session, not a service"
     elif stage == "open" or "failed to open" in lowered or "no such file" in lowered:
-        hint = "could not open the capture file — check the .rdc path"
+        hint = "could not open the capture file. Check the .rdc path"
     elif "no actions" in lowered or "no frames" in lowered:
-        hint = "capture contains no frames — the capture trigger never fired (try --frame or press F12 in-app)"
+        hint = "capture contains no frames, the capture trigger never fired (try --frame or press F12 in-app)"
     else:
         hint = "see devtools_raw(run_id) for the full bridge output"
     return f"renderdoc bridge failed at stage '{stage or 'unknown'}': {error}\n{hint}"

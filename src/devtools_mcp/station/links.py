@@ -2,7 +2,7 @@
 
 Human keys are never identity: local GRIND-19 and platform GRIND-19 are
 unrelated strings. station_links is the only join. `synced_hash` is the
-echo-suppression mechanism — after a push we store the hash of what we
+echo-suppression mechanism, after a push we store the hash of what we
 sent, after a pull-apply the hash of what we applied; a row whose current
 hash equals the link hash is a no-op in either direction.
 
@@ -116,7 +116,7 @@ def insert_link(
     remote_key: str | None,
     synced_hash: str | None,
 ) -> None:
-    """Insert (or replace) a resolved link — used by pull-applies."""
+    """Insert (or replace) a resolved link, used by pull-applies."""
     assert domain in LINK_DOMAINS, f"unknown link domain {domain!r}"
     assert local_id and remote_id and org_id, "link ids must be non-empty"
     now = utc_now_iso()

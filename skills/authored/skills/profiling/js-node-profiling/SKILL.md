@@ -1,7 +1,7 @@
 ---
 name: js-node-profiling
 description: >
-  Profile Node.js / JavaScript via the devtools-mcp node backend — V8 CPU
+  Profile Node.js and JavaScript via the devtools-mcp node backend: V8 CPU
   profiles (--cpu-prof) and sampling heap profiles (--heap-prof), turned into
   flame graphs and queryable hotspot tables. Use when a Node script/server is
   slow (CPU) or memory-hungry (allocations) and you want to see which functions
@@ -15,8 +15,8 @@ into the same flame-graph + Polars-table pipeline as every other backend.
 
 | tool | what | output unit |
 |---|---|---|
-| `cpu` | `node --cpu-prof` — sampled CPU profile (`.cpuprofile`) | samples |
-| `alloc` | `node --heap-prof` — sampled allocation profile (`.heapprofile`) | bytes |
+| `cpu` | `node --cpu-prof`, a sampled CPU profile (`.cpuprofile`) | samples |
+| `alloc` | `node --heap-prof`, a sampled allocation profile (`.heapprofile`) | bytes |
 
 ## CPU profile → flame graph
 
@@ -27,7 +27,7 @@ devtools_analyze(run_id="...", sort_by="exclusive")  # hottest functions
 ```
 
 Width = inclusive time; high **Exc%** = where the CPU actually is. Node's own
-startup/internal frames appear too — filter to your code with
+startup and internal frames appear too, so filter to your code with
 `function_pattern=...` or just read the app frames in the flame graph.
 
 ## Heap (allocation) profile → where bytes come from

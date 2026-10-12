@@ -4,14 +4,36 @@
     "name": "Darach Ennis",
     "email": "darach@gmail.com"
   },
-  "description": "Marketplace for the devtools-mcp performance-engineering plugin — a unified MCP server plus a bundled skills library (profiling, debugging, PowerShell, code-intel).",
+  "description": "Marketplace for the devtools-mcp performance-engineering plugin — a unified MCP server plus a bundled skills library (profiling, debugging, PowerShell, code-intel). Also ships project-map, which templates any project for coding agents.",
   "plugins": [
     {
       "name": "devtools-mcp",
       "source": ".",
       "description": "Unified perf-engineering MCP server (Valgrind/LLDB/DTrace/perf/ETW/VTune/JVM/CDB/Python/Node + build systems, flame graphs, viz terminal, progress tracker) with the full skills library bundled.",
       "category": "development",
-      "keywords": ["mcp", "profiling", "performance", "debugging", "skills"]
+      "keywords": [
+        "mcp",
+        "profiling",
+        "performance",
+        "debugging",
+        "skills"
+      ]
+    },
+    {
+      "name": "project-map",
+      "source": "./plugins/project-map",
+      "description": "Template any project for coding agents in one command: CLAUDE.md per area, a PROJECT_MAP.md that records what/where/why, engineering principles, and a local SQLite FTS5/BM25 index (optional embeddings) as CLI + MCP tools, with agent notes that go stale when their files change.",
+      "category": "development",
+      "keywords": [
+        "claude-md",
+        "agents-md",
+        "project-map",
+        "templating",
+        "bm25",
+        "sqlite",
+        "mcp",
+        "documentation"
+      ]
     }
   ]
 }

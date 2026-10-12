@@ -1,1 +1,1 @@
-"""Maven backend — build, test, dependency tree, dependency resolve (sync)."""
+"""Maven backend, build, test, dependency tree, dependency resolve (sync)."""

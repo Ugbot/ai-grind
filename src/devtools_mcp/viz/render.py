@@ -1,6 +1,6 @@
 """Pure HTML rendering for the visualization terminal (no framework, no CDN).
 
-Dark design system rendered server-side: cards, badges, progress bars — all
+Dark design system rendered server-side: cards, badges, progress bars, all
 plain CSS. Kept dependency-free and side-effect-free so it's unit-testable:
 every function takes plain data and returns an HTML string.
 """
@@ -154,7 +154,7 @@ def page(
     """Wrap body in the shared shell (header, nav, content column).
 
     The nav is the built-in tabs plus any tabs contributed through the viz page
-    registry (viz/pages.py) — so an out-of-tree plugin's console page appears in
+    registry (viz/pages.py), so an out-of-tree plugin's console page appears in
     the nav without editing this list. The reference registered page is
     /recipes; built-ins stay hard-coded here.
     """
@@ -331,7 +331,7 @@ def flame_page(run_id: str, svg: str, total: int, focus_name: str | None, hotspo
     crumbs = f"<a href='/run/{_h(run_id)}'>run</a> / flame"
     reset = ""
     if focus_name:
-        reset = f"<p class='note'>focused on <b>{_h(focus_name)}</b> — " f"<a href='/flame/{_h(run_id)}'>reset</a></p>"
+        reset = f"<p class='note'>focused on <b>{_h(focus_name)}</b>, " f"<a href='/flame/{_h(run_id)}'>reset</a></p>"
     body = (
         f"<h2>Flame graph <span class='pill'>{_h(run_id[:8])}</span></h2>"
         f"<p class='note'>{total:,} samples · click any frame to zoom into its subtree</p>"
@@ -346,7 +346,7 @@ def raw_page(run_id: str, text: str, truncated: bool, size: int = 0) -> str:
     note = ""
     if truncated:
         note = (
-            f"<p class='note'>preview truncated ({size:,} bytes) — "
+            f"<p class='note'>preview truncated ({size:,} bytes), "
             f"<a href='/raw/{_h(run_id)}/download'>download full</a></p>"
         )
     body = f"<h2>Raw output <span class='pill'>{_h(run_id[:8])}</span></h2>{note}<pre>{_h(text)}</pre>"
@@ -503,7 +503,7 @@ def tracker_board(
     overflow = ""
     if total_tasks > shown:
         overflow = (
-            f"<p class='warn'>Showing {shown} of {total_tasks} tasks — "
+            f"<p class='warn'>Showing {shown} of {total_tasks} tasks, "
             "use tracker filters or sub-views for full lists.</p>"
         )
     columns = []
@@ -511,14 +511,14 @@ def tracker_board(
         in_col = [t for t in tasks_rows if t.get("status") == status]
         if status in ("done", "cancelled") and not in_col:
             continue
-        cards = "".join(task_card(t) for t in in_col) or "<p class='note'>—</p>"
+        cards = "".join(task_card(t) for t in in_col) or "<p class='note'>, </p>"
         columns.append(
             f"<div class='col'><h3>{STATUS_LABEL[status]} "
             f"<span class='count'>{len(in_col)}</span></h3>{cards}</div>"
         )
     plan_html = _plan_section(plan) if plan else ""
     body = (
-        f"<h2>{_h(project['key'])} — {_h(project['name'])} "
+        f"<h2>{_h(project['key'])}, {_h(project['name'])} "
         f"<span class='count'>{shown} tasks</span></h2>"
         f"{subnav}{overflow}<div class='board'>{''.join(columns)}</div>{plan_html}"
     )
@@ -677,7 +677,7 @@ def collab_page(
     """Local agent collaboration: who is working where, right now.
 
     `contested` marks (repo_root, file_path) pairs touched or claimed by more
-    than one session — those rows get the conflict (stuck) border.
+    than one session, those rows get the conflict (stuck) border.
     """
     session_cards = "".join(
         f"<div class='card'><h4>{_h(s.get('agent_label') or s.get('session_id', ''))}</h4>"
@@ -690,7 +690,7 @@ def collab_page(
     sessions_html = (
         f"<div class='grid'>{session_cards}</div>"
         if session_cards
-        else "<div class='empty'>No agent sessions yet — touches arrive via the "
+        else "<div class='empty'>No agent sessions yet, touches arrive via the "
         "Claude Code hooks or <code>tracker_files</code>.</div>"
     )
     claim_rows = "".join(
@@ -714,7 +714,7 @@ def collab_page(
     body = (
         "<h2>Agent collaboration</h2>"
         "<p class='note'>File touches and advisory claims from every agent on this machine, "
-        "reported by hooks and <code>tracker_files</code>. Highlighted rows are contested — "
+        "reported by hooks and <code>tracker_files</code>. Highlighted rows are contested, "
         "more than one session on the same file. A multi-user team collab server is "
         "<b>coming soon</b>; this local view is its single-machine precursor.</p>"
         f"<div class='section'><h3>Sessions</h3>{sessions_html}</div>"
@@ -916,24 +916,24 @@ def recipe_run_page(run: dict, steps: list[dict], recipe_key: str) -> str:
             tails.append(
                 f"<h3>{_h(s.get('label', ''))} <span class='sub'>output tail</span></h3><pre>{_h(tail_text)}</pre>"
             )
-    running_note = "<p class='warn'>Run in progress — this page refreshes automatically.</p>" if still_running else ""
+    running_note = "<p class='warn'>Run in progress. This page refreshes automatically.</p>" if still_running else ""
     raw = f"<p class='note'>full output: <code>{_h(run.get('raw_path', ''))}</code></p>" if run.get("raw_path") else ""
     body = (
         f"<h2>Run <span class='pill'>#{_h(rid)}</span> {_run_status_badge(run.get('status', ''))}</h2>"
         f"<p class='note'>recipe <a href='/recipes/{_h(recipe_key)}'>{_h(recipe_key)}</a> · "
         f"exit {_h('' if run.get('exit_code') is None else run.get('exit_code'))} · "
-        f"started {_h(run.get('started_at', ''))} · finished {_h(run.get('finished_at') or '—')}</p>"
+        f"started {_h(run.get('started_at', ''))} · finished {_h(run.get('finished_at') or ', ')}</p>"
         f"{running_note}{table}{''.join(tails)}{raw}"
     )
     return page(f"run {rid}", body, crumbs, active="recipes", auto_refresh=still_running)
 
 
 def graph_page(svg: str, focus: str, node_count: int, edge_count: int, note: str = "") -> str:
-    """Wrap a code-graph SVG in the dashboard shell. Server-rendered, no CDN —
+    """Wrap a code-graph SVG in the dashboard shell. Server-rendered, no CDN,
     every node is a focus link (click to re-root), like the flamegraph."""
     head = (
         "<h2>Code graph</h2>"
-        f"<p class='note'>Focus: <code>{_h(focus)}</code> — {node_count} node(s), "
+        f"<p class='note'>Focus: <code>{_h(focus)}</code>, {node_count} node(s), "
         f"{edge_count} edge(s) shown. Click any node to re-root. "
         "Built natively by LLM Station (<code>graph_build</code> → <code>graph_export</code>).</p>"
     )

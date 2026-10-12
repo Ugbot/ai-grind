@@ -1,7 +1,7 @@
 ---
 name: pwsh-errors
 description: >
-  Error handling in PowerShell — terminating vs non-terminating errors, try/catch,
+  Error handling in PowerShell: terminating vs non-terminating errors, try/catch,
   -ErrorAction, $ErrorActionPreference, $LASTEXITCODE, and exit codes. Use when a
   try/catch isn't catching, when a cmdlet "fails" but the script keeps going, when
   -ErrorAction SilentlyContinue still makes the script report failure, when you
@@ -17,9 +17,9 @@ noted.
 
 ## Terminating vs non-terminating
 
-- **Terminating** — stops execution; **caught by `try/catch`**. Sources: `throw`,
+- Terminating errors stop execution and are caught by `try/catch`. Sources: `throw`,
   `.NET` exceptions, and cmdlets run with `-ErrorAction Stop`.
-- **Non-terminating** — writes to the error stream and **keeps going**; `try/catch`
+- Non-terminating errors write to the error stream and keep going; `try/catch`
   does **not** catch it. This is the default for most cmdlet errors
   (`Get-Item missing`, `Remove-Item` on a locked file, etc.).
 
@@ -59,7 +59,7 @@ $ErrorActionPreference = 'Stop'      # now most cmdlet errors throw and are catc
 
 ## `-ErrorAction SilentlyContinue` does NOT mean "ignore the failure"
 
-It suppresses the error *output*, but the cmdlet still failed — and in an
+It suppresses the error output, but the cmdlet still failed, and in an
 automation harness the overall step can still report exit 1. To make a failure
 **truly non-fatal**, promote it to terminating and swallow it:
 
@@ -98,7 +98,7 @@ finally { if ($fs) { $fs.Dispose() } }     # always runs
 
 ## Native exes don't raise PowerShell errors
 
-A failing `git`/`npm`/`docker` does **not** throw — it sets `$LASTEXITCODE`. Check
+A failing `git`, `npm`, or `docker` does not throw. It sets `$LASTEXITCODE`. Check
 it explicitly (see also `pwsh-native-commands`):
 
 ```powershell
@@ -121,7 +121,7 @@ exit 0      # explicit success
 ```
 
 `exit N` sets the process exit code. `throw` at top level also yields a non-zero
-exit. Don't rely on the last cmdlet's success leaking out — be explicit.
+exit. Don't rely on the last cmdlet's success leaking out. Be explicit.
 
 ## `Write-Error` vs `throw`
 

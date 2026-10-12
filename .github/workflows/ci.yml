@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
   test:
@@ -21,7 +20,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --frozen
 
       - name: Run tests
         run: uv run pytest -q
@@ -29,7 +28,11 @@ jobs:
       - name: Lint
         run: uv run ruff check src/
 
+      - name: Prose check (unslop)
+        run: uv run python scripts/unslop_check.py
+
       - name: Check plugin/ mirror is in sync
         run: |
           uv run python skills/sync.py --target plugin
           git diff --exit-code plugin/
+          test -z "$(git ls-files --others --exclude-standard plugin/)"

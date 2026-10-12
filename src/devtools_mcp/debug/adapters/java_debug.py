@@ -6,7 +6,7 @@ server (see debug.jdtls). transport() boots/reuses one JdtlsClient per
 project root, calls vscode.java.startDebugSession, and connects a
 SocketTransport. java-debug runs ONE shared DAP ServerSocket per jdt.ls
 (JavaDebugServer is a singleton; startDebugSession is idempotent and
-returns the same port — verified live and in JavaDebugServer.java): each
+returns the same port, verified live and in JavaDebugServer.java): each
 new TCP CONNECTION to that port is a separate debug session, so we call
 startDebugSession + open a fresh socket per transport. The client rides
 along in config.extra["_jdtls_client"] so startDebugging child sessions
@@ -18,7 +18,7 @@ transport(): resolveMainClass/resolveClasspath results are stashed in
 config.extra under _resolved_* keys and the template only reads config.
 
 Verified against the java-debug source (protocol/Requests.java @ main):
-LaunchArguments takes mainClass (String), args (String — NOT a list;
+LaunchArguments takes mainClass (String), args (String, NOT a list;
 vscode-java-debug also flattens arrays to one string before sending),
 vmArgs (String), classPaths (String[]), modulePaths (String[]), cwd, env,
 projectName, stopOnEntry, console; AttachArguments takes hostName, port,
@@ -27,7 +27,7 @@ JavaDebugDelegateCommandHandler.java: vscode.java.startDebugSession,
 vscode.java.resolveMainClass, vscode.java.resolveClasspath (singular).
 
 IMPORTANT project note: for Kotlin-only Gradle projects jdt.ls resolution
-FAILS (jdt.ls models Java sources only — no main classes, empty
+FAILS (jdt.ls models Java sources only. No main classes, empty
 classpaths). Use the kotlin adapter for those, or pass explicit
 extra={'main_class': ..., 'classpath': [...]}.
 
@@ -54,7 +54,7 @@ from devtools_mcp.debug.models import AttachConfig, LaunchConfig
 from devtools_mcp.debug.protocol import SocketTransport
 from devtools_mcp.registry import InstalledTool, InstallSpec, InstallStep
 
-# Pinned versions — both URLs verified live (HTTP 200) on 2026-07-24.
+# Pinned versions. Both URLs verified live (HTTP 200) on 2026-07-24.
 JDTLS_VERSION = "1.60.0"
 _JDTLS_TARBALL_URL = (
     "https://download.eclipse.org/jdtls/milestones/"
@@ -66,7 +66,7 @@ _JAVA_DEBUG_JAR_URL = (
     f"{JAVA_DEBUG_VERSION}/com.microsoft.java.debug.plugin-{JAVA_DEBUG_VERSION}.jar"
 )
 
-# install.py does NOT expanduser() download destinations — expand at spec-build time.
+# install.py does NOT expanduser() download destinations, expand at spec-build time.
 _HOME = os.path.expanduser(os.path.join("~", ".devtools-mcp", "adapters", "jdtls"))
 _TARBALL = os.path.join(_HOME, "jdt-language-server.tar.gz")
 _PLUGIN_JAR = os.path.join(_HOME, f"com.microsoft.java.debug.plugin-{JAVA_DEBUG_VERSION}.jar")
@@ -90,7 +90,7 @@ _RESOLVED_CLASSPATH_KEY = "_resolved_classpath"
 _RESOLVED_MODULEPATH_KEY = "_resolved_modulepaths"
 
 _KOTLIN_HINT = (
-    "For Kotlin-only Gradle projects jdt.ls cannot resolve main classes — use the kotlin "
+    "For Kotlin-only Gradle projects jdt.ls cannot resolve main classes. Use the kotlin "
     "adapter, or pass extra={'main_class': ..., 'classpath': [...]} explicitly."
 )
 
@@ -149,7 +149,7 @@ def _resolve_project_root(config: LaunchConfig | AttachConfig) -> str:
 
 
 async def _resolve_launch_details(client: JdtlsClient, config: LaunchConfig) -> None:
-    """Resolve mainClass/classPaths via jdt.ls and stash them in config.extra —
+    """Resolve mainClass/classPaths via jdt.ls and stash them in config.extra,
     launch_template is sync and must only read the config. Idempotent so child
     transports (which reuse the parent config) skip the work."""
     main_class = str(config.extra.get("main_class", "") or config.extra.get(_RESOLVED_MAIN_KEY, ""))
@@ -167,7 +167,7 @@ async def _resolve_launch_details(client: JdtlsClient, config: LaunchConfig) -> 
             )
             overflow = len(candidates) - _MAX_CANDIDATES_LISTED
             more = f", ... {overflow} more" if overflow > 0 else ""
-            raise RuntimeError(f"Multiple main classes found — pass extra={{'main_class': ...}}: {listing}{more}")
+            raise RuntimeError(f"Multiple main classes found. Pass extra={{'main_class': ...}}: {listing}{more}")
         main_class = str(candidates[0].get("mainClass", ""))
         project_name = str(candidates[0].get("projectName", "") or "")
     config.extra[_RESOLVED_MAIN_KEY] = main_class
@@ -253,7 +253,7 @@ def launch_template(config: LaunchConfig) -> dict:
 def attach_template(config: AttachConfig) -> dict:
     if config.port is None:
         raise ValueError(
-            "java attach needs port= — the JDWP port of a JVM started with "
+            "java attach needs port=, the JDWP port of a JVM started with "
             "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
         )
     args: dict[str, object] = {
@@ -283,11 +283,11 @@ async def detect() -> InstalledTool:
         version = match.group(1) if match else "unknown"
         version += f" (java {java_version})" if java_version else " (java not found)"
         if 0 < major < _MIN_JDK:
-            version += f" — JDK {_MIN_JDK}+ required"
+            version += f", JDK {_MIN_JDK}+ required"
     if available:
         path = plugin_jar
     elif not launcher or not plugin_jar:
-        path = f"missing jdt.ls/java-debug under {home} — devtools_install(suite='debug', tool='java')"
+        path = f"missing jdt.ls/java-debug under {home}, devtools_install(suite='debug', tool='java')"
     else:
         path = f"JDK {_MIN_JDK}+ required on PATH (found: {java_version or 'none'})"
     return InstalledTool(suite="debug", name="java", path=path, version=version, available=available)
@@ -324,7 +324,7 @@ _INSTALL = InstallSpec(
     platforms={"darwin": _steps(), "linux": _steps(), "windows": _steps()},
     note=(
         f"Requires a JDK {_MIN_JDK}+ on PATH (jdt.ls itself runs on it). The first debug session "
-        "per project imports it into a jdt.ls workspace — expect 30-60s; later sessions reuse "
+        "per project imports it into a jdt.ls workspace, expect 30-60s; later sessions reuse "
         "the cached server. " + _KOTLIN_HINT
     ),
     url="https://github.com/microsoft/java-debug",
@@ -344,7 +344,7 @@ def _register() -> None:
             install=_INSTALL,
             quirks=AdapterQuirks(multi_session=True, supports_attach_socket=True),
             description=(
-                "Java (microsoft/java-debug in headless jdt.ls) — launch a main class with "
+                "Java (microsoft/java-debug in headless jdt.ls), launch a main class with "
                 "auto-resolved classpath, or attach to a JDWP port"
             ),
         )

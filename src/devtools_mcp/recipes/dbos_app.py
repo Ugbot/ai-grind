@@ -1,4 +1,4 @@
-"""DBOS Transact bootstrap — the durable executor for recipe step sequences.
+"""DBOS Transact bootstrap, the durable executor for recipe step sequences.
 
 DBOS is a process-global singleton: one `DBOS(config=...)` instance, launched
 once, backed by a local SQLite *system database* that checkpoints every
@@ -8,13 +8,13 @@ recipe resume from its last completed step instead of re-running.
 This module owns that singleton's lifecycle so the rest of the codebase never
 touches DBOS construction directly:
 
-    launch_dbos()   — construct (idempotently) + launch; safe to call from
+    launch_dbos(): construct (idempotently) + launch; safe to call from
                       every server-startup path and from the console handler.
-    destroy_dbos()  — tear the singleton down (tests, clean shutdown).
+    destroy_dbos(): tear the singleton down (tests, clean shutdown).
 
 The system DB path defaults to ``~/.devtools-mcp/dbos.db`` and is overridable
 via ``DEVTOOLS_MCP_DBOS_DB`` (the test suite points it at a temp file). The
-domain recipes DB (recipes.db) is a *separate* SQLite file — DBOS's DB is the
+domain recipes DB (recipes.db) is a *separate* SQLite file, DBOS's DB is the
 durability layer, the domain DB stays the human-facing model (console + tools).
 """
 
@@ -29,9 +29,27 @@ from devtools_mcp.recipes.db import resolve_dbos_db_path
 
 DBOS_APP_NAME: str = "devtools-mcp"
 
+# DBOS's system-DB schema calls unixepoch(), which SQLite added in 3.38.
+MIN_SQLITE_FOR_DBOS: tuple[int, int, int] = (3, 38, 0)
+
 _lock = threading.Lock()
 _instance: DBOS | None = None
 _launched: bool = False
+
+
+def check_sqlite_for_dbos() -> None:
+    """Raise a clear error when the bundled sqlite3 predates unixepoch()."""
+    import sqlite3
+
+    if sqlite3.sqlite_version_info < MIN_SQLITE_FOR_DBOS:
+        required = ".".join(map(str, MIN_SQLITE_FOR_DBOS))
+        raise RuntimeError(
+            f"DBOS requires SQLite >= {required} (unixepoch()); the sqlite3 "
+            f"module is {sqlite3.sqlite_version}. Upgrade Python's SQLite "
+            "by using a Python build linked against SQLite >= "
+            f"{required} to enable durable recipes. Installing pysqlite3-binary "
+            "alone does not replace the sqlite3 module used by this process."
+        )
 
 
 def _system_database_url(path: Path) -> str:
@@ -45,7 +63,7 @@ def get_dbos() -> DBOS:
 
     Construction reads the system-DB path lazily (env override honoured), so the
     test suite can point ``DEVTOOLS_MCP_DBOS_DB`` at a temp file before the first
-    call. Does NOT launch — call `launch_dbos()` for that.
+    call. Does NOT launch. Call `launch_dbos()` for that.
     """
     global _instance
     with _lock:
@@ -65,11 +83,12 @@ def launch_dbos() -> DBOS:
     """Construct (if needed) and launch DBOS exactly once. Idempotent.
 
     Safe to call from every entrypoint (MCP lifespan, service-mode boot, the
-    dashboard's trigger-run handler) — the first call launches, the rest are
+    dashboard's trigger-run handler), the first call launches, the rest are
     no-ops. Importing the recipe runner (which applies the @workflow/@step
     decorators) must happen before launch so the workflow is registered.
     """
     global _launched
+    check_sqlite_for_dbos()
     dbos = get_dbos()
     with _lock:
         if not _launched:

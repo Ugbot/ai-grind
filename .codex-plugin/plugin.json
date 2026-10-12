@@ -1,0 +1,27 @@
+{
+  "name": "devtools-mcp",
+  "version": "0.2.0",
+  "description": "Normalized, Polars-backed MCP interface over Valgrind, LLDB, DTrace, perf, ETW/PerfView, Intel VTune, the JVM, CDB, Python, Node/JS and the Maven/Gradle/npm/pnpm/yarn/Cargo build systems — plus flame graphs, a browser visualization terminal, and a SQLite progress tracker. Bundles the full skills library (profiling, debugging, PowerShell, code-intel).",
+  "keywords": [
+    "mcp",
+    "profiling",
+    "performance",
+    "debugging",
+    "valgrind",
+    "perf",
+    "vtune",
+    "flamegraph",
+    "jvm",
+    "skills"
+  ],
+  "skills": "./plugin/skills",
+  "mcpServers": "./.codex-plugin/mcp.json",
+  "interface": {
+    "displayName": "devtools-mcp — unified perf engineering",
+    "shortDescription": "Unified perf-engineering MCP server and skills library",
+    "longDescription": "Normalized, Polars-backed MCP interface over Valgrind, LLDB, DTrace, perf, ETW/PerfView, Intel VTune, the JVM, CDB, Python, Node/JS and the Maven/Gradle/npm/pnpm/yarn/Cargo build systems — plus flame graphs, a browser visualization terminal, and a SQLite progress tracker.",
+    "developerName": "Ugbot",
+    "category": "development",
+    "websiteUrl": "https://github.com/Ugbot/ai-grind"
+  }
+}

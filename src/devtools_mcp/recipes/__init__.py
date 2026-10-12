@@ -2,7 +2,7 @@
 
 A *recipe* is an ordered list of steps (shell commands) run one after another
 with stop-on-failure semantics; every run and every step outcome is cached in
-SQLite. The domain is deliberately generic — build, test, setup, deploy, or any
+SQLite. The domain is deliberately generic, build, test, setup, deploy, or any
 other sequence of commands.
 
 Public API (how out-of-tree plugins seed recipes)::

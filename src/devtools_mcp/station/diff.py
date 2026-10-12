@@ -7,7 +7,7 @@ latest op per row. Non-op-logged tables (claims, skills, perf runs) use
 bounded table scans diffed against station_links by the domain modules.
 
 Each rule keeps its own watermark, so filtering another project's ops out
-of a batch never loses them — that project's rule scans with its own HLC.
+of a batch never loses them. That project's rule scans with its own HLC.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ def task_changes(conn: sqlite3.Connection, after_hlc: str | None, project_key: s
     Returns (rows, max_hlc_consumed). Delete ops have no payload (the
     trigger can't see the vanished row) so they carry only the uid; the
     caller decides relevance by link existence. max_hlc_consumed covers the
-    whole fetched batch — including other projects' ops — which is safe
+    whole fetched batch, including other projects' ops, which is safe
     because watermarks are per (project, domain) rule.
     """
     assert project_key, "project_key must be non-empty"
@@ -53,7 +53,7 @@ def task_changes(conn: sqlite3.Connection, after_hlc: str | None, project_key: s
 
 
 def dirty_task_uids(conn: sqlite3.Connection, after_hlc: str | None, project_key: str) -> set[str]:
-    """Uids with local edits after the watermark — the pull conflict set."""
+    """Uids with local edits after the watermark, the pull conflict set."""
     changed, _ = task_changes(conn, after_hlc, project_key)
     uids = {row["uid"] for row in changed}
     assert len(uids) <= STATION_MAX_OPS_PER_RUN, "dirty set over bound"

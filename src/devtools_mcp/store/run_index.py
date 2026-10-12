@@ -1,7 +1,7 @@
 """A small SQLite index over the on-disk run catalog.
 
 Run blobs (meta.json/result.json/parquet/raw/artifacts) stay as files under
-``<root>/runs/<run_id>/`` — this index is purely additive: a durable, queryable
+``<root>/runs/<run_id>/``. This index is purely additive: a durable, queryable
 table so ``list_run_ids()`` and ``runs_for_task_key()`` don't have to scan every
 directory and JSON-parse every meta.json. Follows the tracker pattern (its own
 DB file under the data root, WAL + foreign_keys + versioned migrations, a
@@ -20,7 +20,7 @@ ENV_DB_PATH: str = "DEVTOOLS_MCP_RUNS_DB"
 BUSY_TIMEOUT_MS: int = 5000
 MIGRATIONS_MAX: int = 50
 
-# v1: one row per persisted run — the fields lookups filter/sort on. The blobs
+# v1: one row per persisted run, the fields lookups filter/sort on. The blobs
 # themselves stay on disk; this is a pure index.
 MIGRATION_V1: tuple[str, ...] = (
     """

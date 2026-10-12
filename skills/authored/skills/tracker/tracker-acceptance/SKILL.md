@@ -49,15 +49,15 @@ result is `pass`. `tracker_criteria(action="list", key="GRIND-7")` shows
 - **strict** (`tracker_project(action="set_policy", key="GRIND",
   close_policy="strict")`): the close is **rejected** while any criterion is
   unmet or unlinked. `override=True` forces it through (the response still
-  lists what was outstanding — say why you overrode in your commit/PR).
+  lists what was outstanding, so say why you overrode in your commit or PR).
 
-The gate looks only at the task being closed, not its children — close
+The gate looks only at the task being closed, not its children, so close
 bottom-up so the tree's state stays honest.
 
 ## Recommended rhythm
 
-1. When a story is created, write its criteria immediately — they're the spec.
+1. When a story is created, write its criteria immediately. They're the spec.
 2. When the test lands, link it (`update` with `test_ref`).
 3. After each relevant test run, `record` the result.
-4. Close. If the gate complains, the work isn't done — finish it or
+4. Close. If the gate complains, the work isn't done. Finish it or
    consciously override.

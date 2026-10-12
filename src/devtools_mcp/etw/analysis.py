@@ -1,4 +1,4 @@
-"""ETW analysis — Polars DataFrame + flame-graph stacks."""
+"""ETW analysis, Polars DataFrame + flame-graph stacks."""
 
 from __future__ import annotations
 

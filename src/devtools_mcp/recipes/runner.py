@@ -15,7 +15,7 @@ recipe's env_axes + any per-run overrides. Full output is persisted once via
 `write_raw`; only a bounded `tail` is kept per step.
 
 Caching: if the recipe already has a passed run against its *current* spec_hash
-and `force` is False, that prior run is returned untouched — the steps are not
+and `force` is False, that prior run is returned untouched, the steps are not
 re-executed. Dry runs report the plan without creating a run row.
 
 The DBOS orchestrator (`_recipe_workflow`) and per-step activity
@@ -70,7 +70,7 @@ def _workflow_id(db_path: str, run_id: int) -> str:
     """Deterministic DBOS workflow id for a domain run (ties the two together).
 
     Includes a hash of the domain-DB path so the id is unique per (database,
-    run) — the DBOS system database is process-global and shared, but a domain
+    run), the DBOS system database is process-global and shared, but a domain
     run_id only counts within its own recipes.db, so the path disambiguates
     (e.g. separate temp databases in the test suite). Determinism is what lets a
     crashed run resume/fork under the same id.
@@ -112,7 +112,7 @@ def _exec_step_activity(
     # so one bad step fails the run cleanly instead of unwinding the workflow.
     try:
         rc, text = asyncio.run(run_capture(_shell_cmd(command), cwd=run_cwd, timeout=timeout, env=env))
-    except Exception as exc:  # noqa: BLE001 — a step crash must fail the step, not the run
+    except Exception as exc:  # noqa: BLE001  # a step crash must fail the step, not the run
         rc, text = 1, f"[devtools] step {label!r} crashed: {type(exc).__name__}: {exc}"
     duration_ms = int((time.monotonic() - start) * 1000)
     status = "passed" if rc == 0 else "failed"
@@ -166,7 +166,7 @@ def _recipe_workflow(db_path: str, key: str, run_id: int, env_extra: dict[str, s
 
     Synchronous (see module docstring). Opens its own domain-DB connection from
     `db_path` (a DBOS workflow's args are checkpointed for recovery, so a live
-    sqlite connection cannot cross the boundary — only the path can). The run row
+    sqlite connection cannot cross the boundary, only the path can). The run row
     already exists (created by the caller); this fills in the step rows and
     finalizes it, all through checkpointed steps.
     """
@@ -257,7 +257,7 @@ async def run_recipe(
     interrupted run resumes from its last completed step. Returns a RunResult. On
     a cache hit (a prior passed run against the current spec_hash, and `force` is
     False) the prior run is returned flagged `cached` without re-executing
-    anything. With `dry_run=True` nothing runs and no run row is created — the
+    anything. With `dry_run=True` nothing runs and no run row is created, the
     planned steps are returned flagged `dry_run`.
     """
     assert db.conn is not None, "run_recipe on closed db"
@@ -279,7 +279,7 @@ async def run_recipe(
     run_id = store.record_run_start(db, recipe)
     try:
         await asyncio.to_thread(_invoke_workflow, str(db.path), key, run_id, env_extra)
-    except Exception as exc:  # noqa: BLE001 — DBOS launch/workflow crash must not leak
+    except Exception as exc:  # noqa: BLE001  # DBOS launch/workflow crash must not leak
         # Finalize the run as failed (capturing the error) rather than leaving it
         # stuck 'running' and propagating an unhandled exception to the caller.
         _finalize_crashed_run(db, run_id, exc)
@@ -317,7 +317,7 @@ def start_background_run(key: str, env_extra: dict[str, str] | None = None, forc
     Used by the dashboard's POST handler so a long recipe doesn't block the HTTP
     response: the run row is created synchronously (so the browser can be
     redirected to a run-detail page that polls) and the durable workflow is
-    enqueued via `DBOS.start_workflow` — DBOS runs it in its own executor and the
+    enqueued via `DBOS.start_workflow`, DBOS runs it in its own executor and the
     call returns immediately. On a cache hit the prior run's id is returned with
     cached=True and no workflow is started.
     """
@@ -336,7 +336,7 @@ def start_background_run(key: str, env_extra: dict[str, str] | None = None, forc
         launch_dbos()
         with SetWorkflowID(_workflow_id(db_path, run_id)):
             DBOS.start_workflow(_recipe_workflow, db_path, key, run_id, env_extra)
-    except Exception as exc:  # noqa: BLE001 — DBOS unavailable must not 500 the console
+    except Exception as exc:  # noqa: BLE001  # DBOS unavailable must not 500 the console
         # Record the run as failed so the console redirect lands on a run-detail
         # page that shows a clear failed status (not a run stuck 'running').
         db2 = open_recipes(Path(db_path))

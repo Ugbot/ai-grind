@@ -24,7 +24,7 @@ def test_overview_empty(db):
     assert "Recipes" in html and "No recipes yet" in html
 
 
-async def test_pages_render_after_a_run(db):
+async def test_pages_render_after_a_run(db, dbos_runtime):
     store.register_recipe(
         db,
         {

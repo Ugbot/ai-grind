@@ -1,13 +1,13 @@
 # RenderDoc bridge: runs INSIDE qrenderdoc's embedded Python (3.6-era) via
 # `qrenderdoc --python bridge.py`. Parameters arrive via environment variables
 # (sys.argv does not exist in the embedded interpreter):
-#   DEVTOOLS_RDOC_REQUEST — path to a request JSON file
-#   DEVTOOLS_RDOC_OUTPUT  — path to write the response JSON file
+#   DEVTOOLS_RDOC_REQUEST, path to a request JSON file
+#   DEVTOOLS_RDOC_OUTPUT, path to write the response JSON file
 # The script ALWAYS writes a response and ALWAYS calls sys.exit() so the
 # qrenderdoc UI never opens. Keep the syntax conservative (no walrus, no
 # match, no `X | Y` annotations) and imports stdlib-only.
 #
-# Wire format: schema_version 1 — see devtools_mcp/renderdoc/parsers.py.
+# Wire format: schema_version 1. See devtools_mcp/renderdoc/parsers.py.
 import json
 import os
 import sys
@@ -285,7 +285,7 @@ def main():
             payload = op_replay(rd, req)
         else:
             payload = op_capture(rd, req)
-    except Exception as exc:  # noqa: BLE001 — every failure becomes a payload
+    except Exception as exc:  # noqa: BLE001  # every failure becomes a payload
         stage = payload.get("stage", "start")
         payload = {"ok": False, "error": "%s: %s" % (type(exc).__name__, exc), "stage": stage}
     try:

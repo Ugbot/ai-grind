@@ -1,7 +1,7 @@
 ---
 name: pwsh-jobs-async
 description: >
-  Running work in the background or in parallel in PowerShell — Start-Job,
+  Running work in the background or in parallel in PowerShell: Start-Job,
   ThreadJob, ForEach-Object -Parallel, Start-Process, and runspaces. Use when you
   need to run commands concurrently, launch a long-running process without
   blocking, fan out work over many items, wait on / collect background results,
@@ -23,7 +23,7 @@ Several mechanisms, with different cost and edition support. Pick by workload.
 | `Start-Process` | new OS process | 5.1 & 7+ | launch an external app/exe, optionally fire-and-forget |
 | runspaces / `RunspacePool` | threads | 5.1 & 7+ | max-control high-throughput parallelism |
 
-## Start-Job — process-isolated background jobs (both editions)
+## Start-Job: process-isolated background jobs (both editions)
 
 ```powershell
 $j = Start-Job -ScriptBlock { Start-Sleep 3; "done at $(Get-Date -Format T)" }
@@ -37,11 +37,11 @@ $jobs | Wait-Job | Receive-Job
 $jobs | Remove-Job
 ```
 
-Jobs run in a **separate process** — no shared variables. Pass data via
+Jobs run in a separate process, so no shared variables. Pass data via
 `-ArgumentList` (and `param()` in the block) or `$using:var`. Output is buffered
 until `Receive-Job`.
 
-## Start-ThreadJob — lighter, same API (7+ in-box / 5.1 module)
+## Start-ThreadJob: lighter, same API (7+ in-box, 5.1 module)
 
 ```powershell
 # 5.1: Install-Module ThreadJob -Scope CurrentUser   (one-time)
@@ -53,7 +53,7 @@ $jobs | Remove-Job
 Much lower startup cost than `Start-Job` because there's no new process. Ideal for
 dozens of network/file calls.
 
-## ForEach-Object -Parallel — fan-out (7+ ONLY)
+## ForEach-Object -Parallel: fan-out (7+ ONLY)
 
 ```powershell
 # 7+ only. -ThrottleLimit caps concurrent runspaces (default 5).
@@ -63,12 +63,12 @@ $results = $items | ForEach-Object -Parallel {
 } -ThrottleLimit 8
 ```
 
-Gotchas: each iteration is an isolated runspace — reference outer variables with
+Gotchas: each iteration is an isolated runspace, so reference outer variables with
 `$using:`; don't append to a shared `[List]` without a thread-safe collection
 (`[System.Collections.Concurrent.ConcurrentBag[object]]`). **Not available in 5.1**
-— use ThreadJob or a runspace pool there.
+Use ThreadJob or a runspace pool there.
 
-## Start-Process — launch external programs
+## Start-Process: launch external programs
 
 ```powershell
 # Fire-and-forget (returns immediately)
@@ -86,7 +86,7 @@ Start-Process powershell.exe -Verb RunAs -ArgumentList '-File','setup.ps1'
 `-Wait` blocks; `-PassThru` returns the process object; `-NoNewWindow` keeps it in
 the current console.
 
-## Runspace pool — maximum-throughput parallelism (both editions)
+## Runspace pool: maximum-throughput parallelism (both editions)
 
 When you need 5.1-compatible high concurrency beyond ThreadJob:
 
@@ -113,12 +113,12 @@ Receive-Job $j -Keep                                # read output without consum
 Get-Job | Where-Object State -eq 'Completed' | Remove-Job   # tidy up
 ```
 
-**Always `Remove-Job` (or Dispose runspaces) when done** — orphaned jobs leak
+Always `Remove-Job` (or Dispose runspaces) when done. Orphaned jobs leak
 memory and (for `Start-Job`) processes.
 
 ## Choosing
 
-- 1–5 heavy independent tasks → `Start-Job`.
+- 1 to 5 heavy independent tasks → `Start-Job`.
 - Many I/O-bound calls, 7+ → `ForEach-Object -Parallel`; 5.1 → `Start-ThreadJob`.
 - Launching an external app → `Start-Process`.
 - CPU-bound or need 5.1 + high throughput → runspace pool.

@@ -1,4 +1,4 @@
-"""JVM analysis — Polars DataFrames + flame-graph stacks."""
+"""JVM analysis, Polars DataFrames + flame-graph stacks."""
 
 from __future__ import annotations
 

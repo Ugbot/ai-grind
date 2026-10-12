@@ -9,13 +9,13 @@ description: >
   the object pipeline, comparison operators, and default encoding.
 ---
 
-# PowerShell core idioms — 5.1 vs 7, side by side
+# PowerShell core idioms: 5.1 vs 7, side by side
 
 Two editions exist on most Windows boxes:
 
-- **Windows PowerShell 5.1** — `powershell.exe`, ships in-box, **.NET Framework**,
+- Windows PowerShell 5.1 is `powershell.exe`: ships in-box, .NET Framework,
   frozen feature set. The default in many automation harnesses.
-- **PowerShell 7+** — `pwsh.exe`, installed separately, **.NET (Core)**,
+- PowerShell 7+ is `pwsh.exe`: installed separately, .NET (Core),
   cross-platform, actively developed.
 
 Check which you're in:
@@ -29,7 +29,7 @@ $PSVersionTable.PSEdition          # Desktop = 5.1, Core = 7+
 
 | | 5.1 | 7+ |
 |---|---|---|
-| run B if A succeeds | **not available** — parser error | `A && B` |
+| run B if A succeeds | not available, parser error | `A && B` |
 | run B regardless | `A; B` | `A; B` or `A && B` |
 | run B if A fails | **not available** | `A \|\| B` |
 
@@ -61,7 +61,7 @@ if ($null -eq $a) { $a = 'default' }              # ??=
 ```
 
 **Always put `$null` on the LEFT** of an equality test (`$null -eq $a`), in both
-editions — it makes `-eq` behave scalar even when `$a` is an array.
+editions, because it makes `-eq` behave scalar even when `$a` is an array.
 
 ## The pipeline carries OBJECTS, not text
 
@@ -93,7 +93,7 @@ boolean.
 
 ## Here-strings (multi-line literals)
 
-The closing `'@` / `"@` **must be at column 0** on its own line — leading
+The closing `'@` / `"@` must be at column 0 on its own line. Leading
 whitespace is a parse error. Same in both editions.
 
 ```powershell
@@ -111,7 +111,7 @@ user is $env:USERNAME, 2+2 = $(2+2)
 - **5.1**: `Out-File`/`>`/`Set-Content` default to **UTF-16 LE with BOM**. Tools
   expecting UTF-8 will choke. Always pass `-Encoding utf8` when other programs
   read the file.
-- **7+**: defaults to **UTF-8 (no BOM)** — usually what you want.
+- 7+ defaults to UTF-8 with no BOM, usually what you want.
 
 ```powershell
 'data' | Out-File out.txt -Encoding utf8        # safe in both editions
@@ -130,7 +130,7 @@ $name = 'Ben'
 ## Cmdlet naming & aliases
 
 Cmdlets are `Verb-Noun` (`Get-ChildItem`, `New-Item`, `Remove-Item`). Aliases
-(`ls`, `cd`, `cat`, `rm`) exist for interactive use — **use full Verb-Noun in
+(`ls`, `cd`, `cat`, `rm`) exist for interactive use. **Use full Verb-Noun in
 scripts** for clarity and portability (some aliases differ across editions/OSes).
 
 ## Quick reference

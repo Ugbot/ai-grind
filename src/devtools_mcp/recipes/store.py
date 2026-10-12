@@ -24,7 +24,7 @@ NAME_MAX: int = 200
 
 
 def _spec_hash(kind: str, env_axes: dict[str, str], steps: list[dict]) -> str:
-    """sha256 of the canonical JSON of the executable spec — the cache key."""
+    """sha256 of the canonical JSON of the executable spec, the cache key."""
     assert isinstance(env_axes, dict), "env_axes must be a dict"
     assert isinstance(steps, list), "steps must be a list"
     canonical = json.dumps(
@@ -203,7 +203,7 @@ def cached_run(db: RecipesDB, key: str) -> Run | None:
     """Latest passed run whose spec_hash matches the recipe's current spec_hash.
 
     None when there is no such run (recipe never passed, or its spec changed
-    since the last pass) — the signal to (re)run.
+    since the last pass), the signal to (re)run.
     """
     assert db.conn is not None, "cached_run on closed db"
     recipe = get_recipe(db.conn, key)
