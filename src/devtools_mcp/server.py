@@ -110,6 +110,13 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     try:
         yield ctx
     finally:
+        import anyio
+
+        from devtools_mcp.tools.market_feed_tools import close_market_feeds
+
+        # MCP session shutdown cancels its task group; finish bounded child cleanup.
+        with anyio.CancelScope(shield=True), contextlib.suppress(Exception):
+            await close_market_feeds()
         if ctx.debug_manager is not None:
             with contextlib.suppress(Exception):
                 await ctx.debug_manager.stop_all()
