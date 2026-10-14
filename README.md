@@ -137,6 +137,19 @@ API at `/api/crdt/`. Work fully offline, sync when you meet the network again.
 (v1 is row-level LWW with full-exchange transport; field-level merge and
 incremental vector-clock exchange are the documented upgrade path.)
 
+The dashboard **binds 127.0.0.1 by default**, so a fresh install is loopback-only
+and no peer can reach it. Sharing a replica is an explicit act — start the peer
+with `--dashboard-host 0.0.0.0` (env: `DEVTOOLS_MCP_DASHBOARD_HOST`), which keeps
+loopback working and admits the machine's hostname, its hostname-resolved
+addresses and, for an unqualified hostname, `<hostname>.local` to the Host
+allowlist that guards state-changing requests. Additional interface addresses,
+DNS aliases and `127.0.0.1:8766` seen through an SSH tunnel are listed explicitly
+in `DEVTOOLS_MCP_DASHBOARD_ALLOWED_HOSTS`.
+`--host` is a *different* knob — it binds the MCP transport and should stay on
+loopback. Anything that can reach the shared dashboard port can read and write
+that tracker replica, so share it on a trusted LAN or over SSH. Step-by-step
+two-machine recipe (firewall rules included): the `tracker-usage` skill.
+
 ### Agent collaboration (local)
 
 Run several agents on one machine, say Claude Code, Cursor, and Codex side by
@@ -312,6 +325,9 @@ listener so the MCP endpoint and dashboard belong to the same process:
 ```
 
 Keep a custom port if needed, but use that same port in each client config.
+
+Both the MCP port and the dashboard bind loopback; add `--dashboard-host
+0.0.0.0` only if another machine must sync with this tracker replica.
 
 Then point clients at the URL once, at user scope, so all projects get it:
 

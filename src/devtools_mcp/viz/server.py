@@ -22,6 +22,79 @@ _TOUCH_MAX_BYTES = 64_000
 _TOUCH_FILES_MAX = 50
 _TABLE_PAGE = 50
 
+# Sharing the dashboard with a second machine (see build_allowed_hosts).
+ENV_ALLOWED_HOSTS = "DEVTOOLS_MCP_DASHBOARD_ALLOWED_HOSTS"
+_LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1", "[::1]")
+_WILDCARD_BINDS = ("", "0.0.0.0", "::", "[::]")  # bind-any: every local address answers
+_ALLOWED_HOSTS_MAX = 64  # bound: a machine has a handful of addresses, not hundreds
+
+
+def _local_bound_names() -> set[str]:
+    """This machine's hostname and resolved addresses, for the bind-any allowlist.
+
+    Only consulted when the operator has deliberately bound a wildcard address.
+    These are *our* identities — a peer that reaches us at 192.168.1.199 sends
+    `Host: 192.168.1.199:8765`, which must be recognised or every write 403s.
+    Adding them does not weaken DNS-rebinding protection: a rebinding attacker
+    controls the *name* in the Host header (evil.com), never our literal IPs,
+    and cross-origin browser calls are still stopped by the Origin check in
+    `_guard_state_change`.
+    """
+    import socket
+
+    names: set[str] = set()
+    with contextlib.suppress(OSError):
+        hostname = socket.gethostname()
+        names.add(hostname)
+        if "." not in hostname:
+            names.add(f"{hostname}.local")  # mDNS/Bonjour name, when not already qualified
+        for info in socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP):
+            if len(names) >= _ALLOWED_HOSTS_MAX:
+                break
+            address = info[4][0]
+            names.add(f"[{address}]" if ":" in address else address)  # IPv6 literals are bracketed
+    assert len(names) <= _ALLOWED_HOSTS_MAX + 1, "local name discovery exceeded its bound"
+    return names
+
+
+def build_allowed_hosts(host: str, port: int, extra: str = "") -> set[str]:
+    """Host-header allowlist for state-changing requests, with and without :port.
+
+    `_guard_state_change` compares the raw Host header (which carries the port)
+    against this set, so every accepted name is registered both bare and as
+    `name:port`.
+
+    Design note (two-machine tracker sync). Binding a *specific* LAN IP would
+    make the allowlist self-configuring, but it would drop loopback — the local
+    MCP tools and the browser talk to 127.0.0.1 — so that trade is unacceptable.
+    Instead: bind a wildcard (`--dashboard-host 0.0.0.0`) so both loopback and
+    the LAN address answer, and derive the allowlist from this machine's own
+    hostname-resolved addresses. This does not enumerate network interfaces.
+    `extra` (DEVTOOLS_MCP_DASHBOARD_ALLOWED_HOSTS, comma-separated) covers
+    additional interface addresses and names we cannot discover — a DNS/CNAME
+    alias, or the `127.0.0.1:8766` a peer sees through an SSH tunnel. Each name is an explicit opt-in; there is
+    no wildcard entry, so the default loopback deployment allows exactly what it
+    allowed before.
+    """
+    assert isinstance(host, str), "host must be str"
+    assert 0 <= port <= 65535, f"port out of range: {port}"
+    bases = set(_LOOPBACK_HOSTS)
+    bases.add(host)
+    if host in _WILDCARD_BINDS:
+        bases |= _local_bound_names()
+    for name in extra.split(","):
+        cleaned = name.strip().strip("/")
+        if cleaned:
+            bases.add(cleaned)
+    bases.discard("")
+    # Host names are case-insensitive (RFC 3986 §3.2.2); `_host_from` lowercases
+    # the header, so the allowlist must be lowercase too or `Exotype.local` from
+    # a peer would miss `exotype.local` here.
+    allowed = {h for base in bases for h in (base.lower(), f"{base.lower()}:{port}")}
+    assert "127.0.0.1" in allowed and f"127.0.0.1:{port}" in allowed, "loopback must always be allowed"
+    assert len(allowed) >= 2 * len(_LOOPBACK_HOSTS), "allowlist lost a loopback name"
+    return allowed
+
 
 def _with_tracker(fn: Callable):
     from devtools_mcp.tracker.db import open_tracker
@@ -181,11 +254,15 @@ class _Handler(BaseHTTPRequestHandler):
         pass
 
     def _host_from(self, header: str) -> str:
-        """The host[:port] from a Host/Origin/Referer header value ('' if none)."""
+        """The host[:port] from a Host/Origin/Referer header value ('' if none).
+
+        Lowercased: host names are case-insensitive, and `build_allowed_hosts`
+        stores its entries lowercase, so both sides of the comparison agree.
+        """
         value = (self.headers.get(header) or "").strip()
         if not value:
             return ""
-        return urlparse(value).netloc or value  # Origin/Referer are URLs; Host is bare
+        return (urlparse(value).netloc or value).lower()  # Origin/Referer are URLs; Host is bare
 
     def _guard_state_change(self) -> bool:
         """Reject cross-origin / rebinding / untokened writes.
@@ -992,22 +1069,30 @@ class VizServer:
     def running(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
 
-    def start(self, host: str = "127.0.0.1", port: int = 8765) -> str:
+    def start(self, host: str = "127.0.0.1", port: int = 8765, allowed_hosts: str | None = None) -> str:
+        """Bind and serve. Default host is loopback — sharing is always deliberate.
+
+        `allowed_hosts` is a comma-separated list of extra Host header values to
+        accept for state-changing requests (defaults to $ENV_ALLOWED_HOSTS); see
+        `build_allowed_hosts` for why it exists and what it does not weaken.
+        """
         assert not self.running, "viz server already running"
+        assert isinstance(host, str) and host is not None, "host must be str"
         # Discover console pages (in-tree /recipes + any 'devtools_mcp.viz_pages'
         # plugins) so their tabs + routes are live before the first request.
         pages.load_viz_pages()
         httpd = ThreadingHTTPServer((host, port), _Handler)
         httpd.app_ctx = self.app_ctx  # type: ignore[attr-defined]
         bound_port = httpd.server_address[1]
-        # Host/Origin allowlist for state-changing requests: loopback names plus the
-        # actual bound host. Blocks DNS-rebinding and cross-site POSTs from a browser
-        # while still allowing a peer that connects to a deliberately-shared bind IP.
-        hosts = {"127.0.0.1", "localhost", "::1", "[::1]", host}
-        httpd.allowed_hosts = {h for base in hosts for h in (base, f"{base}:{bound_port}")}  # type: ignore[attr-defined]
+        # Host/Origin allowlist for state-changing requests. Blocks DNS-rebinding and
+        # cross-site POSTs from a browser while still allowing a peer that connects to
+        # a deliberately-shared bind address.
+        extra = os.environ.get(ENV_ALLOWED_HOSTS, "") if allowed_hosts is None else allowed_hosts
+        httpd.allowed_hosts = build_allowed_hosts(host, bound_port, extra)  # type: ignore[attr-defined]
         httpd.auth_token = os.environ.get("DEVTOOLS_MCP_DASHBOARD_TOKEN", "").strip()  # type: ignore[attr-defined]
         self._httpd = httpd
-        self.url = f"http://{host}:{bound_port}"
+        # A wildcard bind has no useful URL; report loopback, which always answers.
+        self.url = f"http://{'127.0.0.1' if host in _WILDCARD_BINDS else host}:{bound_port}"
         import threading
 
         self._thread = threading.Thread(target=httpd.serve_forever, daemon=True, name="devtools-viz")
