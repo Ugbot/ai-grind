@@ -4,6 +4,7 @@ import devtools_mcp.tools.analysis_tools  # noqa: F401
 import devtools_mcp.tools.batch_tools  # noqa: F401
 import devtools_mcp.tools.debug_tools  # noqa: F401
 import devtools_mcp.tools.flame_tools  # noqa: F401
+import devtools_mcp.tools.gestalt_workspace_tools  # noqa: F401
 import devtools_mcp.tools.install_tools  # noqa: F401
 import devtools_mcp.tools.market_feed_tools  # noqa: F401
 import devtools_mcp.tools.plan_tools  # noqa: F401
