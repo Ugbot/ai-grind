@@ -6,8 +6,10 @@ import re
 from typing import Any, Literal
 
 import anyio
+from pydantic import StrictInt
 
 from devtools_mcp.sbe import CompilerBudgets, SchemaError, compile_schema, generate_cpp, generate_encoder_cpp
+from devtools_mcp.sbe.codegen import select_templates
 from devtools_mcp.server import mcp
 
 _MAX_XML_BYTES = 256 * 1024
@@ -22,6 +24,7 @@ def _compile(
     max_group_entries: int,
     max_data_bytes: int,
     emit: Literal["decoder", "encoder"] = "decoder",
+    template_ids: list[StrictInt] | None = None,
 ) -> dict[str, Any]:
     if emit not in ("decoder", "encoder"):
         return {"status": "error", "code": "invalid_schema", "detail": "emit must be decoder or encoder"}
@@ -50,7 +53,8 @@ def _compile(
             data_bytes=max_data_bytes,
         )
         ir = compile_schema(xml, budgets=budgets, expect_sha256=expect_sha256)
-        header = (generate_encoder_cpp if emit == "encoder" else generate_cpp)(ir, namespace=namespace)
+        selected = select_templates(ir, template_ids)
+        header = (generate_encoder_cpp if emit == "encoder" else generate_cpp)(selected, namespace=namespace)
     except (SchemaError, UnicodeError) as error:
         return {"status": "error", "code": "invalid_schema", "detail": str(error)[:512]}
     result = {
@@ -58,11 +62,13 @@ def _compile(
         "schema_id": ir.schema_id,
         "version": ir.version,
         "sha256": ir.sha256,
-        "message_count": len(ir.messages),
+        "message_count": len(selected.messages),
         "header": header,
     }
     if emit == "encoder":
         result["emit"] = "encoder"
+    if template_ids is not None:
+        result["template_ids"] = [message.id for message in selected.messages]
     return result
 
 
@@ -74,12 +80,15 @@ async def devtools_sbe_compile(
     max_group_entries: int = 65535,
     max_data_bytes: int = 1024 * 1024,
     emit: Literal["decoder", "encoder"] = "decoder",
+    template_ids: list[StrictInt] | None = None,
 ) -> dict[str, Any]:
     """Compile hash-pinned FIX SBE XML into borrowed views or native encoder inputs.
 
     emit=decoder preserves the original borrowed-view header and receipt.
     emit=encoder returns a standalone namespace::encoder header with preflighted
     caller-owned inputs, measure and encode; no runtime XML or allocation.
+    Optional exact template_ids limits emitted messages in schema order while
+    retaining original schema provenance; duplicates/unknown IDs are refused.
 
     Cold authoring only. No paths, URLs, includes, writes, subprocesses or code
     execution. XML cap 256 KiB, output cap 1 MiB, 64 messages/2048 members and
@@ -94,5 +103,6 @@ async def devtools_sbe_compile(
         max_group_entries,
         max_data_bytes,
         emit,
+        template_ids,
         limiter=_COMPILE_LIMITER,
     )

@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from . import CompilerBudgets, SchemaError, compile_schema, generate_cpp, generate_encoder_cpp
+from .codegen import select_templates
 
 
 def main():
@@ -18,18 +19,24 @@ def main():
     command.add_argument("--max-group-entries", type=int, default=65535)
     command.add_argument("--max-data-bytes", type=int, default=1024 * 1024)
     command.add_argument("--encoder", action="store_true", help="emit standalone namespace::encoder native encoder")
+    command.add_argument(
+        "--template-id", type=int, action="append", help="emit only these exact template IDs; repeatable"
+    )
     args = parser.parse_args()
     try:
         budgets = CompilerBudgets(group_entries=args.max_group_entries, data_bytes=args.max_data_bytes)
         with args.schema.open("rb") as source:
             xml = source.read(budgets.file_bytes + 1)
         ir = compile_schema(xml, budgets=budgets, expect_sha256=args.expect_sha256)
-        header = (generate_encoder_cpp if args.encoder else generate_cpp)(ir, namespace=args.namespace)
+        emitted_count = len(select_templates(ir, args.template_id).messages)
+        header = (generate_encoder_cpp if args.encoder else generate_cpp)(
+            ir, namespace=args.namespace, template_ids=args.template_id
+        )
         args.output.write_text(header, encoding="utf-8")
     except (SchemaError, OSError) as error:
         print(f"SBE compilation failed: {error}", file=sys.stderr)
         return 1
-    print(f"compiled {len(ir.messages)} messages; schema={ir.schema_id}/{ir.version}; sha256={ir.sha256}")
+    print(f"compiled {emitted_count} messages; schema={ir.schema_id}/{ir.version}; sha256={ir.sha256}")
     return 0
 
 

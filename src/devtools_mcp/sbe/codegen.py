@@ -1,6 +1,7 @@
 """Emit zero-allocation typed Bolt views and schema-ordered bounded traversal."""
 
 import re
+from dataclasses import replace
 
 from .ir import Data, Field, Layout, SchemaError, SchemaIR
 from .parser import PRIMITIVES, structural_properties
@@ -299,13 +300,35 @@ class _Generator:
         )
 
 
-def generate_cpp(ir: SchemaIR, *, namespace="sbe_generated") -> str:
+def select_templates(ir: SchemaIR, template_ids: list[int] | tuple[int, ...] | None) -> SchemaIR:
+    """Select a bounded exact ID set in schema order without rewriting provenance."""
+    if template_ids is None:
+        return ir
+    if type(template_ids) not in (list, tuple):
+        raise SchemaError("template_ids requires an exact list or tuple")
+    if not 0 < len(template_ids) <= ir.budgets.messages:
+        raise SchemaError("template_ids selection exceeds message budget or is empty")
+    if any(type(value) is not int or not 0 <= value <= 65535 for value in template_ids):
+        raise SchemaError("template_ids requires exact uint16 integers, never bools")
+    requested = set(template_ids)
+    if len(requested) != len(template_ids):
+        raise SchemaError("duplicate template_ids")
+    messages = tuple(message for message in ir.messages if message.id in requested)
+    if len(messages) != len(requested):
+        raise SchemaError("unknown template_ids")
+    return replace(ir, messages=messages)
+
+
+def generate_cpp(
+    ir: SchemaIR, *, namespace="sbe_generated", template_ids: list[int] | tuple[int, ...] | None = None
+) -> str:
     """Emit borrowed view getters; visitor callbacks return sbe::Status.
 
     Traversal enforces structure, enum domains are checked by typed getters.
     Caller callbacks may have effects before a later failure; stage externally
     when all-or-nothing application semantics are required.
     """
+    ir = select_templates(ir, template_ids)
     if len(namespace) > 128:
         raise SchemaError("C++ namespace exceeds bounded length")
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(::[A-Za-z][A-Za-z0-9_]*)*", namespace):

@@ -13,7 +13,7 @@ from devtools_mcp.sbe import CompilerBudgets, SchemaError, compile_schema, gener
 FIXTURES = Path(__file__).parent / "fixtures" / "sbe"
 
 
-def native(tmp_path, fixture, body, *, big=False, xml=None, budgets=None):
+def native(tmp_path, fixture, body, *, big=False, xml=None, budgets=None, template_ids=None):
     compiler = shutil.which("clang++")
     if not compiler:
         pytest.skip("native encoder oracle requires clang++")
@@ -24,9 +24,9 @@ def native(tmp_path, fixture, body, *, big=False, xml=None, budgets=None):
     if big:
         xml = xml.replace(b"littleEndian", b"bigEndian")
     ir = compile_schema(xml, budgets=budgets or CompilerBudgets(group_entries=3, data_bytes=7))
-    decoder = generate_cpp(ir, namespace="fixture")
+    decoder = generate_cpp(ir, namespace="fixture", template_ids=template_ids)
     (tmp_path / "decoder.h").write_text(decoder)
-    (tmp_path / "encoder.h").write_text(generate_encoder_cpp(ir, namespace="fixture"))
+    (tmp_path / "encoder.h").write_text(generate_encoder_cpp(ir, namespace="fixture", template_ids=template_ids))
     source = (
         '#include "decoder.h"\n#include "encoder.h"\n#include <cassert>\n#include <cstring>\n'
         "using namespace fixture::encoder;\nint main() {\n" + body + "\n}\n"
@@ -409,3 +409,96 @@ def test_padded_dimensions_still_refuse_overlap_and_unknown_metadata():
                 b'xsi:evil="https://invalid.example/never-fetched" package="bolt_test"',
             )
         )
+
+
+def test_template_selection_preserves_provenance_defaults_and_schema_order():
+    xml = (FIXTURES / "features.xml").read_bytes()
+    ir = compile_schema(xml)
+    for generate in (generate_cpp, generate_encoder_cpp):
+        complete = generate(ir)
+        assert complete == generate(ir, template_ids=None)
+        selected = generate(ir, template_ids=[9])
+        assert ir.sha256 in selected and "schema_id = 701" in selected
+        assert "message_Other" in selected and "message_Features" not in selected
+        assert "message_Referenced" not in selected
+        assert generate(ir, template_ids=[9, 8]) == generate(ir, template_ids=(8, 9))
+        assert tuple(message.id for message in ir.messages) == (8, 9, 10)
+
+
+@pytest.mark.parametrize("selection", [[], [True], [8.0], ["8"], [8, 8], [-1], [65536], [999], [8] * 1025, {8}])
+def test_template_selection_rejections(selection):
+    ir = compile_schema((FIXTURES / "features.xml").read_bytes())
+    for generate in (generate_cpp, generate_encoder_cpp):
+        with pytest.raises(SchemaError, match="template_ids"):
+            generate(ir, template_ids=selection)
+
+
+def test_selected_encoder_independent_literal_wire(tmp_path):
+    native(
+        tmp_path,
+        "features.xml",
+        r"""
+    message_Other_input input{}; input.value_code=17;
+    std::uint8_t output[32]; std::memset(output,0xa5,sizeof(output)); std::uint32_t written=999;
+    assert(encode_Other(input,2,output,sizeof(output),written)==Status::Ok && written==20);
+    const std::uint8_t oracle[]={12,0,9,0,0xbd,2,2,0,255,255,255,255,255,255,255,127,255,0,17,0};
+    assert(std::memcmp(output,oracle,sizeof(oracle))==0 && output[20]==0xa5);
+    """,
+        template_ids=[9],
+    )
+
+
+@pytest.mark.asyncio
+async def test_mcp_template_selection_receipts_and_strict_refusals():
+    import hashlib
+
+    from devtools_mcp.server import mcp
+    from devtools_mcp.tools.sbe_tools import _compile
+
+    xml = (FIXTURES / "features.xml").read_bytes()
+    digest = hashlib.sha256(xml).hexdigest()
+    arguments = {"schema_xml": xml.decode(), "expect_sha256": digest}
+    _, default = await mcp.call_tool("devtools_sbe_compile", arguments)
+    assert "template_ids" not in default and default["message_count"] == 3
+    for emit in ("decoder", "encoder"):
+        _, result = await mcp.call_tool("devtools_sbe_compile", {**arguments, "emit": emit, "template_ids": [9, 8]})
+        assert result["status"] == "ok" and result["template_ids"] == [8, 9] and result["message_count"] == 2
+        assert result["sha256"] == digest and result["schema_id"] == 701 and result["version"] == 2
+        assert "message_Referenced" not in result["header"]
+    for ids in ([], [8, 8], [999], [8] * 65):
+        _, refusal = await mcp.call_tool("devtools_sbe_compile", {**arguments, "template_ids": ids})
+        assert refusal["status"] == "error" and "header" not in refusal
+    for ids in ([True], [8.0], ["8"]):
+        with pytest.raises(Exception, match="integer|int_type"):
+            await mcp.call_tool("devtools_sbe_compile", {**arguments, "template_ids": ids})
+    direct = _compile(xml.decode(), digest, "sbe_generated", 65535, 1024 * 1024, "decoder", [True])
+    assert direct["status"] == "error" and "header" not in direct
+
+
+def test_cli_template_selection_and_failure_preserve_existing_output(tmp_path):
+    import hashlib
+    import sys
+
+    source = FIXTURES / "features.xml"
+    xml = source.read_bytes()
+    output = tmp_path / "selected.h"
+    command = [
+        sys.executable,
+        "-m",
+        "devtools_mcp.sbe",
+        "compile",
+        str(source),
+        "--output",
+        str(output),
+        "--expect-sha256",
+        hashlib.sha256(xml).hexdigest(),
+    ]
+    for mode in ([], ["--encoder"]):
+        result = subprocess.run(command + mode + ["--template-id", "9"], capture_output=True, text=True)
+        assert result.returncode == 0 and "compiled 1 messages" in result.stdout
+        header = output.read_text()
+        assert "message_Other" in header and "message_Features" not in header
+        for selection in (["9", "9"], ["999"], ["-1"], ["65536"]):
+            flags = [argument for value in selection for argument in ("--template-id", value)]
+            refusal = subprocess.run(command + mode + flags, capture_output=True, text=True)
+            assert refusal.returncode != 0 and output.read_text() == header

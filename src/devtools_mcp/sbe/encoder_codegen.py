@@ -4,7 +4,7 @@ No XML or heap ownership enters generated code. Inputs must remain immutable
 through measure/encode; concurrent mutation is a caller programming error.
 """
 
-from .codegen import _Generator, cpp_literal, generate_cpp, leaves
+from .codegen import _Generator, cpp_literal, generate_cpp, leaves, select_templates
 from .ir import Layout, SchemaError, SchemaIR
 from .parser import PRIMITIVES
 
@@ -376,7 +376,9 @@ class _Encoder(_Generator):
         )
 
 
-def generate_encoder_cpp(ir: SchemaIR, *, namespace="sbe_generated") -> str:
+def generate_encoder_cpp(
+    ir: SchemaIR, *, namespace="sbe_generated", template_ids: list[int] | tuple[int, ...] | None = None
+) -> str:
     """Emit standalone encoder in ``namespace::encoder``; decoder output unchanged.
 
     Flattened composite fields retain their schema names joined with underscores.
@@ -386,6 +388,7 @@ def generate_encoder_cpp(ir: SchemaIR, *, namespace="sbe_generated") -> str:
     Fields/tails absent in the version are ignored. Deprecation is metadata,
     not removal from the wire. All input graphs must be immutable during calls.
     """
+    ir = select_templates(ir, template_ids)
     generate_cpp(ir, namespace=namespace)  # Reuse strict IR/name/work validation.
     g = _Encoder(ir)
     g.emit(

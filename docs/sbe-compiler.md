@@ -74,3 +74,22 @@ version 13, description 20230411 (SHA-256
 Both cold code-generation paths can emit its 31 templates. That evidence does
 not establish current live-channel applicability, generated C++ conformance,
 actual listed security definitions or full CME venue qualification.
+
+## Exact template selection
+
+Both generation APIs accept optional `template_ids=[47, 48]` (an exact list or
+tuple of exact integers). CLI selection repeats `--template-id 47 --template-id
+48`; MCP uses `"template_ids": [47, 48]` with either `emit` mode. Omission keeps
+the original full-header output and receipt. A provided selection adds
+`template_ids` to the receipt and makes `message_count` the emitted count.
+Output and receipt IDs follow original schema order, independent of request
+order. The XML SHA-256, schema ID and version remain those of the complete
+unmodified source. The entire XML is still parsed/validated before selection;
+invalid unselected definitions do not disappear from compiler diagnostics.
+
+Empty selections, duplicates, unknown IDs, bools, noninteger IDs, IDs outside
+uint16 and selections exceeding the compiler message budget are refused. The
+MCP budget admits at most 64 selected IDs and uses strict integers without
+coercing strings/floats/bools. Generation errors publish no header; CLI refusal
+leaves an existing output file unchanged. Selection does not rewrite XML, fetch
+files, register runtime schemas or qualify a venue adapter.
