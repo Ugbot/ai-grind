@@ -180,9 +180,10 @@ class _Compiler:
                 if node.get("nullValue") is not None
                 else default_null(primitive)
             )
-            for attr in ("minValue", "maxValue"):
-                if node.get(attr) is not None:
-                    literal(node.get(attr), primitive)
+            minimum = literal(node.get("minValue"), primitive) if node.get("minValue") is not None else ""
+            maximum = literal(node.get("maxValue"), primitive) if node.get("maxValue") is not None else ""
+            if minimum == "NaN" or maximum == "NaN":
+                raise SchemaError("NaN minValue/maxValue unsupported")
             if node.get("minValue") and node.get("maxValue"):
                 minimum = literal(node.get("minValue"), primitive)
                 maximum = literal(node.get("maxValue"), primitive)
@@ -202,7 +203,16 @@ class _Compiler:
             size = 0 if presence == "constant" else PRIMITIVES[primitive][1] * length
             if size > self.budgets.block_bytes:
                 raise SchemaError("encoding exceeds block budget")
-            return Encoding(**common, primitive=primitive, length=length, size=size, null=null, constant=constant)
+            return Encoding(
+                **common,
+                primitive=primitive,
+                length=length,
+                size=size,
+                null=null,
+                constant=constant,
+                minimum=minimum,
+                maximum=maximum,
+            )
         if kind in ("enum", "set"):
             base = self.resolve(node.get("encodingType", ""), depth + 1)
             if base.kind != "type" or base.length != 1 or base.presence != "required":
@@ -234,7 +244,15 @@ class _Compiler:
                 raise SchemaError("enum nullValue requires optional presence")
             if kind == "enum" and null in numbers:
                 raise SchemaError("enum value conflicts with null sentinel")
-            return Encoding(**common, primitive=base.primitive, size=base.size, null=null, values=tuple(values))
+            return Encoding(
+                **common,
+                primitive=base.primitive,
+                size=base.size,
+                null=null,
+                values=tuple(values),
+                minimum=base.minimum,
+                maximum=base.maximum,
+            )
         if kind != "composite" or depth > self.budgets.nesting:
             raise SchemaError("unsupported encoding or composite nesting")
         fields, end, seen = [], 0, set()
@@ -353,21 +371,47 @@ class _Compiler:
                     raise SchemaError("data length must be unsigned scalar")
                 if data.encoding.length != 0 or primitives[1] not in ("char", "uint8", "int8"):
                     raise SchemaError("data payload must be variable byte/char array")
-                tails.append(Data(child_name, child_id, primitives[0], child_since, child_deprecated))
+                if data.encoding.minimum or data.encoding.maximum:
+                    raise SchemaError("constrained variable data payload unsupported")
+                tails.append(
+                    Data(
+                        child_name,
+                        child_id,
+                        primitives[0],
+                        child_since,
+                        child_deprecated,
+                        length.encoding.minimum,
+                        length.encoding.maximum,
+                    )
+                )
         block = number(node, "blockLength", end, self.budgets.block_bytes)
         if block < end:
             raise SchemaError("blockLength smaller than fixed layout")
         dimension = ()
+        dimension_bounds: tuple[tuple[str, str], ...] = ()
         if tag(node) == "group":
             self.group_count += 1
             if self.group_count > self.budgets.groups:
                 raise SchemaError("schema group budget exceeded")
-            _, dimension = self.packed(node.get("dimensionType", "groupSizeEncoding"), ("blockLength", "numInGroup"))
+            dimensions, dimension = self.packed(
+                node.get("dimensionType", "groupSizeEncoding"), ("blockLength", "numInGroup")
+            )
+            dimension_bounds = tuple((f.encoding.minimum, f.encoding.maximum) for f in dimensions.members)
             if any(p not in ("uint8", "uint16", "uint32") for p in dimension):
                 raise SchemaError("group dimensions require unsigned <=32-bit scalars")
             if block >= 1 << (PRIMITIVES[dimension[0]][1] * 8):
                 raise SchemaError("group blockLength cannot fit dimension encoding")
-        return Layout(name(node), number(node, "id"), block, since, deprecated, tuple(fields), tuple(tails), dimension)
+        return Layout(
+            name(node),
+            number(node, "id"),
+            block,
+            since,
+            deprecated,
+            tuple(fields),
+            tuple(tails),
+            dimension,
+            dimension_bounds,
+        )
 
 
 def number_text(text):
@@ -446,6 +490,8 @@ def compile_schema(xml: bytes, *, budgets=DEFAULT_BUDGETS, expect_sha256: str | 
     )
     if header.size != 8 or primitives != ("uint16",) * 4:
         raise SchemaError("only common four-uint16 message header supported")
+    if any(f.encoding.minimum or f.encoding.maximum for f in header.members):
+        raise SchemaError("constrained message header scalars unsupported")
     messages, names, ids = [], set(), set()
     for node in root:
         if tag(node) != "message":

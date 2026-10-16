@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import CompilerBudgets, SchemaError, compile_schema, generate_cpp
+from . import CompilerBudgets, SchemaError, compile_schema, generate_cpp, generate_encoder_cpp
 
 
 def main():
@@ -17,13 +17,14 @@ def main():
     command.add_argument("--expect-sha256", required=True)
     command.add_argument("--max-group-entries", type=int, default=65535)
     command.add_argument("--max-data-bytes", type=int, default=1024 * 1024)
+    command.add_argument("--encoder", action="store_true", help="emit standalone namespace::encoder native encoder")
     args = parser.parse_args()
     try:
         budgets = CompilerBudgets(group_entries=args.max_group_entries, data_bytes=args.max_data_bytes)
         with args.schema.open("rb") as source:
             xml = source.read(budgets.file_bytes + 1)
         ir = compile_schema(xml, budgets=budgets, expect_sha256=args.expect_sha256)
-        header = generate_cpp(ir, namespace=args.namespace)
+        header = (generate_encoder_cpp if args.encoder else generate_cpp)(ir, namespace=args.namespace)
         args.output.write_text(header, encoding="utf-8")
     except (SchemaError, OSError) as error:
         print(f"SBE compilation failed: {error}", file=sys.stderr)

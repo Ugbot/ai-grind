@@ -58,6 +58,8 @@ class Encoding:
     semantic: str = ""
     members: tuple["Field", ...] = ()
     values: tuple[Value, ...] = ()
+    minimum: str = ""
+    maximum: str = ""
 
 
 @dataclass(frozen=True)
@@ -83,6 +85,8 @@ class Data:
     length_primitive: str
     since: int
     deprecated: int | None
+    length_minimum: str = ""
+    length_maximum: str = ""
 
 
 @dataclass(frozen=True)
@@ -95,6 +99,7 @@ class Layout:
     fields: tuple[Field, ...]
     tails: tuple["Layout | Data", ...]
     dimension: tuple[str, ...] = ()
+    dimension_bounds: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)

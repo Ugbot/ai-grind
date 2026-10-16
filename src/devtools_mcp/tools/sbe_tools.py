@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Literal
 
 import anyio
 
-from devtools_mcp.sbe import CompilerBudgets, SchemaError, compile_schema, generate_cpp
+from devtools_mcp.sbe import CompilerBudgets, SchemaError, compile_schema, generate_cpp, generate_encoder_cpp
 from devtools_mcp.server import mcp
 
 _MAX_XML_BYTES = 256 * 1024
@@ -16,8 +16,15 @@ _COMPILE_LIMITER = anyio.CapacityLimiter(2)
 
 
 def _compile(
-    schema_xml: str, expect_sha256: str, namespace: str, max_group_entries: int, max_data_bytes: int
+    schema_xml: str,
+    expect_sha256: str,
+    namespace: str,
+    max_group_entries: int,
+    max_data_bytes: int,
+    emit: Literal["decoder", "encoder"] = "decoder",
 ) -> dict[str, Any]:
+    if emit not in ("decoder", "encoder"):
+        return {"status": "error", "code": "invalid_schema", "detail": "emit must be decoder or encoder"}
     if len(schema_xml) > _MAX_XML_BYTES or len(namespace) > 128:
         return {"status": "error", "code": "limit_exceeded", "detail": "XML/namespace exceeds callable cap"}
     if not re.fullmatch(r"[0-9a-f]{64}", expect_sha256):
@@ -43,10 +50,10 @@ def _compile(
             data_bytes=max_data_bytes,
         )
         ir = compile_schema(xml, budgets=budgets, expect_sha256=expect_sha256)
-        header = generate_cpp(ir, namespace=namespace)
+        header = (generate_encoder_cpp if emit == "encoder" else generate_cpp)(ir, namespace=namespace)
     except (SchemaError, UnicodeError) as error:
         return {"status": "error", "code": "invalid_schema", "detail": str(error)[:512]}
-    return {
+    result = {
         "status": "ok",
         "schema_id": ir.schema_id,
         "version": ir.version,
@@ -54,6 +61,9 @@ def _compile(
         "message_count": len(ir.messages),
         "header": header,
     }
+    if emit == "encoder":
+        result["emit"] = "encoder"
+    return result
 
 
 @mcp.tool()
@@ -63,8 +73,13 @@ async def devtools_sbe_compile(
     namespace: str = "sbe_generated",
     max_group_entries: int = 65535,
     max_data_bytes: int = 1024 * 1024,
+    emit: Literal["decoder", "encoder"] = "decoder",
 ) -> dict[str, Any]:
-    """Compile hash-pinned in-memory FIX SBE subset XML into borrowed Bolt C++ views.
+    """Compile hash-pinned FIX SBE XML into borrowed views or native encoder inputs.
+
+    emit=decoder preserves the original borrowed-view header and receipt.
+    emit=encoder returns a standalone namespace::encoder header with preflighted
+    caller-owned inputs, measure and encode; no runtime XML or allocation.
 
     Cold authoring only. No paths, URLs, includes, writes, subprocesses or code
     execution. XML cap 256 KiB, output cap 1 MiB, 64 messages/2048 members and
@@ -72,5 +87,12 @@ async def devtools_sbe_compile(
     This does not register schemas, ingest market data, or qualify CME support.
     """
     return await anyio.to_thread.run_sync(
-        _compile, schema_xml, expect_sha256, namespace, max_group_entries, max_data_bytes, limiter=_COMPILE_LIMITER
+        _compile,
+        schema_xml,
+        expect_sha256,
+        namespace,
+        max_group_entries,
+        max_data_bytes,
+        emit,
+        limiter=_COMPILE_LIMITER,
     )
