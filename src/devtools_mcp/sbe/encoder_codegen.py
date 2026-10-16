@@ -58,7 +58,11 @@ class _Encoder(_Generator):
         for path, f in flat:
             if f.presence != "constant":
                 self.validator(owner, path, f)
+        self.fixed_helpers(owner, flat)
+        if layout.dimension:
+            self.dimensions(layout, owner)
         self.measure(layout, owner, flat)
+        self.tail_helpers(layout, owner, depth)
         self.write(layout, owner, flat, depth)
 
     def validator(self, owner, path, f):
@@ -100,6 +104,74 @@ class _Encoder(_Generator):
             self.emit("    return Status::Ok;")
         self.emit("}")
 
+    def fixed_helpers(self, owner, flat):
+        for index in range((len(flat) + 9) // 10):
+            chunk = flat[index * 10 : (index + 1) * 10]
+            self.emit(
+                f"inline Status {owner}_measure_fields_{index}(const {owner}_input& input, "
+                f"std::uint16_t version) noexcept {{",
+                "    assert(version <= schema_version);",
+                "    assert(schema_version <= UINT16_MAX);",
+                "    (void)input; (void)version;",
+            )
+            self.measure_field_chunk(owner, chunk)
+            self.emit("    return Status::Ok;", "}")
+            self.emit(
+                f"inline Status {owner}_write_fields_{index}(const {owner}_input& input, "
+                f"std::uint16_t version, sbe::WriteBlock& block) noexcept {{",
+                "    assert(version <= schema_version);",
+                "    assert(block.acting_version == version);",
+                "    (void)input; (void)version; (void)block;",
+                "    auto status = Status::Ok;",
+            )
+            self.write_field_chunk(owner, chunk)
+            self.emit("    return status;", "}")
+
+    def measure_field_chunk(self, owner, flat):
+        for path, f in flat:
+            if f.presence == "constant":
+                continue
+            value = f"input.value_{path}"
+            present = f"input.present_{path}" if f.presence == "optional" else "true"
+            self.emit(f"    if (version >= {f.since}) {{")
+            if f.encoding.length != 1:
+                self.emit(
+                    f"        for (std::uint32_t i = 0; i < {f.encoding.length}; ++i)",
+                    f"            if ({owner}_check_{path}({value}[i], version, {present}) != Status::Ok) "
+                    f"return Status::InvalidInput;",
+                )
+            else:
+                self.emit(
+                    f"        if ({owner}_check_{path}({value}, version, {present}) != Status::Ok) return "
+                    f"Status::InvalidInput;"
+                )
+            self.emit("    }")
+
+    def write_field_chunk(self, owner, flat):
+        for path, f in flat:
+            if f.presence == "constant":
+                continue
+            cpp = PRIMITIVES[f.encoding.primitive][0]
+            value = f"input.value_{path}"
+            self.emit(f"    if (version >= {f.since}) {{")
+            if f.encoding.length != 1:
+                self.emit(
+                    f"        for (std::uint32_t i = 0; i < {f.encoding.length}; ++i) {{",
+                    f"            status = sbe::write_field<order, {cpp}>(block, {f.offset} + i * "
+                    f"{PRIMITIVES[f.encoding.primitive][1]}, {f.since}, {value}[i]);",
+                    "            if (status != Status::Ok) return status;",
+                    "        }",
+                )
+            else:
+                call = (
+                    f"sbe::write_optional<order, {cpp}>(block, {f.offset}, {f.since}, input.present_{path}, "
+                    f"{value}, {cpp_literal(f.encoding.null, f.encoding.primitive)})"
+                    if f.presence == "optional"
+                    else f"sbe::write_field<order, {cpp}>(block, {f.offset}, {f.since}, {value})"
+                )
+                self.emit(f"        status = {call};", "        if (status != Status::Ok) return status;")
+            self.emit("    }")
+
     def measure(self, layout, owner, flat):
         self.emit(
             f"inline Status {owner}_measure(const {owner}_input& input, Measure& m) noexcept {{",
@@ -108,24 +180,10 @@ class _Encoder(_Generator):
             "    if (overlap(&input, sizeof(input), m.output, m.capacity)) return Status::InvalidInput;",
             f"    if (!add(m, {owner}_block(m.version))) return Status::LimitExceeded;",
         )
-        for path, f in flat:
-            if f.presence == "constant":
-                continue
-            value = f"input.value_{path}"
-            present = f"input.present_{path}" if f.presence == "optional" else "true"
-            self.emit(f"    if (m.version >= {f.since}) {{")
-            if f.encoding.length != 1:
-                self.emit(
-                    f"        for (std::uint32_t i = 0; i < {f.encoding.length}; ++i)",
-                    f"            if ({owner}_check_{path}({value}[i], m.version, {present}) != Status::Ok) "
-                    f"return Status::InvalidInput;",
-                )
-            else:
-                self.emit(
-                    f"        if ({owner}_check_{path}({value}, m.version, {present}) != Status::Ok) return "
-                    f"Status::InvalidInput;"
-                )
-            self.emit("    }")
+        for index in range((len(flat) + 9) // 10):
+            self.emit(
+                f"    if ({owner}_measure_fields_{index}(input, m.version) != Status::Ok) return Status::InvalidInput;"
+            )
         for tail in layout.tails:
             child, value = owner + "_" + tail.name, "input.tail_" + tail.name
             self.emit(f"    if (m.version >= {tail.since}) {{")
@@ -150,7 +208,8 @@ class _Encoder(_Generator):
                 self.emit(
                     f"        if ({value}.count > {max_count} || ({value}.count && !{value}.data) || "
                     f"{child}_block(m.version) > {max_block}) return Status::InvalidInput;",
-                    f"        if (!add(m, {PRIMITIVES[lp][1] + PRIMITIVES[cp][1]})) return Status::LimitExceeded;",
+                    f"        if (!add(m, {tail.dimension_size or PRIMITIVES[lp][1] + PRIMITIVES[cp][1]})) "
+                    f"return Status::LimitExceeded;",
                     f"        for (std::uint32_t i = 0; i < {value}.count; ++i) {{",
                     f"            const auto status = {child}_measure({value}.data[i], m);",
                     "            if (status != Status::Ok) return status;",
@@ -188,38 +247,49 @@ class _Encoder(_Generator):
             f"    auto status = sbe::open_write_block(writer, {owner}_block(version), version, block);",
             "    if (status != Status::Ok) return status;",
         )
-        for path, f in flat:
-            if f.presence == "constant":
-                continue
-            cpp = PRIMITIVES[f.encoding.primitive][0]
-            value = f"input.value_{path}"
-            self.emit(f"    if (version >= {f.since}) {{")
-            if f.encoding.length != 1:
-                self.emit(
-                    f"        for (std::uint32_t i = 0; i < {f.encoding.length}; ++i) {{",
-                    f"            status = sbe::write_field<order, {cpp}>(block, {f.offset} + i * "
-                    f"{PRIMITIVES[f.encoding.primitive][1]}, {f.since}, {value}[i]);",
-                    "            if (status != Status::Ok) return status;",
-                    "        }",
-                )
-            else:
-                call = (
-                    f"sbe::write_optional<order, {cpp}>(block, {f.offset}, {f.since}, input.present_{path}, "
-                    f"{value}, {cpp_literal(f.encoding.null, f.encoding.primitive)})"
-                    if f.presence == "optional"
-                    else f"sbe::write_field<order, {cpp}>(block, {f.offset}, {f.since}, {value})"
-                )
-                self.emit(f"        status = {call};", "        if (status != Status::Ok) return status;")
-            self.emit("    }")
+        for index in range((len(flat) + 9) // 10):
+            self.emit(
+                f"    status = {owner}_write_fields_{index}(input, version, block);",
+                "    if (status != Status::Ok) return status;",
+            )
         for tail in layout.tails:
+            self.emit(
+                f"    status = {owner}_write_tail_{tail.name}(input, version, writer);",
+                "    if (status != Status::Ok) return status;",
+            )
+        self.emit("    return Status::Ok;", "}")
+
+    def tail_helpers(self, layout, owner, depth):
+        for tail in layout.tails:
+            self.emit(
+                f"inline Status {owner}_write_tail_{tail.name}(const {owner}_input& input, "
+                f"std::uint16_t version, sbe::Writer& writer) noexcept {{",
+                "    assert(version <= schema_version);",
+                "    assert(writer.offset <= writer.size);",
+                "    auto status = Status::Ok;",
+            )
+            self.write_tails(owner, (tail,), depth)
+            self.emit("    return status;", "}")
+
+    def write_tails(self, owner, tails, depth):
+        for tail in tails:
             child, value = owner + "_" + tail.name, "input.tail_" + tail.name
             self.emit(f"    if (version >= {tail.since}) {{")
             if isinstance(tail, Layout):
                 lp, cp = (PRIMITIVES[p][0] for p in tail.dimension)
-                self.emit(
-                    f"        status = sbe::write_group_dimensions<order, {lp}, {cp}, "
+                padded = tail.dimension_offsets and (
+                    tail.dimension_offsets != (0, PRIMITIVES[tail.dimension[0]][1])
+                    or tail.dimension_size != sum(PRIMITIVES[p][1] for p in tail.dimension)
+                )
+                call = (
+                    f"        status = {child}_dimensions(writer, version, {value}.count);"
+                    if padded
+                    else f"        status = sbe::write_group_dimensions<order, {lp}, {cp}, "
                     f"{self.ir.budgets.group_entries}, {self.ir.budgets.nesting}>(writer, "
-                    f"{child}_block(version), {value}.count, {depth + 1});",
+                    f"{child}_block(version), {value}.count, {depth + 1});"
+                )
+                self.emit(
+                    call,
                     "        if (status != Status::Ok) return status;",
                     f"        for (std::uint32_t i = 0; i < {value}.count; ++i) {{",
                     f"            status = {child}_write({value}.data[i], version, writer);",
@@ -233,7 +303,29 @@ class _Encoder(_Generator):
                     "        if (status != Status::Ok) return status;",
                 )
             self.emit("    }")
-        self.emit("    return Status::Ok;", "}")
+
+    def dimensions(self, layout, owner):
+        padded = layout.dimension_offsets and (
+            layout.dimension_offsets != (0, PRIMITIVES[layout.dimension[0]][1])
+            or layout.dimension_size != sum(PRIMITIVES[p][1] for p in layout.dimension)
+        )
+        if not padded:
+            return
+        lp, cp = (PRIMITIVES[p][0] for p in layout.dimension)
+        lo, co = layout.dimension_offsets
+        self.emit(
+            f"inline Status {owner}_dimensions(sbe::Writer& writer, std::uint16_t version, "
+            f"std::uint32_t count) noexcept {{",
+            "    assert(version <= schema_version);",
+            "    assert(writer.offset <= writer.size);",
+            "    sbe::WriteBlock dimensions{};",
+            f"    auto status = sbe::open_write_block(writer, {layout.dimension_size}, version, dimensions);",
+            "    if (status != Status::Ok) return status;",
+            f"    status = sbe::write_field<order, {lp}>(dimensions, {lo}, 0, {owner}_block(version));",
+            "    if (status != Status::Ok) return status;",
+            f"    return sbe::write_field<order, {cp}>(dimensions, {co}, 0, count);",
+            "}",
+        )
 
     def public(self, message):
         owner = "message_" + message.name

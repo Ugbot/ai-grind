@@ -129,7 +129,7 @@ def test_invalid_or_unsupported_schema_is_explicit(old, new, diagnostic):
         compile_schema(change(old, new))
 
 
-def test_cycle_nonpacked_header_dimensions_and_order_rejected():
+def test_cycle_header_dimensions_and_order_validation():
     cyclic = change(b'<ref name="amount" type="Price"/>', b'<ref name="amount" type="PriceRef"/>')
     with pytest.raises(SchemaError, match="cyclic"):
         compile_schema(cyclic)
@@ -138,8 +138,13 @@ def test_cycle_nonpacked_header_dimensions_and_order_rejected():
     nonpacked = change(
         b'name="numInGroup" primitiveType="uint16"', b'name="numInGroup" primitiveType="uint16" offset="4"', NESTED
     )
-    with pytest.raises(SchemaError, match="dimensions"):
-        compile_schema(nonpacked)
+    padded = compile_schema(nonpacked).messages[0].tails[0]
+    assert padded.dimension_offsets == (0, 4) and padded.dimension_size == 6
+    overlapping = change(
+        b'name="numInGroup" primitiveType="uint16"', b'name="numInGroup" primitiveType="uint16" offset="1"', NESTED
+    )
+    with pytest.raises(SchemaError, match="overlapping"):
+        compile_schema(overlapping)
     disorder = change(
         b'<data name="name" id="9" type="largeData"/>',
         b'<data name="name" id="9" type="largeData"/><field name="bad" id="10" type="uint8"/>',

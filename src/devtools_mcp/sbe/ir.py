@@ -100,6 +100,8 @@ class Layout:
     tails: tuple["Layout | Data", ...]
     dimension: tuple[str, ...] = ()
     dimension_bounds: tuple[tuple[str, str], ...] = ()
+    dimension_offsets: tuple[int, ...] = ()
+    dimension_size: int = 0
 
 
 @dataclass(frozen=True)

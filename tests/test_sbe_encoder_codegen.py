@@ -13,7 +13,7 @@ from devtools_mcp.sbe import CompilerBudgets, SchemaError, compile_schema, gener
 FIXTURES = Path(__file__).parent / "fixtures" / "sbe"
 
 
-def native(tmp_path, fixture, body, *, big=False, xml=None):
+def native(tmp_path, fixture, body, *, big=False, xml=None, budgets=None):
     compiler = shutil.which("clang++")
     if not compiler:
         pytest.skip("native encoder oracle requires clang++")
@@ -23,7 +23,7 @@ def native(tmp_path, fixture, body, *, big=False, xml=None):
     xml = (FIXTURES / fixture).read_bytes() if xml is None else xml
     if big:
         xml = xml.replace(b"littleEndian", b"bigEndian")
-    ir = compile_schema(xml, budgets=CompilerBudgets(group_entries=3, data_bytes=7))
+    ir = compile_schema(xml, budgets=budgets or CompilerBudgets(group_entries=3, data_bytes=7))
     decoder = generate_cpp(ir, namespace="fixture")
     (tmp_path / "decoder.h").write_text(decoder)
     (tmp_path / "encoder.h").write_text(generate_encoder_cpp(ir, namespace="fixture"))
@@ -318,3 +318,94 @@ async def test_existing_mcp_compile_encoder_selection_and_refusals():
     assert refused["status"] == "error" and "header" not in refused
     with pytest.raises(Exception, match="decoder|encoder"):
         await mcp.call_tool("devtools_sbe_compile", {**arguments, "emit": "both"})
+
+
+def test_official_style_padded_dimensions_inherited_versions_and_nullable_enum(tmp_path):
+    xml = (FIXTURES / "nested.xml").read_bytes()
+    xml = xml.replace(b"http://fixprotocol.io/2016/sbe", b"http://www.fixprotocol.org/ns/simple/1.0")
+    xml = xml.replace(
+        b'package="bolt_test"',
+        b'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+        b'xsi:schemaLocation="urn:metadata https://invalid.example/never-fetched.xsd" package="bolt_test"',
+    )
+    xml = xml.replace(
+        b'<type name="numInGroup" primitiveType="uint16"/>',
+        b'<type name="numInGroup" primitiveType="uint8" offset="7"/>',
+    )
+    xml = xml.replace(
+        b'<enum name="Side" encodingType="uint8">',
+        b'<type name="NullableSide" primitiveType="uint8" presence="optional"/>'
+        b'<enum name="Side" encodingType="NullableSide" sinceVersion="1">',
+    )
+    xml = xml.replace(b'name="Nested" id="7"', b'name="Nested" id="7" sinceVersion="1"')
+    ir = compile_schema(xml)
+    root = ir.messages[0]
+    assert root.since == 1 and root.fields[0].since == 1
+    assert root.fields[1].presence == "optional" and root.fields[1].encoding.values[0].since == 1
+    group = root.tails[0]
+    assert group.since == 1 and group.fields[0].since == 1
+    assert group.dimension == ("uint16", "uint8")
+    assert group.dimension_offsets == (0, 7) and group.dimension_size == 8
+    native(
+        tmp_path,
+        "nested.xml",
+        r"""
+    message_Nested_rows_samples_input samples[1]{}; samples[0].value_sample=1.0f;
+    message_Nested_rows_input rows[1]{}; rows[0].value_value=-2; rows[0].tail_samples={samples,1};
+    const std::uint8_t label[]={88}, name[]={65,66}; rows[0].tail_label={label,1};
+    message_Nested_input input{}; input.value_id=42; input.present_side=true;
+    input.value_side=1; input.value_flags=5; input.tail_rows={rows,1}; input.tail_name={name,2};
+    std::uint8_t output[128]; std::memset(output,0xa5,sizeof(output)); std::uint32_t n=99,m=0;
+    assert(measure_Nested(input,2,m)==Status::Ok && m==40);
+    assert(encode_Nested(input,2,output,sizeof(output),n)==Status::Ok && n==40);
+    const std::uint8_t oracle[]={4,0,7,0,188,2,2,0,42,0,1,5,
+        2,0,0,0,0,0,0,1,0xfe,0xff,4,0,0,0,0,0,0,1,0,0,0x80,0x3f,1,88,2,0,65,66};
+    static_assert(sizeof(oracle)==40);
+    assert(std::memcmp(output,oracle,40)==0 && output[40]==0xa5);
+    struct Visitor {
+        unsigned roots=0, entries=0, samples=0;
+        Status on_message_Nested(fixture::message_Nested_view view) noexcept {
+            std::uint16_t id=0; assert(view.get_id(id)==Status::Ok && id==42); ++roots; return Status::Ok;
+        }
+        Status on_message_Nested_rows(fixture::message_Nested_rows_view view) noexcept {
+            std::int16_t value=0; assert(view.get_value(value)==Status::Ok && value==-2); ++entries; return Status::Ok;
+        }
+        Status on_message_Nested_rows_samples(fixture::message_Nested_rows_samples_view view) noexcept {
+            float value=0; assert(view.get_sample(value)==Status::Ok && value==1.0f); ++samples; return Status::Ok;
+        }
+        Status on_message_Nested_rows_label(bolt::wire::ByteView bytes) noexcept {
+            assert(bytes.size==1 && bytes.data[0]==88); return Status::Ok;
+        }
+        Status on_message_Nested_name(bolt::wire::ByteView bytes) noexcept {
+            assert(bytes.size==2 && bytes.data[0]==65 && bytes.data[1]==66); return Status::Ok;
+        }
+    } visitor;
+    assert(fixture::decode_Nested({oracle,sizeof(oracle)},visitor)==Status::Ok);
+    assert(visitor.roots==1 && visitor.entries==1 && visitor.samples==1);
+    assert(fixture::decode_Nested({oracle,19},visitor)==Status::Truncated);
+    input.present_side=false;
+    assert(encode_Nested(input,2,output,sizeof(output),n)==Status::Ok && output[10]==255);
+    assert(encode_Nested(input,0,output,sizeof(output),n)==Status::UnsupportedVersion);
+    assert(encode_Nested(input,1,output,sizeof(output),n)==Status::Ok && n==39 && output[0]==3);
+    """,
+        xml=xml,
+        budgets=CompilerBudgets(group_entries=65535, data_bytes=7),
+    )
+
+
+def test_padded_dimensions_still_refuse_overlap_and_unknown_metadata():
+    xml = (FIXTURES / "nested.xml").read_bytes()
+    with pytest.raises(SchemaError, match="overlapping"):
+        compile_schema(
+            xml.replace(
+                b'name="numInGroup" primitiveType="uint16"', b'name="numInGroup" primitiveType="uint16" offset="1"'
+            )
+        )
+    with pytest.raises(SchemaError, match="unsupported node/attribute"):
+        compile_schema(
+            xml.replace(
+                b'package="bolt_test"',
+                b'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+                b'xsi:evil="https://invalid.example/never-fetched" package="bolt_test"',
+            )
+        )

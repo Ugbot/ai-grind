@@ -48,7 +48,7 @@ padding. No runtime XML, allocation or ownership enters the generated code.
 
 The compiler supports its existing strict IR subset, including nested groups
 and variable data. Unsupported constructs fail explicitly: optional composite
-and array fields, versioned composite wire members, custom headers/dimensions,
+and array fields, versioned composite wire members, custom headers,
 constrained common-header scalars and constrained variable-data payload elements
 are examples. Declared variable-data **length** bounds are supported. Deprecation
 metadata does not remove fields from the wire; fields absent in the selected
@@ -56,5 +56,21 @@ version are ignored. Larger generated functions or output exceed explicit
 budgets and are refused.
 
 The byte-oracle tests use owned synthetic XML. This is generic encoder/compiler
-support, not CME qualification. Current official CME XML acquisition, exact
-schema provenance and venue-specific conformance evidence remain separate work.
+support, not CME qualification. Exact schema provenance and venue-specific conformance evidence remain separate
+requirements; successful cold generation alone does not establish them.
+
+The official legacy namespace `http://www.fixprotocol.org/ns/simple/1.0` and
+root `xsi:schemaLocation` metadata are allowlisted; schema locations are never
+fetched. Field/group/enum-value versions inherit their enclosing version when
+omitted. Enum primitive aliases may be nullable, with explicit optional inputs.
+Group dimensions retain both scalar offsets and their full composite size,
+including padded headers such as uint16 block length at offset 0 and uint8
+count at offset 7. The writer zeroes dimension padding; the reader uses declared
+offsets. Large fixed-field and tail writers are split into bounded helpers.
+
+The pinned CME production-path XML acquired on 2026-10-16 declares schema 1,
+version 13, description 20230411 (SHA-256
+`f45ebadf65ccb1a2d416f00ee755480072ecff030970cc170a78540541d78d60`).
+Both cold code-generation paths can emit its 31 templates. That evidence does
+not establish current live-channel applicability, generated C++ conformance,
+actual listed security definitions or full CME venue qualification.

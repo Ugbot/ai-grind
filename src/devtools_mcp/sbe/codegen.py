@@ -108,11 +108,18 @@ class _Generator:
             "        switch (value) {",
         )
         for value in enc.values:
-            self.emit(
-                f"        case {cpp_literal(value.literal, enc.primitive)}:",
-                f"            if (block.acting_version < {value.since}) return Status::InvalidInput;",
-                f"            out = static_cast<{cpp}>(value); return Status::Ok;",
-            )
+            if len(enc.values) > 16:
+                self.emit(
+                    f"        case {cpp_literal(value.literal, enc.primitive)}: "
+                    f"if (block.acting_version < {value.since}) return Status::InvalidInput; "
+                    f"out = static_cast<{cpp}>(value); return Status::Ok;"
+                )
+            else:
+                self.emit(
+                    f"        case {cpp_literal(value.literal, enc.primitive)}:",
+                    f"            if (block.acting_version < {value.since}) return Status::InvalidInput;",
+                    f"            out = static_cast<{cpp}>(value); return Status::Ok;",
+                )
         self.emit("        default: return Status::InvalidInput;", "        }", "    }")
 
     def view(self, layout, owner):
@@ -166,6 +173,32 @@ class _Generator:
                 self.emit(f"    if (version >= {f.since}) size = std::max(size, std::uint32_t{{{f.offset + f.size}}});")
         self.emit(f"    if (version == schema_version) size = {layout.block_length};", "    return size;", "}")
 
+    def padded_group(self, layout, owner, depth):
+        length, count = (PRIMITIVES[p][0] for p in layout.dimension)
+        lo, co = layout.dimension_offsets
+        self.emit(
+            f"inline Status {owner}_open(bolt::wire::ByteReader& reader, "
+            f"std::uint16_t version, sbe::Group& out) noexcept {{",
+            "    assert(bolt::wire::byte_reader_valid(reader));",
+            "    assert(version <= schema_version);",
+            f"    if ({depth} > {self.ir.budgets.nesting}) return Status::LimitExceeded;",
+            "    auto next = reader; bolt::wire::ByteView dimensions{};",
+            f"    if (!bolt::wire::read_bytes(next, {layout.dimension_size}, dimensions)) return Status::Truncated;",
+            f"    bolt::wire::ByteReader lr{{dimensions.data, dimensions.size, {lo}}};",
+            f"    bolt::wire::ByteReader cr{{dimensions.data, dimensions.size, {co}}};",
+            f"    {length} length{{}}; {count} count{{}};",
+            "    if (!sbe::read_scalar<order>(lr, length) || !sbe::read_scalar<order>(cr, count)) "
+            "return Status::Truncated;",
+        )
+        if self.ir.budgets.group_entries < (1 << (PRIMITIVES[layout.dimension[1]][1] * 8)) - 1:
+            self.emit(f"    if (count > {self.ir.budgets.group_entries}) return Status::LimitExceeded;")
+        self.emit(
+            f"    if (length < {owner}_minimum_block(version)) return Status::InvalidInput;",
+            "    if (std::uint64_t{length} * count > next.size - next.offset) return Status::Truncated;",
+            "    reader = next; out = {length, count, version}; return Status::Ok;",
+            "}",
+        )
+
     def walk(self, layout, owner, depth):
         self.view(layout, owner)
         for tail in layout.tails:
@@ -207,6 +240,19 @@ class _Generator:
         self.emit("    return Status::Ok;", "}")
         if layout.dimension:
             length, count = (PRIMITIVES[p][0] for p in layout.dimension)
+            padded = layout.dimension_offsets and (
+                layout.dimension_offsets != (0, PRIMITIVES[layout.dimension[0]][1])
+                or layout.dimension_size != sum(PRIMITIVES[p][1] for p in layout.dimension)
+            )
+            if padded:
+                self.padded_group(layout, owner, depth)
+            opening = (
+                f"    auto status = {owner}_open(reader, version, group);"
+                if padded
+                else f"    auto status = sbe::open_group<order, {length}, {count}, "
+                f"{self.ir.budgets.group_entries}, {self.ir.budgets.nesting}>"
+                f"(reader, {owner}_minimum_block(version), version, {depth}, group);"
+            )
             self.emit(
                 "template <typename Visitor>",
                 f"inline Status {owner}_group(bolt::wire::ByteReader& reader, "
@@ -214,9 +260,7 @@ class _Generator:
                 "    assert(bolt::wire::byte_reader_valid(reader));",
                 "    assert(version <= schema_version);",
                 "    sbe::Group group{};",
-                f"    auto status = sbe::open_group<order, {length}, {count}, "
-                f"{self.ir.budgets.group_entries}, {self.ir.budgets.nesting}>"
-                f"(reader, {owner}_minimum_block(version), version, {depth}, group);",
+                opening,
                 "    if (status != Status::Ok) return status;",
                 f"    for (std::uint32_t i = 0; i < {self.ir.budgets.group_entries} && group.remaining != 0; ++i) {{",
                 "        sbe::Block block{};",

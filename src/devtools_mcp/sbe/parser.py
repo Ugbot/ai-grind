@@ -14,11 +14,25 @@ PRIMITIVES = {
     "float": ("float", 4),
     "double": ("double", 8),
 }
-NAMESPACES = {"", "http://fixprotocol.io/2016/sbe", "http://fixprotocol.io/2017/sbe"}
+NAMESPACES = {
+    "",
+    "http://fixprotocol.io/2016/sbe",
+    "http://fixprotocol.io/2017/sbe",
+    "http://www.fixprotocol.org/ns/simple/1.0",
+}
 DEFAULT_BUDGETS = CompilerBudgets()
 META = {"description", "semanticType", "sinceVersion", "deprecated"}
 ATTRS = {
-    "messageSchema": {"package", "id", "version", "semanticVersion", "byteOrder", "headerType", "description"},
+    "messageSchema": {
+        "package",
+        "id",
+        "version",
+        "semanticVersion",
+        "byteOrder",
+        "headerType",
+        "description",
+        "{http://www.w3.org/2001/XMLSchema-instance}schemaLocation",
+    },
     "types": set(),
     "type": META
     | {
@@ -130,8 +144,8 @@ class _Compiler:
         if not self.nodes or len(self.nodes) > budgets.types:
             raise SchemaError("type budget exceeded or missing types")
 
-    def versions(self, node):
-        since = number(node, "sinceVersion", 0, self.version)
+    def versions(self, node, inherited=0):
+        since = number(node, "sinceVersion", inherited, self.version)
         deprecated = number(node, "deprecated", maximum=self.version) if node.get("deprecated") else None
         if deprecated is not None and deprecated < since:
             raise SchemaError("deprecated precedes sinceVersion")
@@ -215,8 +229,13 @@ class _Compiler:
             )
         if kind in ("enum", "set"):
             base = self.resolve(node.get("encodingType", ""), depth + 1)
-            if base.kind != "type" or base.length != 1 or base.presence != "required":
-                raise SchemaError("enum/set requires required scalar encoding")
+            if base.kind != "type" or base.length != 1 or base.presence not in ("required", "optional"):
+                raise SchemaError("enum/set requires scalar encoding")
+            if base.presence == "optional":
+                if kind != "enum" or node.get("presence", "optional") != "optional":
+                    raise SchemaError("nullable encoding only supported for optional enum")
+                presence = "optional"
+                common["presence"] = presence
             if not base.primitive.startswith("u") and not (kind == "enum" and base.primitive == "char"):
                 raise SchemaError("enum/set requires unsigned integer (enum also char)")
             if presence == "constant" or (kind == "set" and presence != "required"):
@@ -233,7 +252,7 @@ class _Compiler:
                     raise SchemaError("duplicate enum/set value")
                 names.add(item)
                 numbers.add(value)
-                v_since, v_deprecated = self.versions(child)
+                v_since, v_deprecated = self.versions(child, since)
                 if v_since < since:
                     raise SchemaError("enum value precedes encoding")
                 values.append(Value(item, value, v_since, v_deprecated))
@@ -284,9 +303,9 @@ class _Compiler:
             raise SchemaError("composite requires >=2 members within block budget")
         return Encoding(**common, size=end, members=tuple(fields))
 
-    def field(self, node, end):
+    def field(self, node, end, inherited=0):
         enc = self.resolve(node.get("type", ""))
-        since, deprecated = self.versions(node)
+        since, deprecated = self.versions(node, inherited)
         if since < enc.since:
             raise SchemaError("field precedes encoding version")
         if enc.semantic and node.get("semanticType") and enc.semantic != node.get("semanticType"):
@@ -320,24 +339,30 @@ class _Compiler:
             raise SchemaError("overlapping field offset")
         return Field(name(node), number(node, "id"), enc, offset, since, deprecated, presence, constant)
 
-    def packed(self, key, names):
+    def packed(self, key, names, *, allow_padding=False):
         enc = self.resolve(key)
         if enc.kind != "composite" or tuple(f.name for f in enc.members) != names:
             raise SchemaError(f"requires packed composite {names}")
         end, result = 0, []
         for f in enc.members:
-            if f.offset != end or f.presence != "required" or f.since != 0 or f.encoding.kind != "type":
+            if (
+                (f.offset != end and not allow_padding)
+                or f.offset < end
+                or f.presence != "required"
+                or f.since != 0
+                or f.encoding.kind != "type"
+            ):
                 raise SchemaError("custom/versioned dimensions/header/data prefix unsupported")
             if f.encoding.length != 1 and f.name != "varData":
                 raise SchemaError("header/dimension/data length requires scalar encoding")
             result.append(f.encoding.primitive)
-            end += f.encoding.size
+            end = f.offset + f.encoding.size
         return enc, tuple(result)
 
-    def layout(self, node, depth=0):
+    def layout(self, node, depth=0, inherited=0):
         if depth > self.budgets.nesting:
             raise SchemaError("group nesting budget exceeded")
-        since, deprecated = self.versions(node)
+        since, deprecated = self.versions(node, inherited)
         fields, tails, end, phase, names, ids = [], [], 0, 0, set(), set()
         last_since = since
         for child in node:
@@ -353,17 +378,20 @@ class _Compiler:
             if next_phase is None or next_phase < phase:
                 raise SchemaError("members must be fields, groups, data in wire order")
             phase = next_phase
-            child_since, child_deprecated = self.versions(child)
-            if child_since < since or (kind == "field" and child_since < last_since):
+            child_since, child_deprecated = self.versions(child, since)
+            ordered_field = (
+                kind == "field" and child.get("presence", self.resolve(child.get("type", "")).presence) != "constant"
+            )
+            if child_since < since or (ordered_field and child_since < last_since):
                 raise SchemaError("versioned additions must append within each block/tail")
-            if kind == "field":
+            if ordered_field:
                 last_since = child_since
             if kind == "field":
-                f = self.field(child, end)
+                f = self.field(child, end, since)
                 fields.append(f)
                 end = f.offset + f.size
             elif kind == "group":
-                tails.append(self.layout(child, depth + 1))
+                tails.append(self.layout(child, depth + 1, since))
             else:
                 enc, primitives = self.packed(child.get("type", ""), ("length", "varData"))
                 length, data = enc.members
@@ -389,13 +417,17 @@ class _Compiler:
             raise SchemaError("blockLength smaller than fixed layout")
         dimension = ()
         dimension_bounds: tuple[tuple[str, str], ...] = ()
+        dimension_offsets: tuple[int, ...] = ()
+        dimension_size = 0
         if tag(node) == "group":
             self.group_count += 1
             if self.group_count > self.budgets.groups:
                 raise SchemaError("schema group budget exceeded")
             dimensions, dimension = self.packed(
-                node.get("dimensionType", "groupSizeEncoding"), ("blockLength", "numInGroup")
+                node.get("dimensionType", "groupSizeEncoding"), ("blockLength", "numInGroup"), allow_padding=True
             )
+            dimension_offsets = tuple(f.offset for f in dimensions.members)
+            dimension_size = dimensions.size
             dimension_bounds = tuple((f.encoding.minimum, f.encoding.maximum) for f in dimensions.members)
             if any(p not in ("uint8", "uint16", "uint32") for p in dimension):
                 raise SchemaError("group dimensions require unsigned <=32-bit scalars")
@@ -411,6 +443,8 @@ class _Compiler:
             tuple(tails),
             dimension,
             dimension_bounds,
+            dimension_offsets,
+            dimension_size,
         )
 
 
