@@ -10,6 +10,7 @@ import devtools_mcp.tools.market_feed_tools  # noqa: F401
 import devtools_mcp.tools.plan_tools  # noqa: F401
 import devtools_mcp.tools.plugins_tools  # noqa: F401
 import devtools_mcp.tools.recipe_tools  # noqa: F401
+import devtools_mcp.tools.ring_evidence_tools  # noqa: F401
 import devtools_mcp.tools.sbe_tools  # noqa: F401
 import devtools_mcp.tools.search_tools  # noqa: F401
 import devtools_mcp.tools.skill_tools  # noqa: F401

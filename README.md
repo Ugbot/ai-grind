@@ -12,6 +12,14 @@ provenance and scope. Use the maintained [MCP client](docs/devtools-call.md)
 for structured tool-call batches. The [integration roadmap](docs/research/python-callables-roadmap-20261012.md)
 tracks process supervision through existing recipes.
 
+`analyze_ring_arrival_boundaries` joins a dedicated native ring boundary trace,
+ordered arrival CSV and exact benchmark report. It validates complete event
+counts, clock-offset bounds and latency percentiles before returning bounded
+phase summaries. The same read-only callable is exposed as `devtools_ring_arrival`.
+Use DTrace `-o` to keep records separate from target stdout. Input byte/event
+and report-row budgets are explicit; analysis success does not qualify an
+instrumented performance result.
+
 ## Why this exists
 
 Serious performance tools demand two kinds of expertise: the command-line incantations to run them, and the experience to read what comes back. VTune, Valgrind, PerfView and ETW, perf, JFR, the debuggers, all of them. An LLM has both. What it doesn't have is room. One raw profiler dump is tens of thousands of symbol-heavy lines, and pasting that into a conversation destroys the context you're working in. ai-grind absorbs that noise. Every run is parsed into a queryable [Polars](https://pola.rs/) DataFrame, so the model gets a bounded summary and a `run_id`, then queries for exactly what it needs instead of taking the whole dump back at once.
@@ -36,6 +44,7 @@ Instead of dozens of individual tool wrappers, devtools-mcp provides **a few cat
 |----------|-------|---------|
 | **Batch** | `devtools_check`, `devtools_run`, `devtools_list`, `devtools_raw` | Detect tools, run analyses, list results, view raw output |
 | **Analysis** | `devtools_analyze`, `devtools_query`, `devtools_compare` | Filter, group, query, and diff run results |
+| **Ring evidence** | `devtools_ring_arrival` | Validate same-execution native event boundaries and attribute bounded wall intervals |
 | **Search** | `devtools_search`, `devtools_correlate` | Cross-run text search and join runs on shared columns |
 | **Flame** | `devtools_flamegraph` | Render any sampling run as an SVG flame graph + bounded text tree |
 | **Visualize** | `devtools_dashboard` | Launch a local browser "visualization terminal" for all runs |
