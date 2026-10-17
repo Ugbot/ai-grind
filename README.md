@@ -625,3 +625,24 @@ See any of `etw/`, `jvm/`, `cdb/` for the pattern.
 ## License
 
 MIT
+
+### Instruments thread-policy evidence
+
+`devtools_instruments_threads` and the reusable
+`devtools_mcp.evidence.instruments_threads.analyze_instruments_thread_policy`
+read existing xctrace thread-info, ThreadQoSTable and ThreadPriority XML exports.
+Supply an explicit PID and half-open trace-relative nanosecond window. The reader
+validates UTF-8 XML, per-file ID/ref DAGs, exact column schemas, identities and
+nonoverlapping intervals before reporting target-thread coverage. Combined input
+byte/row/node caps, fixed depth 64, target-thread and per-summary detail caps are
+explicit. Input bytes are not an aggregate resident-memory budget.
+
+Sparse observations return analysis `PASS` with coverage `PARTIAL`; uncovered
+intervals stay unknown. Raw exporter QoS codes (not OS QoS constants), formatted
+labels and mismatch-state text are retained. Bounded pair details include total
+and omitted counts/durations; mismatch-code and exporter-state durations include
+all observed groups, including omitted details. Gap lists retain total counts.
+No capture UUID exists in these exports: caller association and shared PID/TID
+cannot authenticate the same execution. The tool performs no process launch,
+scheduling changes or artifact writes, and makes no native clock mapping,
+off-CPU/latency causal claim or performance qualification (`UNVERIFIED`).
