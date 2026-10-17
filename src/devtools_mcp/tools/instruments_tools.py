@@ -66,3 +66,61 @@ async def devtools_instruments_threads(
             "performance_validation": "UNVERIFIED",
             "error": {"code": "invalid_evidence", "message": str(exc)},
         }
+
+
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=False))
+async def devtools_instruments_ring(
+    native_report_path: str,
+    csv_path: str,
+    signpost_path: str,
+    thread_state_path: str,
+    thread_info_path: str,
+    *,
+    pid: UInt64,
+    assume_constant_offset: Annotated[bool, Field(strict=True)] = False,
+    max_bytes: PositiveInt = 128 << 20,
+    max_rows: PositiveInt = 500000,
+    max_nodes: PositiveInt = 3000000,
+    max_threads: PositiveInt = 64,
+    top_n: PositiveInt = 5,
+    state_details: PositiveInt = 20,
+) -> dict[str, Any]:
+    """Validate ring CSV/native metrics, collected finish marker and scheduler XML.
+
+    Default returns validated evidence with clock join UNVERIFIED and no joined
+    events. Explicit assume_constant_offset enables CONDITIONAL single-anchor
+    extrapolation with drift UNMEASURED, not performance/causality qualification.
+    Possible envelopes and guaranteed cores intersect marker-main-thread states;
+    no producer role is inferred. Coverage and omitted detail counts/durations
+    remain explicit. CSV stamps have no independent DTrace boundary proof here.
+    Budgets combine all files; XML/reference depth64 and native JSON1MiB caps
+    additionally apply. Files are caller-associated, not capture-UUID authenticated.
+    Does not launch processes, change policy or write artifacts.
+    """
+    from devtools_mcp.evidence.instruments_ring import analyze_instruments_ring_arrival
+
+    analyze = partial(
+        analyze_instruments_ring_arrival,
+        native_report_path,
+        csv_path,
+        signpost_path,
+        thread_state_path,
+        thread_info_path,
+        pid=pid,
+        assume_constant_offset=assume_constant_offset,
+        max_bytes=max_bytes,
+        max_rows=max_rows,
+        max_nodes=max_nodes,
+        max_threads=max_threads,
+        top_n=top_n,
+        state_details=state_details,
+    )
+    try:
+        return await anyio.to_thread.run_sync(analyze)
+    except (EvidenceParseError, ArtifactError, OSError, ValueError) as exc:
+        return {
+            "analysis_validation": "FAIL",
+            "performance_validation": "UNVERIFIED",
+            "clock_join_validation": "UNVERIFIED",
+            "error": {"code": "invalid_evidence", "message": str(exc)},
+        }

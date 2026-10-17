@@ -646,3 +646,30 @@ No capture UUID exists in these exports: caller association and shared PID/TID
 cannot authenticate the same execution. The tool performs no process launch,
 scheduling changes or artifact writes, and makes no native clock mapping,
 off-CPU/latency causal claim or performance qualification (`UNVERIFIED`).
+
+`devtools_instruments_ring` and the reusable
+`devtools_mcp.evidence.instruments_ring.analyze_instruments_ring_arrival` validate
+native benchmark JSON, ordered arrival CSV, collected `RingClockAnchor` signpost,
+thread-state and thread-info XML. The exact emitted native bracket/payload and
+marker-main identity must match. Identical marker projections across distinct
+exported table paths are deduplicated; within-table duplicates refuse.
+
+Default `assume_constant_offset=False` performs all validation but reports clock
+join `UNVERIFIED` and returns no joined event windows. Explicit `True` enables
+`CONDITIONAL` single-finish-anchor extrapolation, with drift `UNMEASURED`. Signed
+trace-minus-native offset bounds produce possible envelopes and guaranteed
+cores for bounded worst due-to-terminal and preceding-measured-terminal gaps;
+the first measured event's prior gap remains unavailable. Intersected scheduler
+coverage separates missing time from observed raw `Unknown` state, and preserves
+raw state/core/priority labels without inferring QoS or producer roles. Coverage
+and state totals precede detail truncation, with explicit omitted counts and
+durations. Overlapping envelopes are not additive exact CPU time or causal
+latency/off-CPU evidence. Native performance `FAIL` is retained separately from
+analysis `PASS`; the CSV check has no independent DTrace boundary-stamp proof.
+
+Combined budgets cover all input bytes and rows, XML elements, JSON values and
+CSV cells; XML/reference depth64 and native JSON1MiB additionally bound parsing.
+Per-event interval/state/gap details are bounded by `state_details`, event output
+by `top_n`. These are not aggregate resident-memory budgets. Caller-associated
+files and a matching marker do not authenticate a capture UUID or establish
+clock drift. The analyzer does not launch processes, change policy or write files.

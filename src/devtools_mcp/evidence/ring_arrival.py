@@ -188,7 +188,9 @@ def _boundaries(lines: list[str], total: int) -> tuple[list[dict], int, int, int
     return events, pid, producer, consumer
 
 
-def _csv(lines: list[str], warm: int, total: int, a: dict, events: list[dict]) -> list[tuple[int, int, int, int]]:
+def _csv(
+    lines: list[str], warm: int, total: int, a: dict, events: list[dict] | None
+) -> list[tuple[int, int, int, int]]:
     _require(len(lines) == total - warm + 1 and lines[0] == _HEADER, "CSV header/count mismatch")
     result = []
     previous = -1
@@ -204,7 +206,8 @@ def _csv(lines: list[str], warm: int, total: int, a: dict, events: list[dict]) -
         quotient, remainder = divmod(prefix, rate)
         expected = epoch + quotient * 1_000_000_000 + remainder * 1_000_000_000 // rate
         _require(expected <= _U64 and due == expected and stamp >= due, "CSV due/causality mismatch")
-        _require(stamp == events[event]["stamp"][1], "CSV/native stamp mismatch")
+        if events is not None:
+            _require(stamp == events[event]["stamp"][1], "CSV/native stamp mismatch")
         result.append((event, prefix, due, stamp))
         previous = prefix
     latency = [row[3] - row[2] for row in result]
