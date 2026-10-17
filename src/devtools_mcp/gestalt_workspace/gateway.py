@@ -22,7 +22,11 @@ class Gateway:
     def __init__(self, host: str, port: int, limits: dict[str, int]):
         self.host, self.port, self.limits = host, port, limits
 
-    def call(self, action: str, params: dict[str, Any]) -> dict[str, Any]:
+    def call(self, action: str, params: dict[str, Any], *, domain: str = "compute") -> dict[str, Any]:
+        require(
+            type(domain) is str and domain in {"compute", "admin", "storage", "catalog"},
+            "invalid gateway domain",
+        )
         mutation = action.endswith(".create")
         connection = http.client.HTTPConnection(self.host, self.port, timeout=self.limits["timeout_ms"] / 1000)
         deadline = time.monotonic() + self.limits["timeout_ms"] / 1000
@@ -38,7 +42,7 @@ class Gateway:
             watchdog.daemon = True
             watchdog.start()
             transport_socket.settimeout(remaining)
-            connection.request("POST", "/api/v1/compute", payload, {"Content-Type": "application/json"})
+            connection.request("POST", f"/api/v1/{domain}", payload, {"Content-Type": "application/json"})
             remaining = deadline - time.monotonic()
             require(remaining > 0, "gateway request deadline exceeded", "transport_error")
             transport_socket.settimeout(remaining)

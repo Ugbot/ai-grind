@@ -65,6 +65,7 @@ class State:
     def __init__(self):
         self.records = {"notebook": {}, "dashboard": {}}
         self.calls = []
+        self.wire_requests = []
         self.creates = 0
         self.next_id = 1791929009050621001
         self.fault = None
@@ -111,8 +112,10 @@ def gateway():
 
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self):
-            assert self.path == "/api/v1/compute"
-            request = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            assert self.path in {"/api/v1/compute", "/api/v1/admin", "/api/v1/storage", "/api/v1/catalog"}
+            raw_request = self.rfile.read(int(self.headers["Content-Length"]))
+            state.wire_requests.append((self.path, raw_request))
+            request = json.loads(raw_request)
             if state.wire_mode:
                 import time
 
@@ -589,3 +592,69 @@ async def test_worst_case_dashboard_resolution_overflow_before_any_http(bundle, 
     result = await install(bundle, gateway, max_body_bytes=limit)
     assert result["error"]["message"] == "resolved dashboard worst-case body byte limit exceeded"
     assert not gateway[0].calls
+
+
+@pytest.mark.parametrize("domain", [None, "compute", "admin", "storage", "catalog"])
+def test_gateway_explicit_domain_preserves_request_envelope(gateway, domain):
+    from devtools_mcp.gestalt_workspace.gateway import Gateway
+
+    state, endpoint = gateway
+    state.dispatch = lambda action, params: (200, {"ok": True, "data": {"observed": action}})
+    client = Gateway("127.0.0.1", int(endpoint.rsplit(":", 1)[1]), limits_config(None))
+    arguments = {} if domain is None else {"domain": domain}
+    assert client.call("table.list", {"limit": 3}, **arguments) == {"observed": "table.list"}
+    assert state.wire_requests == [
+        (f"/api/v1/{domain or 'compute'}", canonical({"action": "table.list", "resource": "", "params": {"limit": 3}}))
+    ]
+
+
+@pytest.mark.parametrize("domain", ["", "Compute", "../admin", "compute?x=1", "admin/", None, 1, [], {}])
+def test_gateway_invalid_domain_refuses_before_connection(monkeypatch, domain):
+    import http.client
+
+    from devtools_mcp.gestalt_workspace.common import WorkspaceError
+    from devtools_mcp.gestalt_workspace.gateway import Gateway
+
+    def forbidden_connection(*args, **kwargs):
+        pytest.fail("invalid domain must refuse before constructing a connection")
+
+    monkeypatch.setattr(http.client, "HTTPConnection", forbidden_connection)
+    client = Gateway("127.0.0.1", 1, limits_config(None))
+    with pytest.raises(WorkspaceError) as error:
+        client.call("org.create", {}, domain=domain)
+    assert error.value.code == "invalid_input" and not error.value.uncertain
+
+
+@pytest.mark.parametrize("domain", ["admin", "storage", "catalog"])
+@pytest.mark.parametrize("mode", ["repeated100", "trickle_headers"])
+def test_gateway_other_domains_keep_absolute_deadline(gateway, domain, mode):
+    import time
+
+    from devtools_mcp.gestalt_workspace.common import WorkspaceError
+    from devtools_mcp.gestalt_workspace.gateway import Gateway
+
+    state, endpoint = gateway
+    state.wire_mode = mode
+    client = Gateway("127.0.0.1", int(endpoint.rsplit(":", 1)[1]), limits_config({"timeout_ms": 30}))
+    start = time.monotonic()
+    with pytest.raises(WorkspaceError) as error:
+        client.call("org.create", {}, domain=domain)
+    assert time.monotonic() - start < 0.5
+    assert error.value.code == "transport_error" and error.value.uncertain
+    assert len(state.wire_requests) == 1 and state.creates == 0
+
+
+@pytest.mark.parametrize("domain", ["admin", "storage", "catalog"])
+def test_gateway_other_domains_keep_response_byte_limit(gateway, domain):
+    from devtools_mcp.gestalt_workspace.common import WorkspaceError
+    from devtools_mcp.gestalt_workspace.gateway import Gateway
+
+    state, endpoint = gateway
+    state.dispatch = lambda action, params: (200, b"x" * 1025)
+    limits = limits_config(None)
+    limits["max_response_bytes"] = 1024
+    client = Gateway("127.0.0.1", int(endpoint.rsplit(":", 1)[1]), limits)
+    with pytest.raises(WorkspaceError) as error:
+        client.call("table.list", {}, domain=domain)
+    assert error.value.code == "invalid_response" and not error.value.uncertain
+    assert len(state.wire_requests) == 1
