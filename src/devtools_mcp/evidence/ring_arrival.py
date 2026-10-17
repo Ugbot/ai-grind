@@ -14,6 +14,7 @@ from typing import Any
 
 from .artifacts import ArtifactError, fingerprint_file, verify_binding
 from .benchmark import EvidenceParseError
+from .ring_cpu import summarize_thread_cpu, validate_thread_cpu
 
 _U64 = (1 << 64) - 1
 _PHASES = ("gen_in", "gen_out", "commit_in", "commit_out", "read_in", "read_out", "observe_in", "observe_out", "stamp")
@@ -124,11 +125,15 @@ def _boundaries(lines: list[str], total: int) -> tuple[list[dict], int, int, int
     events: list[dict] = [{} for _ in range(total + 2)]
     pid = producer = consumer = None
     count = 0
+    width = len(lines[0].split(","))
+    _require(width in (7, 8), "expected seven or eight dedicated B columns")
     for line in lines:
         if line == "":
             continue
         fields = line.split(",")
-        _require(len(fields) == 7 and fields[0] == "B" and fields[4] in _PHASES, "expected exact dedicated B record")
+        _require(
+            len(fields) == width and fields[0] == "B" and fields[4] in _PHASES, "expected exact dedicated B record"
+        )
         process, thread, event, phase, stamp, arg = (
             _number(fields[1]),
             _number(fields[2]),
@@ -150,7 +155,7 @@ def _boundaries(lines: list[str], total: int) -> tuple[list[dict], int, int, int
             _require(consumer == thread, "multiple consumer threads")
         expected = 1 if phase == "read_out" else 0
         _require(phase == "stamp" or arg == expected, f"unexpected {phase} return/argument")
-        events[event][phase] = (stamp, arg)
+        events[event][phase] = (stamp, arg) if width == 7 else (stamp, arg, _number(fields[7]))
         count += 1
         _require(count <= total * 9 + 2, "boundary row cap exceeded")
     _require(
@@ -229,22 +234,29 @@ def analyze_ring_arrival_boundaries(
     max_events: int = 1_000_000,
     max_bytes: int = 256 << 20,
     top_n: int = 20,
+    preceding_events: int = 0,
 ) -> dict:
     """Validate complete dedicated evidence and return bounded clock-safe attribution.
 
     ``max_events`` caps warm plus measured events; ``max_bytes`` caps both files
     combined. ``top_n`` caps returned event detail. All limits are positive;
     refusal raises EvidenceParseError (invalid caller limits raise ValueError).
-    No input is written, repaired, truncated, or interpreted as execution authority.
+    ``preceding_events`` independently caps measured events immediately before
+    the single worst event; zero returns no predecessor rows. Warm events are
+    never included. No input is written, repaired, truncated, or interpreted as
+    execution authority.
     """
     if any(type(v) is not int or v <= 0 for v in (max_events, max_bytes, top_n)) or max_bytes > 1 << 40:
         raise ValueError("positive bounded event/byte/report caps required")
+    if type(preceding_events) is not int or not 0 <= preceding_events <= max_events:
+        raise ValueError("preceding_events requires a builtin int in [0, max_events]")
     warm, total, a = _benchmark(benchmark_json_dict, max_events)
     lines, boundary_binding = _read(boundary_path, max_bytes, total * 9 + 2)
     remaining = max_bytes - boundary_binding["size_bytes"]
     _require(remaining > 0, "combined byte cap exhausted")
     csv_lines, csv_binding = _read(arrival_csv_path, remaining, total - warm + 1)
     events, pid, producer, consumer = _boundaries(lines, total)
+    cpu_advances = validate_thread_cpu(events, total)
     samples = _csv(csv_lines, warm, total, a, events)
     lower, upper = -_U64, _U64
     for event in range(1, total + 1):
@@ -305,7 +317,11 @@ def analyze_ring_arrival_boundaries(
             }
         )
     late = sum(row["latency_ns"] > a["gate_ns"] for row in details)
+    worst_index = max(range(len(details)), key=lambda index: details[index]["latency_ns"])
+    predecessors = details[max(0, worst_index - preceding_events) : worst_index]
     details.sort(key=lambda row: (-row["latency_ns"], row["event"]))
+    worst = details[:top_n]
+    thread_cpu = summarize_thread_cpu(events, warm, total, cpu_advances, worst + predecessors)
     return {
         "analysis_validation": "PASS",
         "performance_validation": a["validation"],
@@ -326,5 +342,13 @@ def analyze_ring_arrival_boundaries(
             "source_definitely_within_gate": definitely_within,
             "source_ambiguous": late - definitely_late - definitely_within,
         },
-        "worst_events": details[:top_n],
+        "worst_events": worst,
+        "worst_event_predecessors": {
+            "requested": preceding_events,
+            "available": len(predecessors),
+            "start_event": predecessors[0]["event"] if predecessors else None,
+            "end_event": predecessors[-1]["event"] if predecessors else None,
+            "events": predecessors,
+        },
+        "thread_cpu": thread_cpu,
     }

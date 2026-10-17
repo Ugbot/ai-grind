@@ -18,7 +18,19 @@ counts, clock-offset bounds and latency percentiles before returning bounded
 phase summaries. The same read-only callable is exposed as `devtools_ring_arrival`.
 Use DTrace `-o` to keep records separate from target stdout. Input byte/event
 and report-row budgets are explicit; analysis success does not qualify an
-instrumented performance result.
+instrumented performance result. Dedicated `B,pid,tid,event,phase,timestamp,arg`
+records may uniformly append an eighth `vtimestamp_ns` column. Seven-column
+captures return `thread_cpu: null`; mixed formats refuse. Optional
+`preceding_events=0` independently budgets a chronological measured-event window
+before the single worst event, separate from `top_n`. Requested/available counts
+and first/last event IDs expose a short window near measurement start; warm
+events and the worst event itself are excluded. CPU records must
+advance monotonically over each actual producer/consumer sequence, including
+warmup and consumer EOF. CPU spans never subtract across threads. Reports retain
+raw wall/CPU spans and signed residuals, including negative residuals; residuals
+are not pure off-CPU time or proof of preemption/algorithmic cause. The accounting
+includes platform probe and clock-reading differences: see [Apple XNU DTrace](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/dev/dtrace/dtrace.c)
+and the [DTrace variable reference](https://docs.oracle.com/cd/E19253-01/817-6223/chp-variables/index.html).
 
 ## Why this exists
 
