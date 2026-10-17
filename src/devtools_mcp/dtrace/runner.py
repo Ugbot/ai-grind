@@ -4,16 +4,72 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import shlex
 import signal
 import tempfile
 import time
 
-from devtools_mcp.dtrace.models import DTraceResult
+from devtools_mcp.dtrace.models import DTraceCollectionDiagnostics, DTraceResult
 from devtools_mcp.dtrace.parsers import parse_dtrace_output
 from devtools_mcp.models import create_run_base
 
 _SUDO_FAILURE = ("a password is required", "a terminal is required", "sudo: a password", "no tty present")
+
+
+
+_MAX_DIAGNOSTIC_SCAN_BYTES = 16 << 20
+_MAX_DIAGNOSTIC_EXAMPLE_CHARS = 1024
+_DROP = re.compile(r"\b(?:drops?|dropped)\b")
+_DROP_COUNT = re.compile(r"^(\d+)\s")
+_ERROR = re.compile(r"^(?:errors?\b|failed\b|fault\b|invalid\b|could not\b|cannot\b)")
+
+
+def _collection_diagnostics(
+    stderr: bytes, *, capture_complete: bool = True, max_scan_bytes: int = _MAX_DIAGNOSTIC_SCAN_BYTES,
+) -> DTraceCollectionDiagnostics:
+    """Scan captured bytes before summary truncation; examples and scan are bounded.
+
+    Counts describe observed diagnostic lines, not lost events. A capped scan
+    counts only complete lines and never certifies the unexamined suffix.
+    """
+    assert 0 < max_scan_bytes <= _MAX_DIAGNOSTIC_SCAN_BYTES
+    extent = min(len(stderr), max_scan_bytes)
+    scanned = stderr[:extent]
+    if extent < len(stderr) and not scanned.endswith(b"\n"):
+        scanned = scanned[:scanned.rfind(b"\n") + 1]
+    result = DTraceCollectionDiagnostics(
+        captured_stderr_bytes=len(stderr), scanned_stderr_bytes=len(scanned),
+        capture_complete=capture_complete, scan_complete=len(scanned) == len(stderr),
+    )
+    # Prefer faults/drops over advisories if the bounded example list fills.
+    examples: list[tuple[int, str]] = []
+    for raw in scanned.splitlines():
+        line = raw.decode("utf-8", errors="replace").strip()
+        if not line.startswith("dtrace:"):
+            continue
+        message = line[len("dtrace:"):].strip().lower()
+        dropped = _DROP.search(message) is not None
+        count = _DROP_COUNT.match(message)
+        if dropped and count is not None and not count[1].strip("0"):
+            dropped = False
+        error = _ERROR.search(message) is not None
+        result.diagnostic_lines += 1
+        result.error_lines += int(error)
+        result.drop_lines += int(dropped)
+        result.advisory_lines += int(not error and not dropped)
+        sample = line[:_MAX_DIAGNOSTIC_EXAMPLE_CHARS]
+        result.examples_truncated |= len(sample) < len(line)
+        item = (0 if error or dropped else 1, sample)
+        if item in examples:
+            continue
+        examples.append(item)
+        examples.sort(key=lambda item: item[0])
+        if len(examples) > 8:
+            del examples[8:]
+            result.examples_truncated = True
+    result.examples = [line for _, line in examples]
+    return result
 
 
 def _kill_group(proc: asyncio.subprocess.Process) -> None:
@@ -146,6 +202,7 @@ async def run_dtrace(
             env=({**os.environ, **env} if env else None),
         )
 
+        capture_complete = True
         try:
             stdout_bytes, stderr_bytes = await asyncio.wait_for(
                 proc.communicate(),
@@ -154,6 +211,7 @@ async def run_dtrace(
         except TimeoutError:
             _kill_group(proc)  # SIGKILL the group, SIGTERM to sudo can't reach the child
             await proc.wait()
+            capture_complete = False
             stdout_bytes = b""
             stderr_bytes = b"DTrace timed out"
 
@@ -200,6 +258,11 @@ async def run_dtrace(
         )
 
         result = parse_dtrace_output(combined, run_base, script=script or "", one_liner=one_liner or "")
+        # Timeout currently discards communicate's partial output; its synthetic
+        # message in raw output is not original captured stderr.
+        result.collection_diagnostics = _collection_diagnostics(
+            stderr_bytes if capture_complete else b"", capture_complete=capture_complete,
+        )
         return None, result, raw_path
 
     except FileNotFoundError:

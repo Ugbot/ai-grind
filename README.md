@@ -32,6 +32,14 @@ are not pure off-CPU time or proof of preemption/algorithmic cause. The accounti
 includes platform probe and clock-reading differences: see [Apple XNU DTrace](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/dev/dtrace/dtrace.c)
 and the [DTrace variable reference](https://docs.oracle.com/cd/E19253-01/817-6223/chp-variables/index.html).
 
+DTrace run summaries display collection diagnostics before samples or target
+output, even when the collector exits0 and the benchmark reportsPASS. The
+runner scans captured stderr bytes before output truncation, separately reports
+capture/scan completeness, and retains bounded error/drop examples. SIP notices
+remain advisory. Legacy results with no recorded stderr inspection are explicitly
+UNVERIFIED. These diagnostics preserve actual exit codes, benchmark JSON and raw
+artifacts; absence of reported errors does not certify complete probe coverage.
+
 ## Why this exists
 
 Serious performance tools demand two kinds of expertise: the command-line incantations to run them, and the experience to read what comes back. VTune, Valgrind, PerfView and ETW, perf, JFR, the debuggers, all of them. An LLM has both. What it doesn't have is room. One raw profiler dump is tens of thousands of symbol-heavy lines, and pasting that into a conversation destroys the context you're working in. ai-grind absorbs that noise. Every run is parsed into a queryable [Polars](https://pola.rs/) DataFrame, so the model gets a bounded summary and a `run_id`, then queries for exactly what it needs instead of taking the whole dump back at once.

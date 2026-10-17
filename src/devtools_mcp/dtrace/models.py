@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from pydantic import BaseModel, Field
 
 from devtools_mcp.models import RunBase
@@ -50,6 +52,21 @@ class DTraceProbeHit(BaseModel):
     args: str = ""
 
 
+class DTraceCollectionDiagnostics(BaseModel):
+    """Observed stderr diagnostics, never proof that probe collection was complete."""
+
+    captured_stderr_bytes: int = Field(default=0, ge=0)
+    scanned_stderr_bytes: int = Field(default=0, ge=0)
+    capture_complete: bool = False
+    scan_complete: bool = False
+    diagnostic_lines: int = Field(default=0, ge=0)
+    error_lines: int = Field(default=0, ge=0)
+    drop_lines: int = Field(default=0, ge=0)
+    advisory_lines: int = Field(default=0, ge=0)
+    examples: list[Annotated[str, Field(max_length=1024)]] = Field(default_factory=list, max_length=8)
+    examples_truncated: bool = False
+
+
 class DTraceResult(RunBase):
     """Result from a DTrace run."""
 
@@ -61,3 +78,5 @@ class DTraceResult(RunBase):
     quantizations: list[DTraceQuantization] = Field(default_factory=list)
     probe_hits: list[DTraceProbeHit] = Field(default_factory=list)
     raw_output: str = ""
+    # None preserves legacy/parser-only results: no stderr inspection is implied.
+    collection_diagnostics: DTraceCollectionDiagnostics | None = None

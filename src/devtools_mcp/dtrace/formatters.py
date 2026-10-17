@@ -9,6 +9,27 @@ from devtools_mcp.formatters.utils import format_run_header
 def format_dtrace_summary(result: DTraceResult) -> str:
     """Format a concise DTrace result summary."""
     parts = [format_run_header(result), ""]
+    diagnostics = result.collection_diagnostics
+    if diagnostics is None:
+        parts.append("**Collection diagnostics:** UNVERIFIED — stderr diagnostics were not recorded.")
+    else:
+        if diagnostics.error_lines or diagnostics.drop_lines:
+            parts.append("**Collection diagnostics:** ISSUES REPORTED — trace collection is compromised.")
+        elif not diagnostics.capture_complete or not diagnostics.scan_complete:
+            parts.append("**Collection diagnostics:** UNVERIFIED — stderr capture or scan is incomplete.")
+        else:
+            parts.append("**Collection diagnostics:** No error/drop lines reported in inspected stderr.")
+        parts.append(
+            f"  Observed lines: {diagnostics.error_lines} errors, {diagnostics.drop_lines} drop reports, "
+            f"{diagnostics.advisory_lines} advisories; scanned {diagnostics.scanned_stderr_bytes}/"
+            f"{diagnostics.captured_stderr_bytes} captured stderr bytes; "
+            f"capture_complete={diagnostics.capture_complete}, scan_complete={diagnostics.scan_complete}."
+        )
+        parts.extend(f"  {line}" for line in diagnostics.examples)
+        if diagnostics.examples_truncated:
+            parts.append("  Diagnostic examples limited; consult the retained raw artifact.")
+    parts.append("  Trace completeness is not certified by exit code or absence of diagnostics.")
+    parts.append("")
 
     if result.one_liner:
         parts.append(f"**One-liner:** `{result.one_liner}`")
