@@ -46,13 +46,13 @@ already living there survive.
 | Type | Count | Categories |
 |---|---|---|
 | Skills (harvested, vendored external) | 80 | `planning/` `build/` `review/` `ship/` `web/` `meta/` `writing/` `understanding/` `principles/`, listed below |
-| Skills (authored) | 29 | `powershell/` (9), `profiling/` (7), `debugging/` (2), `devtools/` (5), `tracker/` (4), `collab/` (2) |
+| Skills (authored) | 30 | `powershell/` (9), `profiling/` (7), `debugging/` (2), `devtools/` (6), `tracker/` (4), `collab/` (2) |
 | Commands | 1 | `dev-tools/` (`clean-test-data`) |
-| Agents | 4 | `integration/` `review/` (3) |
+| Agents | 5 | `integration/` (2, including authored Reuse Harvester), `review/` (3) |
 
-Total loadable: 109 skills (80 harvested plus 29 authored).
+Total loadable: 110 skills (80 harvested plus 30 authored).
 
-Run `python ../scripts/unslop_check.py` before committing prose changes. It
+Run `uv run --no-project python ../scripts/unslop_check.py` before committing prose changes. It
 encodes the `unslop` skill's rules as a check over the markdown and Python this
 repo owns, and skips vendored and generated trees.
 
@@ -124,7 +124,7 @@ The cursor/plugins harvest added three categories:
 ### Agents
 
 - `_disabled/`: `living-docs-writer`, `test-bench-runner` (retained, not published)
-- `integration/`: `frontend-backend-connectivity-checker`
+- `integration/`: `frontend-backend-connectivity-checker`, authored `reuse-harvester`
 - `review/`: `comment-sicko`, `thermo-nuclear-review-subagent`,
   `thermo-nuclear-code-quality-review-subagent` (cursor/plugins, MIT)
 
@@ -140,9 +140,10 @@ Written for this library:
   `jvm-threads-heap`, `python-profiling`, `js-node-profiling`,
   `renderdoc-frame-analysis` for GPU frame capture and replay.
 - `debugging/` (2): `cdb-windows-debug`, `unified-debugging`.
-- `devtools/` (5): `devtools-mcp-usage`, `devtools-visualizer`, `build-tools` for
+- `devtools/` (6): `devtools-mcp-usage`, `devtools-visualizer`, `build-tools` for
   maven, gradle, npm, pnpm, yarn, and cargo, `vtune-profiling`, and `skills-sync`
-  for this library's harvest and sync workflow plus the `skills_sync` MCP tool.
+  for this library's harvest and sync workflow plus the `skills_sync` MCP tool;
+  `reuse-harvesting` curates reusable artifacts, qualification notes and roles.
 - `tracker/` (4): `tracker-usage`, `tracker-breakdown`, `tracker-acceptance`,
   `tracker-github-sync`.
 - `collab/` (2): `agent-collab`, `live-skills`.
@@ -150,6 +151,16 @@ Written for this library:
 To add another authored skill, drop a `<name>/SKILL.md` anywhere under
 `authored/skills/` and re-run `sync.py`. The folder name must match the
 frontmatter `name:`.
+
+Authored Markdown agents live under `authored/agents/<category>/<name>.md`.
+`sync.py` publishes them to each target that supports agents, preserving
+unrelated entries in shared targets and rejecting case-insensitive collisions with catalog or
+other authored names. Categories with an `_` prefix or `experimental` segment
+remain sidelined. `--target agents` publishes skills only. Native Codex TOML
+roles travel as bundled skill assets; sync does not convert or register them.
+The Reuse Harvester skill installs no global configuration or scheduler.
+Its [review ledger](../docs/research/reuse-harvest-integration-20261020.json)
+records reviewed source assets, decisions and executed checks.
 
 ## Provenance and dedup
 

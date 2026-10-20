@@ -146,6 +146,33 @@ def sync_flat(item: dict, base: Path) -> bool:
     return True
 
 
+def sync_authored_agents(base: Path, seen: set[str]) -> int:
+    """Publish authored Markdown agents; collisions fail before overwriting."""
+    agents_root = AUTHORED / "agents"
+    if not agents_root.is_dir():
+        return 0
+    found = sorted(agents_root.rglob("*.md"))
+    assert len(found) <= MAX_AUTHORED, f"authored agents out of bounds: {len(found)}"
+    normalized = {name.casefold() for name in seen}
+    count = 0
+    for source in found:
+        category = source.parent.relative_to(agents_root).as_posix()
+        if sidelined(category):
+            continue
+        name = read_skill_name(source)
+        assert name == source.stem, f"filename/name mismatch: {source.stem} != {name}"
+        assert name.casefold() not in normalized, f"duplicate agent name (authored vs catalog): {name}"
+        seen.add(name)
+        normalized.add(name.casefold())
+        destination = base / "agents" / source.name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
+        assert destination.is_file(), f"authored agent sync failed: {destination}"
+        count += 1
+    assert count <= len(found)
+    return count
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Flatten catalog/ into a loadable mirror.")
     ap.add_argument("--target", choices=("local", "plugin", "agents", "project", "global"), default="local")
@@ -160,6 +187,7 @@ def main() -> int:
     assert base.is_dir(), f"target base not created: {base}"
 
     seen_skills: set[str] = set()
+    seen_agents: set[str] = set()
     counts = {"skill": 0, "command": 0, "agent": 0, "skipped": 0}
     missing: list[str] = []
     for it in items:
@@ -170,6 +198,8 @@ def main() -> int:
         copied = sync_skill(it, base, seen_skills) if kind == "skill" else sync_flat(it, base)
         if copied:
             counts[kind] += 1
+            if kind == "agent":
+                seen_agents.add(dest_path(it["dest"]).stem)
         else:
             missing.append(f"{kind}:{it.get('name', it['dest'])}")
 
@@ -179,6 +209,8 @@ def main() -> int:
 
     authored = sync_authored(base, seen_skills)
     counts["skill"] += authored
+    if not skills_only:
+        counts["agent"] += sync_authored_agents(base, seen_agents)
 
     assert counts["skill"] == len(seen_skills), "skill count/name-set mismatch"
     print(f"synced -> {base}  (target={args.target})")

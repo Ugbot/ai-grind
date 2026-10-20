@@ -47,6 +47,7 @@ A unified developer-tooling workspace. Two concerns live here:
 | `plugins/project-map/` | Second plugin in this marketplace (`project-map@ai-grind`), stdlib-only and independent of the Python project. `kb.py template` templates any repo for coding agents (root `CLAUDE.md`, `AGENTS.md` pointer, `PROJECT_MAP.md`, a `CLAUDE.md` per area, principles doc) and vendors itself into the target's `.claude/tools/`, so the target works without the plugin. `kb.py` is a SQLite FTS5/BM25 index with symbol lookup, notes that go stale when their files change, a map linter (`check`), optional embeddings (`kb_embed.py`), and an MCP server (`kb_mcp.py`). Tests in `plugins/project-map/tests/` run in the root `pytest`; `ruff.toml` there pins Python 3.9 compatibility |
 | `hooks/` | Claude Code hooks under the plugin `hooks` key. `report_touch.py` (PostToolUse) reports edited files to the collab API and relays conflicts into context; `check_conflict.py` (PreToolUse) is optional and reads `DEVTOOLS_MCP_COLLAB_MODE=warn\|ask\|off`. Stdlib-only, never blocking. This is the local precursor to the team collab server, coming soon |
 | `skills/` | The unified skills library. See `skills/README.md` |
+| `skills/authored/skills/devtools/reuse-harvesting/` | Reuse workflow, standalone 14-contract artifact caller, qualification reference and native Codex TOML role. Authored Claude agent lives under `skills/authored/agents/integration/`; `sync.py` publishes Markdown agents only. [Adoption ledger](docs/research/reuse-harvest-integration-20261020.json) |
 | `pyproject.toml`, `uv.lock` | Python project metadata and lock |
 
 ## Skills library (`skills/`)
@@ -66,9 +67,12 @@ Claude loads). Two scripts and one map drive it:
 - Through MCP instead: `skills_sync(action=status|harvest|sync, target=...)` in
   `tools/skills_sync_tools.py` wraps both scripts, where `target="all"` means the
   derived mirrors and `DEVTOOLS_MCP_SKILLS_ROOT` overrides the library location.
+  Authored Markdown agents under `authored/agents/` join catalog agents in
+  non-skills-only targets; duplicate names fail rather than overwrite. Bundled
+  Codex TOML roles remain assets and are not registered by sync.
   See the `skills-sync` skill
 
-Contents: 109 loadable skills, being 80 harvested plus 29 authored. The
+Contents: 110 loadable skills, being 80 harvested plus 30 authored. The
 harvested set is an 80-skill external collection (MIT and Apache) under
 `planning/ build/ review/ ship/ web/ meta/ writing/ understanding/ principles/`
 from addyosmani/agent-skills, obra/superpowers, mattpocock/skills,
@@ -76,7 +80,7 @@ anthropics/skills, and cursor/plugins. Clones live in
 `C:/code/vendor-skills/`, attribution in `skills/THIRD_PARTY_SKILLS.md`.
 Authored: `powershell/` (5.1 and 7), `profiling/`, `devtools/` including
 `skills-sync`, `tracker/`, `collab/`, and `meta/skill-router.rules.md`. Plus 1
-command and 4 agents.
+command and 5 agents (4 harvested, 1 authored).
 
 Sidelined skills are harvested into `catalog/` for reference but never synced to
 the mirrors or indexed by the router, which `sync.sidelined()` enforces:

@@ -1,0 +1,705 @@
+{
+  "assets": [
+    {
+      "dependency_platform_contract": "Metadata and workflow instructions; native runtime configuration remains explicit. Local structural checks only.",
+      "destinations": [
+        {
+          "ctime_ns": 1792530977634285356,
+          "device": 16777234,
+          "inode": 339415852,
+          "mtime_ns": 1792530977634236772,
+          "path": "/Users/bengamble/ai-grind/skills/authored/agents/integration/reuse-harvester.md",
+          "sha256": "dcb56bda437d3f0c15a51bb0e2a4f0e7f058aee75f10f6798df6bbf452619535",
+          "size_bytes": 2505
+        },
+        {
+          "ctime_ns": 1792530977635529452,
+          "device": 16777234,
+          "inode": 339415862,
+          "mtime_ns": 1792530977635480159,
+          "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/agents/reuse-harvester.toml",
+          "sha256": "e2baa4daa28afb680db0a47635a3bbd0750ae9ec7c46b49330ce8421e335de46",
+          "size_bytes": 3554
+        }
+      ],
+      "disposition": "adopt",
+      "id": "curator-role",
+      "reason": "Generalize the project role; retain a native Codex TOML asset and distinct Claude Markdown agent. No automatic conversion/registration or second scheduler.",
+      "sources": [
+        {
+          "ctime_ns": 1792530887130259181,
+          "device": 16777234,
+          "inode": 338914622,
+          "mtime_ns": 1792530887130259181,
+          "path": "/Users/bengamble/Gestalt2/agents/reuse-harvester.toml",
+          "sha256": "49576d8a3c3753d9b36c062abbdb6998dcc88e8988b22aa511492429c4b612aa",
+          "size_bytes": 5259
+        }
+      ],
+      "validation": "TOML parsing, name/instruction contract and exact plugin/source byte matching in focused tests. No live invocation or behavioral pressure evaluation of the new role."
+    },
+    {
+      "dependency_platform_contract": "Generic instructions; actual platforms must be recorded by each run.",
+      "destinations": [
+        {
+          "ctime_ns": 1792530977636242334,
+          "device": 16777234,
+          "inode": 339415866,
+          "mtime_ns": 1792530977636192375,
+          "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/SKILL.md",
+          "sha256": "d0708afd6b2fc59ffa8ebfd94394b18d317bbbb96e29b95e58909f4683cfb4d7",
+          "size_bytes": 3261
+        }
+      ],
+      "disposition": "adopt",
+      "id": "curation-workflow",
+      "reason": "Retain bounded discovery, existing-helper search, honest readiness and pending cursor semantics; remove project-specific scheduling assumptions.",
+      "sources": [
+        {
+          "ctime_ns": 1792530986810359420,
+          "device": 16777234,
+          "inode": 338914625,
+          "mtime_ns": 1792530986810359420,
+          "path": "/Users/bengamble/Gestalt2/docs/harvest/README.md",
+          "sha256": "e64fb9c8485f6f0694c9760cc4c7ba616debc44b3da96e462f176c48ceb453aa",
+          "size_bytes": 2239
+        }
+      ],
+      "validation": "Frontmatter/folder compatibility exercised through plugin regeneration; prose checks pass. No behavioral pressure evaluation."
+    },
+    {
+      "dependency_platform_contract": "uv 0.12.3, available Python >=3.12, macOS 26.6.2 arm64 executed. Linux/Windows unverified. Requires trusted checkout with stdlib artifact module, symlinks and hard links. No MCP server/project environment needed for standalone caller.",
+      "destinations": [
+        {
+          "ctime_ns": 1792530999827225911,
+          "device": 16777234,
+          "inode": 339415864,
+          "mtime_ns": 1792530999827225911,
+          "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/scripts/check_artifacts.py",
+          "sha256": "d8a98f285c9a2d4da6aac2bff796b5aa0f100210f0c587ab2c97a254c0645a15",
+          "size_bytes": 5509
+        },
+        {
+          "ctime_ns": 1792530977634965946,
+          "device": 16777234,
+          "inode": 339415859,
+          "mtime_ns": 1792530977634916529,
+          "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/references/artifact-contract.md",
+          "sha256": "74552f6f7b03640e26c2927e17cc7525461d6026c140f4e71cc3b1eb93541213",
+          "size_bytes": 1553
+        }
+      ],
+      "disposition": "adopt",
+      "id": "artifact-contract-caller",
+      "reason": "Retain dependency-light external caller; fix broad negative exception acceptance, import-time CLI execution and weak preservation checks. Add explicit replacement, size cap and cleanup contracts.",
+      "sources": [
+        {
+          "ctime_ns": 1792530175264009856,
+          "device": 16777234,
+          "inode": 338953255,
+          "mtime_ns": 1792530175264009856,
+          "path": "/Users/bengamble/Gestalt2/scripts/harvested/artifact-contract/check.py",
+          "sha256": "c478da46ab4a870ab5c91e9785d033417c20582f920ba3de89e333f4ec516dd1",
+          "size_bytes": 2800
+        },
+        {
+          "ctime_ns": 1792530175280679602,
+          "device": 16777234,
+          "inode": 338953256,
+          "mtime_ns": 1792530175280679602,
+          "path": "/Users/bengamble/Gestalt2/scripts/harvested/artifact-contract/README.md",
+          "sha256": "ebcb80eeed649fc988a791e81a4d6e772dd0c50fd6c12d987970c4768411166a",
+          "size_bytes": 2373
+        }
+      ],
+      "validation": "14 standalone contracts pass from /private/tmp with a script path containing spaces; missing checkout exit1, missing required argument exit2. Focused tests reject malformed modules and wrong exception types."
+    },
+    {
+      "dependency_platform_contract": "Reference only; build/test owner must qualify native, race, latency, durability and distributed behavior.",
+      "destinations": [
+        {
+          "ctime_ns": 1792530977635170907,
+          "device": 16777234,
+          "inode": 339415860,
+          "mtime_ns": 1792530977635130989,
+          "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/references/qualification.md",
+          "sha256": "6ecf0a382a217652bf0b5bcd57e1e20488dd71e60ad9640d14a7bcd3012d3737",
+          "size_bytes": 2901
+        }
+      ],
+      "disposition": "adopt",
+      "id": "qualification-reference",
+      "reason": "Preserve source/binary attribution, full-log counting and discriminating negative controls as general reference. Historical native claims do not become fresh gates.",
+      "sources": [
+        {
+          "ctime_ns": 1792530175297386516,
+          "device": 16777234,
+          "inode": 338953257,
+          "mtime_ns": 1792530175297386516,
+          "path": "/Users/bengamble/Gestalt2/docs/harvest/qualification/README.md",
+          "sha256": "8123f73873429e457f8cd4f2307f2f249d5763421473c3186daa2adcdb8c8d24",
+          "size_bytes": 4271
+        }
+      ],
+      "validation": "Markdown reference reviewed for consistency with sources; no native execution or distributed qualification. Helper behavior freshly exercised separately."
+    },
+    {
+      "dependency_platform_contract": "uv 0.12.3, available Python >=3.12, macOS 26.6.2 arm64 executed. Linux/Windows unverified. Bindings detect ordinary churn, not adversarial ancestor replacement or mid-run changes that revert.",
+      "destinations": [],
+      "disposition": "duplicate",
+      "id": "artifact-primitives",
+      "reason": "Existing ai-grind implementation and its stronger synthetic tests already own hashing, bindings, bounded inventory and atomic publication. No second implementation and no primitive edit.",
+      "sources": [
+        {
+          "ctime_ns": 1791800638994332727,
+          "device": 16777234,
+          "inode": 253926832,
+          "mtime_ns": 1791800638994332727,
+          "path": "/Users/bengamble/ai-grind/src/devtools_mcp/evidence/artifacts.py",
+          "sha256": "c86241d462cdaa4a887a9aee6f2311dca83c03743810d147185fcd3be6279e6e",
+          "size_bytes": 10899
+        },
+        {
+          "ctime_ns": 1791800638994874063,
+          "device": 16777234,
+          "inode": 253927374,
+          "mtime_ns": 1791800638994874063,
+          "path": "/Users/bengamble/ai-grind/tests/test_evidence_artifacts.py",
+          "sha256": "05b5449b744b34236065c5c3bd3791be5caa863df951e1de69a2cd26266f68ac",
+          "size_bytes": 8242
+        }
+      ],
+      "validation": "Existing 20 artifact cases plus 13 new integration/caller cases pass (33 total); unchanged helper SHA256 c86241d462cdaa4a887a9aee6f2311dca83c03743810d147185fcd3be6279e6e."
+    },
+    {
+      "dependency_platform_contract": "Historical Markdown index.",
+      "destinations": [],
+      "disposition": "duplicate",
+      "id": "harvest-index",
+      "reason": "Project navigation belongs to the project harvest; use as source provenance, without duplicating project readiness claims into the library.",
+      "sources": [
+        {
+          "ctime_ns": 1792530248352820615,
+          "device": 16777234,
+          "inode": 338957070,
+          "mtime_ns": 1792530248352820615,
+          "path": "/Users/bengamble/Gestalt2/docs/harvest/INDEX.md",
+          "sha256": "0dc5cff2e37e3c9d67f00cf0942463ef565804af34724339b3984ef9239c2136",
+          "size_bytes": 2323
+        }
+      ],
+      "validation": "Read as data; relative source context reviewed. No readiness inferred for identity-only entries."
+    },
+    {
+      "dependency_platform_contract": "Historical JSON evidence; source support limits retained.",
+      "destinations": [],
+      "disposition": "duplicate",
+      "id": "harvest-ledger",
+      "reason": "Retain project-owned per-candidate provenance and ready/rejected schema. New library ledger uses adopt/reject mapping without rewriting historical records.",
+      "sources": [
+        {
+          "ctime_ns": 1792530273825703982,
+          "device": 16777234,
+          "inode": 338957152,
+          "mtime_ns": 1792530273825703982,
+          "path": "/Users/bengamble/Gestalt2/docs/harvest/ledger.json",
+          "sha256": "9d1599def7e5c145275ca63c2daa4bfe5a54105440767b4a30d0f8e812a8c30f",
+          "size_bytes": 9552
+        }
+      ],
+      "validation": "JSON parsed and reviewed; source and historical validation references inspected."
+    },
+    {
+      "dependency_platform_contract": "Historical bounded discovery inventory; no tool support claim.",
+      "destinations": [],
+      "disposition": "needs-validation",
+      "id": "discovery-inventory",
+      "reason": "Inventory identities are discovery, not content review or readiness. Preserve pending cursor and original per-file inspection status.",
+      "sources": [
+        {
+          "ctime_ns": 1792530273816406391,
+          "device": 16777234,
+          "inode": 338954331,
+          "mtime_ns": 1792530273816406391,
+          "path": "/Users/bengamble/Gestalt2/docs/harvest/runs/20261020T210053-discovery.json",
+          "sha256": "59e0440b2d92cdc1a0124a80081ae5165751f68d58f495d2ce1d23ac43f20a0b",
+          "size_bytes": 19864
+        }
+      ],
+      "validation": "JSON parsed and explicit reviewed-vs-identity-only status inspected. Remaining source contents were not all reviewed."
+    },
+    {
+      "dependency_platform_contract": "Original macOS/Python3.12 evidence only.",
+      "destinations": [],
+      "disposition": "duplicate",
+      "id": "original-validation",
+      "reason": "Original 11-contract macOS receipt remains historical provenance; new caller has fresh execution evidence instead of inheriting its pass.",
+      "sources": [
+        {
+          "ctime_ns": 1792530206408634987,
+          "device": 16777234,
+          "inode": 338954226,
+          "mtime_ns": 1792530206408634987,
+          "path": "/Users/bengamble/Gestalt2/docs/harvest/runs/20261020T210053-validation.json",
+          "sha256": "65e4a77bdaaad86eb3c2fb5e46f904f25d1f64c6e579c0a7abdb7e791523cbb3",
+          "size_bytes": 2277
+        }
+      ],
+      "validation": "Inspected command/cwd, expected original0/2/2 exits and outputs. Not rerun as an acceptance gate."
+    },
+    {
+      "dependency_platform_contract": "PEP723 stdlib Python>=3.11/uv plus Codex. Owner checked macOS Python3.12.13. Windows immediate-process cleanup only and unexecuted; POSIX descendants escaping session outside contract.",
+      "destinations": [],
+      "disposition": "needs-validation",
+      "id": "project-launcher",
+      "reason": "Keep one project-owned runner. Review identified uncapped output and exited-parent descendant leaks; owner fixed them and published local process checks. No duplicated canonical library runner.",
+      "sources": [
+        {
+          "ctime_ns": 1792530891659303302,
+          "device": 16777234,
+          "inode": 338914623,
+          "mtime_ns": 1792530891659303302,
+          "path": "/Users/bengamble/Gestalt2/scripts/run_reuse_harvester.py",
+          "sha256": "7fa75e0b609208ada61d602b61822eb0ced7fe6ede32ffc017daa01cb2b733f7",
+          "size_bytes": 8917
+        }
+      ],
+      "validation": "Reviewed owner-produced nine-category receipt and current source hashes. Pending cursor is explicit in prompt. Live new-role invocation and cross-platform support remain unqualified by this integration."
+    },
+    {
+      "dependency_platform_contract": "PEP723 stdlib Python>=3.11/uv plus Codex. launchd is macOS-only; cron POSIX-only. Real Linux/Windows operation unverified.",
+      "destinations": [],
+      "disposition": "needs-validation",
+      "id": "scheduler-installer",
+      "reason": "Machine configuration stays outside library extraction. Owner moved invalid-platform refusal before role/config writes. No scheduler or global mirror changed by this integration.",
+      "sources": [
+        {
+          "ctime_ns": 1792530887114299067,
+          "device": 16777234,
+          "inode": 338919997,
+          "mtime_ns": 1792530887114299067,
+          "path": "/Users/bengamble/Gestalt2/scripts/install_reuse_harvester.py",
+          "sha256": "6eb1cdf8566be11ecf3736fa3b513b94313c403e963a772262be6f611191acec",
+          "size_bytes": 6961
+        }
+      ],
+      "validation": "Owner fixture verifies platform refusal before mutation; source re-reviewed. No scheduler install was executed here."
+    },
+    {
+      "dependency_platform_contract": "Requires exclusive owner-coordinated native environment; not a ready portable tool.",
+      "destinations": [],
+      "disposition": "reject",
+      "id": "schema-mutation-runner",
+      "reason": "Hardwired live source/build mutation, unbounded synchronous subprocesses and any-nonzero acceptance are unsuitable for direct concurrent reuse. Preserve oracle lessons and originals.",
+      "sources": [
+        {
+          "ctime_ns": 1792529387384156241,
+          "device": 16777234,
+          "inode": 338756243,
+          "mtime_ns": 1792529387384156241,
+          "path": "/private/tmp/g2ice-progress-20261020/schema-command/schema-mutations.py",
+          "sha256": "86ac9b7709b7f2bee93a2b76f7b0028627c3d094821fc8c8188c9724f24d54aa",
+          "size_bytes": 4558
+        }
+      ],
+      "validation": "Content read as data only; no execution or native build."
+    },
+    {
+      "dependency_platform_contract": "Keep as forensic provenance; isolated mutation design and owner validation required.",
+      "destinations": [],
+      "disposition": "reject",
+      "id": "view-mutation-runner",
+      "reason": "Live source rewrites and shared rebuilds lack bounded subprocess deadlines/coordination; any nonzero test result can be misclassified as intended oracle discrimination.",
+      "sources": [
+        {
+          "ctime_ns": 1792526898110067876,
+          "device": 16777234,
+          "inode": 338708435,
+          "mtime_ns": 1792526898110067876,
+          "path": "/private/tmp/g2ice-progress-20261020/view-command/command-mutations.py",
+          "sha256": "51ff8cba9384052b12eae454cdecddaadf51d1e1a312f7a6314acb4b15b85c70",
+          "size_bytes": 3884
+        }
+      ],
+      "validation": "Content read as data only; no execution or native build."
+    },
+    {
+      "dependency_platform_contract": "Exclusive coordinated ownership and native qualification required.",
+      "destinations": [],
+      "disposition": "reject",
+      "id": "native-baseline-runner",
+      "reason": "Rewrites dirty sources from HEAD and temporarily renames active tests in a shared checkout. Preserve restoration lessons rather than publish for concurrent use.",
+      "sources": [
+        {
+          "ctime_ns": 1792524884947658965,
+          "device": 16777234,
+          "inode": 338336590,
+          "mtime_ns": 1792524884947658965,
+          "path": "/private/tmp/g2ice-progress-20261020/view-projection/probe_native_baseline.py",
+          "sha256": "85ee8a8c6b1f37003ec95c80e4d2fc29f945b12b1f171dd1257d543cdcef6dc2",
+          "size_bytes": 1773
+        }
+      ],
+      "validation": "Content read as data only; no execution or native build."
+    },
+    {
+      "dependency_platform_contract": "Owner macOS arm64/Python3.12.13 synthetic checks; Windows and escaped sessions outside verified boundary.",
+      "destinations": [],
+      "disposition": "duplicate",
+      "id": "owner-hardening-evidence",
+      "reason": "Keep result and binding manifest with project owner. This review consumes them as source-bound evidence without claiming an independent rerun.",
+      "sources": [
+        {
+          "ctime_ns": 1792531102507107137,
+          "device": 16777234,
+          "inode": 339594479,
+          "mtime_ns": 1792531102507089804,
+          "path": "/Users/bengamble/Gestalt2/docs/harvest/launcher-hardening-2026-10-20/result.json",
+          "sha256": "a2e9c29fabf80e03ff580a9ea86dc03190e8158edc7bc578eddfc7a8f5b1fc70",
+          "size_bytes": 671
+        },
+        {
+          "ctime_ns": 1792531102508851779,
+          "device": 16777234,
+          "inode": 339594483,
+          "mtime_ns": 1792531102508851779,
+          "path": "/Users/bengamble/Gestalt2/docs/harvest/launcher-hardening-2026-10-20/manifest.json",
+          "sha256": "547d8ac59a4a9a707bf96ca9e7c7fb8aa018bf85c6fa7d8eb1a07b482dbfca13",
+          "size_bytes": 1102
+        }
+      ],
+      "validation": "Owner result is pass for nine check categories, including cap1KiB versus uncapped2MiB baseline, orphan, timeout, cancellation, platform preflight and syntax/function bounds. Manifest source_bindings match current source SHA256."
+    }
+  ],
+  "commit_ready_files": [
+    "PROJECT_MAP.md",
+    "docs/research/reuse-harvest-integration-20261020.json",
+    "docs/research/reuse-harvest-integration-20261020.md",
+    "plugin/agents/reuse-harvester.md",
+    "plugin/skills/reuse-harvesting/SKILL.md",
+    "plugin/skills/reuse-harvesting/agents/reuse-harvester.toml",
+    "plugin/skills/reuse-harvesting/references/artifact-contract.md",
+    "plugin/skills/reuse-harvesting/references/qualification.md",
+    "plugin/skills/reuse-harvesting/scripts/check_artifacts.py",
+    "skills/README.md",
+    "skills/authored/agents/integration/reuse-harvester.md",
+    "skills/authored/skills/devtools/reuse-harvesting/SKILL.md",
+    "skills/authored/skills/devtools/reuse-harvesting/agents/reuse-harvester.toml",
+    "skills/authored/skills/devtools/reuse-harvesting/references/artifact-contract.md",
+    "skills/authored/skills/devtools/reuse-harvesting/references/qualification.md",
+    "skills/authored/skills/devtools/reuse-harvesting/scripts/check_artifacts.py",
+    "skills/sync.py",
+    "tests/test_reuse_harvesting.py"
+  ],
+  "destination_bindings": [
+    {
+      "ctime_ns": 1792531056710644179,
+      "device": 16777234,
+      "inode": 254198665,
+      "mtime_ns": 1792531056710606804,
+      "path": "/Users/bengamble/ai-grind/PROJECT_MAP.md",
+      "sha256": "23408091a4a664b95ddf937a59d9c6963ba0c801d2f9c0526ad677e9b01d6448",
+      "size_bytes": 14928
+    },
+    {
+      "ctime_ns": 1792531210518175878,
+      "device": 16777234,
+      "inode": 254104991,
+      "mtime_ns": 1792531210518129544,
+      "path": "/Users/bengamble/ai-grind/skills/README.md",
+      "sha256": "c3f75fc2cc4eceedcb6639145826b4679177c2f79588fc2cecc0a13ae9a3425f",
+      "size_bytes": 9567
+    },
+    {
+      "ctime_ns": 1792531210514679094,
+      "device": 16777234,
+      "inode": 254105233,
+      "mtime_ns": 1792531210514623593,
+      "path": "/Users/bengamble/ai-grind/skills/sync.py",
+      "sha256": "c2927848cca614c0ba45742565f9506e9f6cebc916cf9a8d613026e4535c4acf",
+      "size_bytes": 9733
+    },
+    {
+      "ctime_ns": 1792531210521722621,
+      "device": 16777234,
+      "inode": 339258119,
+      "mtime_ns": 1792531210521674204,
+      "path": "/Users/bengamble/ai-grind/tests/test_reuse_harvesting.py",
+      "sha256": "013ca24b9207b0fc747b6d5f0b02da5a774859212c35f486de472071569b52f7",
+      "size_bytes": 7020
+    },
+    {
+      "ctime_ns": 1792531210524500815,
+      "device": 16777234,
+      "inode": 339597168,
+      "mtime_ns": 1792531210524448106,
+      "path": "/Users/bengamble/ai-grind/docs/research/reuse-harvest-integration-20261020.md",
+      "sha256": "54c18797926da5ed2a01b14d979894f2ed090ec51bc38c2b6b01a406306c9662",
+      "size_bytes": 5468
+    },
+    {
+      "ctime_ns": 1792530977634285356,
+      "device": 16777234,
+      "inode": 339415852,
+      "mtime_ns": 1792530977634236772,
+      "path": "/Users/bengamble/ai-grind/skills/authored/agents/integration/reuse-harvester.md",
+      "sha256": "dcb56bda437d3f0c15a51bb0e2a4f0e7f058aee75f10f6798df6bbf452619535",
+      "size_bytes": 2505
+    },
+    {
+      "ctime_ns": 1792531227390950651,
+      "device": 16777234,
+      "inode": 339603372,
+      "mtime_ns": 1792531227390943568,
+      "path": "/Users/bengamble/ai-grind/plugin/agents/reuse-harvester.md",
+      "sha256": "dcb56bda437d3f0c15a51bb0e2a4f0e7f058aee75f10f6798df6bbf452619535",
+      "size_bytes": 2505
+    },
+    {
+      "ctime_ns": 1792530977636242334,
+      "device": 16777234,
+      "inode": 339415866,
+      "mtime_ns": 1792530977636192375,
+      "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/SKILL.md",
+      "sha256": "d0708afd6b2fc59ffa8ebfd94394b18d317bbbb96e29b95e58909f4683cfb4d7",
+      "size_bytes": 3261
+    },
+    {
+      "ctime_ns": 1792530977635529452,
+      "device": 16777234,
+      "inode": 339415862,
+      "mtime_ns": 1792530977635480159,
+      "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/agents/reuse-harvester.toml",
+      "sha256": "e2baa4daa28afb680db0a47635a3bbd0750ae9ec7c46b49330ce8421e335de46",
+      "size_bytes": 3554
+    },
+    {
+      "ctime_ns": 1792530977634965946,
+      "device": 16777234,
+      "inode": 339415859,
+      "mtime_ns": 1792530977634916529,
+      "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/references/artifact-contract.md",
+      "sha256": "74552f6f7b03640e26c2927e17cc7525461d6026c140f4e71cc3b1eb93541213",
+      "size_bytes": 1553
+    },
+    {
+      "ctime_ns": 1792530977635170907,
+      "device": 16777234,
+      "inode": 339415860,
+      "mtime_ns": 1792530977635130989,
+      "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/references/qualification.md",
+      "sha256": "6ecf0a382a217652bf0b5bcd57e1e20488dd71e60ad9640d14a7bcd3012d3737",
+      "size_bytes": 2901
+    },
+    {
+      "ctime_ns": 1792530999827225911,
+      "device": 16777234,
+      "inode": 339415864,
+      "mtime_ns": 1792530999827225911,
+      "path": "/Users/bengamble/ai-grind/skills/authored/skills/devtools/reuse-harvesting/scripts/check_artifacts.py",
+      "sha256": "d8a98f285c9a2d4da6aac2bff796b5aa0f100210f0c587ab2c97a254c0645a15",
+      "size_bytes": 5509
+    },
+    {
+      "ctime_ns": 1792531227379052535,
+      "device": 16777234,
+      "inode": 339603326,
+      "mtime_ns": 1792530977636192375,
+      "path": "/Users/bengamble/ai-grind/plugin/skills/reuse-harvesting/SKILL.md",
+      "sha256": "d0708afd6b2fc59ffa8ebfd94394b18d317bbbb96e29b95e58909f4683cfb4d7",
+      "size_bytes": 3261
+    },
+    {
+      "ctime_ns": 1792531227378504280,
+      "device": 16777234,
+      "inode": 339603323,
+      "mtime_ns": 1792530977635480159,
+      "path": "/Users/bengamble/ai-grind/plugin/skills/reuse-harvesting/agents/reuse-harvester.toml",
+      "sha256": "e2baa4daa28afb680db0a47635a3bbd0750ae9ec7c46b49330ce8421e335de46",
+      "size_bytes": 3554
+    },
+    {
+      "ctime_ns": 1792531227377958649,
+      "device": 16777234,
+      "inode": 339603320,
+      "mtime_ns": 1792530977634916529,
+      "path": "/Users/bengamble/ai-grind/plugin/skills/reuse-harvesting/references/artifact-contract.md",
+      "sha256": "74552f6f7b03640e26c2927e17cc7525461d6026c140f4e71cc3b1eb93541213",
+      "size_bytes": 1553
+    },
+    {
+      "ctime_ns": 1792531227378213193,
+      "device": 16777234,
+      "inode": 339603321,
+      "mtime_ns": 1792530977635130989,
+      "path": "/Users/bengamble/ai-grind/plugin/skills/reuse-harvesting/references/qualification.md",
+      "sha256": "6ecf0a382a217652bf0b5bcd57e1e20488dd71e60ad9640d14a7bcd3012d3737",
+      "size_bytes": 2901
+    },
+    {
+      "ctime_ns": 1792531227378868908,
+      "device": 16777234,
+      "inode": 339603325,
+      "mtime_ns": 1792530999827225911,
+      "path": "/Users/bengamble/ai-grind/plugin/skills/reuse-harvesting/scripts/check_artifacts.py",
+      "sha256": "d8a98f285c9a2d4da6aac2bff796b5aa0f100210f0c587ab2c97a254c0645a15",
+      "size_bytes": 5509
+    }
+  ],
+  "limitations": [
+    "Linux/Windows unverified",
+    "New agent role behavior not pressure-evaluated or invoked live",
+    "No fresh native/latency/race/durability/quorum qualification",
+    "Owned mirror regeneration is not atomic on a later validation failure; shared target semantics remain per-item overwrite",
+    "Windows project-runner cleanup immediate-process only; POSIX descendants escaping session outside its contract"
+  ],
+  "pending_discovery": {
+    "cutoff_and_pending_cursor_are_distinct": true,
+    "original_inventory_entries": 48,
+    "remaining_identity_only_paths": [
+      "/Users/bengamble/Gestalt2/scripts/goal_vsr.py",
+      "/Users/bengamble/Gestalt2/scripts/test_goal_board_vsr_sql.py",
+      "/Users/bengamble/ai-grind/src/devtools_mcp/store/provenance.py",
+      "/private/tmp/g2ice-progress-20261020/catalog-receipt-mutations.py",
+      "/Users/bengamble/Gestalt2/PROJECT_MAP.md",
+      "/Users/bengamble/Gestalt2/benchmarks/mgbench/bulk_import_time.py",
+      "/Users/bengamble/Gestalt2/benchmarks/mgbench/kafka_stream_bench.py",
+      "/Users/bengamble/Gestalt2/benchmarks/mgbench/kafka_stream_module.py",
+      "/Users/bengamble/Gestalt2/benchmarks/mgbench/streaming_bench.py",
+      "/Users/bengamble/Gestalt2/benchmarks/mgbench/streaming_compare.py",
+      "/Users/bengamble/Gestalt2/benchmarks/streaming_flink/README.md",
+      "/Users/bengamble/Gestalt2/benchmarks/streaming_flink/common.py",
+      "/Users/bengamble/Gestalt2/benchmarks/streaming_flink/run_comparison.py",
+      "/Users/bengamble/Gestalt2/benchmarks/streaming_flink/run_flink.py",
+      "/Users/bengamble/Gestalt2/docs/JOURNAL.md",
+      "/Users/bengamble/Gestalt2/docs/MAP_SUBSYSTEMS.md",
+      "/Users/bengamble/Gestalt2/docs/PUNCHCARD.md",
+      "/Users/bengamble/Gestalt2/docs/plans/2026-10-17-connection-observation-integration.md",
+      "/Users/bengamble/Gestalt2/docs/plans/2026-10-18-ticket-triage.md",
+      "/Users/bengamble/Gestalt2/docs/plans/2026-10-20-live-csr.md",
+      "/Users/bengamble/Gestalt2/docs/plans/2026-10-20-sql-quorum-receipts.md",
+      "/Users/bengamble/Gestalt2/docs/research/2026-10-15-cognee-capability-comparison.md",
+      "/Users/bengamble/Gestalt2/docs/research/2026-10-20-streaming-graph-vs-memgraph.md",
+      "/Users/bengamble/Gestalt2/scripts/check_chukonu_off_build.py",
+      "/Users/bengamble/Gestalt2/src/cluster/CLAUDE.md",
+      "/Users/bengamble/Gestalt2/src/graph/CLAUDE.md",
+      "/Users/bengamble/Gestalt2/tasks/plan.md",
+      "/Users/bengamble/Gestalt2/tasks/todo.md",
+      "/Users/bengamble/Gestalt2/extern/marbledb/PROJECT_MAP.md",
+      "/Users/bengamble/Gestalt2/extern/marbledb/docs/research/2026-10-20-registered-table-names.md",
+      "/Users/bengamble/Gestalt2/extern/marbledb/docs/research/design-log.md",
+      "/Users/bengamble/Gestalt2/extern/chukonu/PROJECT_MAP.md",
+      "/Users/bengamble/Gestalt2/extern/chukonu/docs/research/2026-10-20-view-command-receipts.md"
+    ],
+    "schema_mutator_review_complete": true
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "python": "3.12.13 (main, Aug  7 2026, 02:15:23) [Clang 22.1.3 ]",
+  "red_baseline": {
+    "command": "uv run --offline --no-sync pytest --noconftest -p no:cacheprovider tests/test_reuse_harvesting.py -q --tb=short",
+    "result": "8 failed, 1 passed before implementation; authored agents ignored, collision not rejected, helper/function absent. Initial invalid manifest fixture was corrected before this discriminating run."
+  },
+  "reviewed_utc": "2026-10-20T21:21:25.359261+00:00",
+  "schema_version": 1,
+  "scope": "Authored reuse assets, narrow authored-agent sync, targeted checks, generated plugin and navigation docs. No Git mutation, native build, cleanup, new venv or global/scheduler changes by this worker.",
+  "source_identity_note": "Sources rehashed after owner fixes and verified stable before publication. Content reviewed in this integration is listed explicitly; unrelated inventory identities remain pending.",
+  "tools": {
+    "ruff": "0.15.6",
+    "uv": "0.12.3 Homebrew2026-08-07 aarch64-apple-darwin"
+  },
+  "tracker": "GRIND-11",
+  "validation_receipts": {
+    "checks": [
+      {
+        "command": "UV_CACHE_DIR=/private/tmp/ai-grind-reuse-uv-cache uv run --offline --no-sync pytest --noconftest -p no:cacheprovider tests/test_reuse_harvesting.py tests/test_evidence_artifacts.py -q --tb=short",
+        "cwd": "/Users/bengamble/ai-grind",
+        "result": {
+          "chunk_id": "3d183e",
+          "exit_code": 0,
+          "original_token_count": 25,
+          "output": ".................................                                        [100%]\n33 passed in 0.16s\n",
+          "wall_time_seconds": 0.351994917
+        }
+      },
+      {
+        "command": "UV_CACHE_DIR=/private/tmp/ai-grind-reuse-uv-cache uv run --offline --no-sync ruff check --no-cache skills/sync.py tests/test_reuse_harvesting.py skills/authored/skills/devtools/reuse-harvesting/scripts/check_artifacts.py",
+        "cwd": "/Users/bengamble/ai-grind",
+        "result": {
+          "chunk_id": "37dfa7",
+          "exit_code": 0,
+          "original_token_count": 5,
+          "output": "All checks passed!\n",
+          "wall_time_seconds": 8.375e-06
+        }
+      },
+      {
+        "command": "UV_CACHE_DIR=/private/tmp/ai-grind-reuse-uv-cache uv run --offline --no-sync black --check skills/sync.py tests/test_reuse_harvesting.py skills/authored/skills/devtools/reuse-harvesting/scripts/check_artifacts.py",
+        "cwd": "/Users/bengamble/ai-grind",
+        "result": {
+          "chunk_id": "baf50e",
+          "exit_code": 0,
+          "original_token_count": 14,
+          "output": "All done! \u2728 \ud83c\udf70 \u2728\n3 files would be left unchanged.\n",
+          "wall_time_seconds": 0.049708125
+        }
+      },
+      {
+        "command": "UV_CACHE_DIR=/private/tmp/ai-grind-reuse-uv-cache uv run --no-project --offline python scripts/unslop_check.py skills/authored/skills/devtools/reuse-harvesting/SKILL.md skills/authored/skills/devtools/reuse-harvesting/references/artifact-contract.md skills/authored/skills/devtools/reuse-harvesting/references/qualification.md skills/authored/skills/devtools/reuse-harvesting/scripts/check_artifacts.py skills/authored/agents/integration/reuse-harvester.md docs/research/reuse-harvest-integration-20261020.md",
+        "cwd": "/Users/bengamble/ai-grind",
+        "result": {
+          "chunk_id": "261d18",
+          "exit_code": 0,
+          "original_token_count": 7,
+          "output": "\n0 finding(s) in 6 file(s)\n",
+          "wall_time_seconds": 9.417e-06
+        }
+      }
+    ],
+    "cli": [
+      {
+        "command": "UV_CACHE_DIR=/private/tmp/ai-grind-reuse-uv-cache uv run --no-project --offline --script '/private/tmp/ai-grind reuse caller/check_artifacts.py' --ai-grind /Users/bengamble/ai-grind",
+        "cwd": "/private/tmp",
+        "result": {
+          "chunk_id": "d512b6",
+          "exit_code": 0,
+          "original_token_count": 187,
+          "output": "{\n  \"python\": \"3.12.13 (main, Aug  7 2026, 02:15:23) [Clang 22.1.3 ]\",\n  \"platform\": \"macOS-26.6.2-arm64-arm-64bit\",\n  \"module_path\": \"/Users/bengamble/ai-grind/src/devtools_mcp/evidence/artifacts.py\",\n  \"module_sha256\": \"c86241d462cdaa4a887a9aee6f2311dca83c03743810d147185fcd3be6279e6e\",\n  \"checks\": [\n    \"unchanged binding and spaces\",\n    \"same-size drift rejected\",\n    \"missing file rejected\",\n    \"oversized file rejected\",\n    \"directory rejected\",\n    \"leaf symlink rejected\",\n    \"partial inventory explicit\",\n    \"atomic record roundtrip\",\n    \"existing record preserved\",\n    \"missing destination parent rejected\",\n    \"nonfinite JSON rejected\",\n    \"oversized JSON rejected\",\n    \"explicit replacement\",\n    \"temporary cleanup\"\n  ]\n}\n",
+          "wall_time_seconds": 6.334e-06
+        }
+      },
+      {
+        "command": "UV_CACHE_DIR=/private/tmp/ai-grind-reuse-uv-cache uv run --no-project --offline --script '/private/tmp/ai-grind reuse caller/check_artifacts.py' --ai-grind /private/tmp/ai-grind-reuse-nonexistent-20261020",
+        "cwd": "/private/tmp",
+        "result": {
+          "chunk_id": "8a4310",
+          "exit_code": 1,
+          "original_token_count": 40,
+          "output": "Artifact contract check failed: ai-grind artifact helper is missing: /private/tmp/ai-grind-reuse-nonexistent-20261020/src/devtools_mcp/evidence/artifacts.py\n",
+          "wall_time_seconds": 6.5e-06
+        }
+      },
+      {
+        "command": "UV_CACHE_DIR=/private/tmp/ai-grind-reuse-uv-cache uv run --no-project --offline --script '/private/tmp/ai-grind reuse caller/check_artifacts.py'",
+        "cwd": "/private/tmp",
+        "result": {
+          "chunk_id": "edc9fb",
+          "exit_code": 2,
+          "original_token_count": 32,
+          "output": "usage: check_artifacts.py [-h] --ai-grind AI_GRIND\ncheck_artifacts.py: error: the following arguments are required: --ai-grind\n",
+          "wall_time_seconds": 7.625e-06
+        }
+      }
+    ],
+    "sync": {
+      "command": "UV_CACHE_DIR=/private/tmp/ai-grind-reuse-uv-cache uv run --no-project --offline python skills/sync.py --target plugin",
+      "cwd": "/Users/bengamble/ai-grind",
+      "result": {
+        "chunk_id": "3ca48c",
+        "exit_code": 0,
+        "original_token_count": 35,
+        "output": "synced -> /Users/bengamble/ai-grind/plugin  (target=plugin)\n  skills=110 (harvested=80 authored=30) commands=1 agents=5 skipped(archive)=40\n",
+        "wall_time_seconds": 0.023755458
+      }
+    }
+  }
+}
