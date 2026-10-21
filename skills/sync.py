@@ -173,10 +173,66 @@ def sync_authored_agents(base: Path, seen: set[str]) -> int:
     return count
 
 
+def selected_sync(target: str, names: list[str]) -> int:
+    from additive import publish, read_document, safe_destination, skill_name
+
+    if target not in ("local", "plugin", "agents"):
+        raise ValueError("selected sync only publishes owned local/plugin/agents mirrors")
+    if not names or len(names) != len(set(names)) or len(names) > MAX_ITEMS:
+        raise ValueError("selected names must be explicit, unique and bounded")
+    selected = set(names)
+    base, _ = target_base(target)
+    sources: dict[str, tuple[Path, Path]] = {}
+
+    def add(name: str, source: Path, relative: str) -> None:
+        if name.casefold() in sources:
+            raise ValueError(f"ambiguous selected name: {name}")
+        sources[name.casefold()] = (source, safe_destination(base, relative))
+
+    for item in read_document(MANIFEST)["items"]:
+        name, kind = item["name"], item["type"]
+        if name not in selected:
+            continue
+        if kind not in ("skill", "agent") or sidelined(item.get("category", "")):
+            raise ValueError("selected asset is not a published skill or agent")
+        if target == "agents" and kind != "skill":
+            raise ValueError("agents mirror accepts skills only")
+        source = safe_destination(ROOT, item["dest"])
+        if kind == "skill":
+            if skill_name(source) != name:
+                raise ValueError("selected catalog name mismatch")
+            add(name, source.parent, f"skills/{name}")
+        else:
+            add(name, source, f"agents/{source.name}")
+    for kind in ("skills", "agents"):
+        authored = AUTHORED / kind
+        found = sorted(authored.rglob("SKILL.md" if kind == "skills" else "*.md")) if authored.is_dir() else []
+        if len(found) > MAX_AUTHORED:
+            raise ValueError("authored asset count limit")
+        for path in found:
+            name = path.parent.name if kind == "skills" else path.stem
+            if name not in selected or sidelined(path.parent.relative_to(authored).as_posix()):
+                continue
+            if skill_name(path) != name or (target == "agents" and kind != "skills"):
+                raise ValueError("selected authored name/type mismatch")
+            add(name, path.parent if kind == "skills" else path, f"{kind}/{name}" + (".md" if kind == "agents" else ""))
+    if set(sources) != {name.casefold() for name in selected}:
+        raise ValueError("selected source names missing")
+    publish(list(sources.values()))
+    print(f"additive sync: {len(sources)} selected assets -> {base}; unrelated destinations preserved")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Flatten catalog/ into a loadable mirror.")
     ap.add_argument("--target", choices=("local", "plugin", "agents", "project", "global"), default="local")
+    ap.add_argument("--additive", action="store_true")
+    ap.add_argument("--select", action="append", default=[])
     args = ap.parse_args()
+    if args.additive != bool(args.select):
+        ap.error("--additive and one or more explicit --select names are required together")
+    if args.additive:
+        return selected_sync(args.target, args.select)
     skills_only = args.target == "agents"  # commands/agents .md are Claude-specific
 
     items = load_manifest()
