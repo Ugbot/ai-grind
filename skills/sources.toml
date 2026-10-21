@@ -757,3 +757,121 @@ src = "C:/code/vendor-skills/renderdoc-skill/.claude/skills/renderdoc-gpu-debug"
 type = "skill"
 category = "profiling"
 note = "renderdoc-gpu-debug — rudybear/renderdoc-skill (MIT, (c) 2025 Alexey Medvedev). 66-command rdc-cli wrapper: pixel history, shader debug, mesh output, RT export. Complements the authored renderdoc-frame-analysis skill (devtools-mcp backend, renderdoccmd-driven). REQUIRES rdc-cli + renderdoc.pyd — see THIRD_PARTY_SKILLS.md for the unmet-prereq note."
+
+# Official Cloudflare skills installed by the vendor's agent setup route.
+# Per-user source paths are expanded by harvest.source_path; selected additive
+# publication avoids unavailable legacy sources and preserves existing assets.
+
+[[item]]
+src = "~/.agents/skills/agents-sdk"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/basin"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/cf-cli"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/cloudflare"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/cloudflare-email-service"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/cloudflare-one"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/cloudflare-one-migrations"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/durable-objects"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/gateway-workers"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/k2"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/nextjs-on-cloudflare"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/sandbox-migrate-to-next"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/sandbox-next"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/sandbox-stable"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/turnstile-spin"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/web-perf"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/workers-best-practices"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/workers-profiling"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+[[item]]
+src = "~/.agents/skills/wrangler"
+type = "skill"
+category = "cloudflare"
+note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"

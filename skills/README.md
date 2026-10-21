@@ -45,12 +45,33 @@ already living there survive.
 
 | Type | Count | Categories |
 |---|---|---|
-| Skills (harvested, vendored external) | 80 | `planning/` `build/` `review/` `ship/` `web/` `meta/` `writing/` `understanding/` `principles/`, listed below |
-| Skills (authored) | 30 | `powershell/` (9), `profiling/` (7), `debugging/` (2), `devtools/` (6), `tracker/` (4), `collab/` (2) |
+| Skills (harvested, vendored external) | 99 | `planning/` `build/` `review/` `ship/` `web/` `meta/` `writing/` `understanding/` `principles/`, listed below |
+| Skills (authored) | 31 | `powershell/` (9), `profiling/` (7), `debugging/` (2), `devtools/` (7), `tracker/` (4), `collab/` (2) |
 | Commands | 1 | `dev-tools/` (`clean-test-data`) |
-| Agents | 5 | `integration/` (2, including authored Reuse Harvester), `review/` (3) |
+| Agents | 6 | `integration/` (3, including authored Reuse Harvester and Cloudflare Controller), `review/` (3) |
 
-Total loadable: 110 skills (80 harvested plus 30 authored).
+Committed plugin: 130 skills (99 harvested plus 31 authored), 1 command and 6 agents.
+
+Cloudflare integration was selectively published on 2026-10-21: 19 official
+`cloudflare/skills` source rows, authored `devtools/cloudflare-control`, and the
+authored `integration/cloudflare-controller` agent. All 749 prior output files
+and 125 prior manifest entries survived unchanged. Repeating the same selected
+publication changed no output or manifest bytes. Official
+Cloudflare skills stay verbatim and authoritative. The authored skill coordinates
+MCP/cf/Wrangler authentication boundaries and secret-free S3 configuration.
+Focused qualification: 63 tests pass; source lint/format and new prose checks
+pass. Existing prose findings elsewhere remain separate. The older local and
+`.agents` mirrors received only selected assets; they were not fully rebuilt.
+[Evidence](../docs/research/cloudflare-integration-20261021.md).
+
+`harvest.py` expands `~` in explicit sources. For partial checkouts, both scripts
+support `--additive --select NAME` (repeat `--select` per exact asset). Selected
+mode stages/preflights requested inputs, refuses conflicting destinations,
+preserves unrelated entries/directories, skips identical files and resumes
+compatible partial output. Metadata follows successful output publication.
+Selected sync permits plugin/local/agents only; agents is skills-only. Default
+full harvest/sync behavior is unchanged and may wipe generated directories, so
+do not use it to publish Cloudflare while legacy sources are unavailable.
 
 Run `uv run --no-project python ../scripts/unslop_check.py` before committing prose changes. It
 encodes the `unslop` skill's rules as a check over the markdown and Python this

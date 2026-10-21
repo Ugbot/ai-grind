@@ -1,0 +1,56 @@
+{
+  "preservedFiles": 749,
+  "preservedManifestItems": 125,
+  "addedOfficialSkills": 19,
+  "manifestItems": 144,
+  "counts": {
+    "skills/catalog": {
+      "files": 437,
+      "flatSkills": 0,
+      "agents": 0
+    },
+    "plugin": {
+      "files": 438,
+      "flatSkills": 130,
+      "agents": 6
+    },
+    "skills/loadable": {
+      "files": 389,
+      "flatSkills": 107,
+      "agents": 4
+    },
+    ".agents": {
+      "files": 373,
+      "flatSkills": 100,
+      "agents": 0
+    }
+  },
+  "sourceHashes": {
+    "skills/additive.py": "eb48e577481fa8787954f6b769195a033737b870334a090e851fd819e1f278e4",
+    "skills/harvest.py": "cad0630b7609d690afc40987214d61c5fff7fbf98a0b836ed82162b617ca3b22",
+    "skills/sync.py": "7f257a607a817fef11913d30edd6344f01e15f614890f033b441fafd98308b7f",
+    "skills/authored/skills/devtools/cloudflare-control/scripts/cloudflare_control.py": "be75fdbf71ea8a08fbcaf82888e43c0d5fd42361a1a10911ee782639a135a84c",
+    "tests/test_cloudflare_control.py": "bcbbdc9c3bb7f1038a50337612ced481ff4d8ea0c57d9d95ce4832c86112ac31",
+    "tests/test_skills_additive.py": "136e61e8e28b5aaba8e0206722d1458e05db050644290e5276ec9fff70c40db2"
+  },
+  "manifestHash": "6e852f826b0a3929c3a8c76ad78db78f6fc03973a5cd35811db7b5e356b71624",
+  "idempotentRepeat": true,
+  "focusedTests": {
+    "passed": 63,
+    "failed": 0,
+    "seconds": 1.28,
+    "unraisableWarningsAreErrors": true
+  },
+  "liveCfStatus": {
+    "authenticated": true,
+    "mcpAuthenticated": "not_checked",
+    "s3Credentials": "not_checked"
+  },
+  "newProseFindings": 0,
+  "fullProseCheck": "Repository-wide content check remains failing on existing content; new scoped prose passes.",
+  "whitespaceCheck": {
+    "authored": "pass",
+    "officialVendor": "upstream whitespace preserved verbatim",
+    "vendorFiles": 20
+  }
+}

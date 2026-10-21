@@ -1,6 +1,6 @@
 {
   "counts": {
-    "skill": 103,
+    "skill": 122,
     "archive": 1,
     "command": 15,
     "agent": 6
@@ -1005,6 +1005,158 @@
       "origin": "C:\\code\\vendor-skills\\renderdoc-skill\\.claude\\skills\\renderdoc-gpu-debug",
       "dest": "catalog\\skills\\profiling\\renderdoc-gpu-debug\\SKILL.md",
       "sha256": "c6f2f983ecb5e5a1d31efc3c55b0df5dc73d1d1b54e0ae7b428687852e781fb0"
+    },
+    {
+      "name": "agents-sdk",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/agents-sdk",
+      "dest": "catalog/skills/cloudflare/agents-sdk/SKILL.md",
+      "sha256": "95890d0c50e3a1c871b6508f60cd93e1ae10c83732c90f471e985aa5c07d15b0"
+    },
+    {
+      "name": "basin",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/basin",
+      "dest": "catalog/skills/cloudflare/basin/SKILL.md",
+      "sha256": "d9bd504ac8125ef84820af6815b3a6f3417fb9126614bad68e420f0f01cec4e3"
+    },
+    {
+      "name": "cf-cli",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/cf-cli",
+      "dest": "catalog/skills/cloudflare/cf-cli/SKILL.md",
+      "sha256": "0043a1ae53d9009a031d58435d4c32121794401261dffacccf5d4c2fc5bf79ea"
+    },
+    {
+      "name": "cloudflare",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/cloudflare",
+      "dest": "catalog/skills/cloudflare/cloudflare/SKILL.md",
+      "sha256": "336a55878f37551d14b6d8dddabfe0c97362fd5414380083a365802568fb39b7"
+    },
+    {
+      "name": "cloudflare-email-service",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/cloudflare-email-service",
+      "dest": "catalog/skills/cloudflare/cloudflare-email-service/SKILL.md",
+      "sha256": "846013394fd263cf637b4ea8fb319ccce8ca23a8e5c5aa2ee920a813cf13781a"
+    },
+    {
+      "name": "cloudflare-one",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/cloudflare-one",
+      "dest": "catalog/skills/cloudflare/cloudflare-one/SKILL.md",
+      "sha256": "78c0540861f0c8f5825f7e871a6e8ebfaae0b2b5a8055ab5cfd18038b2f59b4d"
+    },
+    {
+      "name": "cloudflare-one-migrations",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/cloudflare-one-migrations",
+      "dest": "catalog/skills/cloudflare/cloudflare-one-migrations/SKILL.md",
+      "sha256": "d09dd780eeaf28f5aad17b0c2aec2bacd8b7d6cbd07919d24a2092982cab77db"
+    },
+    {
+      "name": "durable-objects",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/durable-objects",
+      "dest": "catalog/skills/cloudflare/durable-objects/SKILL.md",
+      "sha256": "2468c1795f439f494f076eb13a2202a3c4e579e71e6e2ed98b4d1f5ce62fef1b"
+    },
+    {
+      "name": "gateway-workers",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/gateway-workers",
+      "dest": "catalog/skills/cloudflare/gateway-workers/SKILL.md",
+      "sha256": "238318511ad83277ba87a24a77d491d4a3b0e153f6ddcb50a8333cfe42eff552"
+    },
+    {
+      "name": "k2",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/k2",
+      "dest": "catalog/skills/cloudflare/k2/SKILL.md",
+      "sha256": "906b7269c035872eb3802f810b3475107cc121b55b23533a19efb3e615fb5ef6"
+    },
+    {
+      "name": "nextjs-on-cloudflare",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/nextjs-on-cloudflare",
+      "dest": "catalog/skills/cloudflare/nextjs-on-cloudflare/SKILL.md",
+      "sha256": "4755b76350b64f2057f21f44aabc46b73d23b7d66f2c4ceb2970634e7eae70d6"
+    },
+    {
+      "name": "sandbox-migrate-to-next",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/sandbox-migrate-to-next",
+      "dest": "catalog/skills/cloudflare/sandbox-migrate-to-next/SKILL.md",
+      "sha256": "cd070c652654eb419e11cdaab403351a451d2bbac88afa70141bdc0077ae2512"
+    },
+    {
+      "name": "sandbox-next",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/sandbox-next",
+      "dest": "catalog/skills/cloudflare/sandbox-next/SKILL.md",
+      "sha256": "12715f895553982177161d13169ffaef17ea05966645fd85757e067f34df68f1"
+    },
+    {
+      "name": "sandbox-stable",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/sandbox-stable",
+      "dest": "catalog/skills/cloudflare/sandbox-stable/SKILL.md",
+      "sha256": "490dc8b20d6ffbdfcbf1b4bc30fda1362997d4cf1d2af48fa1afb63fdf8f37ad"
+    },
+    {
+      "name": "turnstile-spin",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/turnstile-spin",
+      "dest": "catalog/skills/cloudflare/turnstile-spin/SKILL.md",
+      "sha256": "ec154e3f2df0ce4018be74aa287b59596031617f939c3b4e5ef49a4f10ce6a66"
+    },
+    {
+      "name": "web-perf",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/web-perf",
+      "dest": "catalog/skills/cloudflare/web-perf/SKILL.md",
+      "sha256": "79c531e95ca4d96a7de920c28c127c2c09ec55cd452a92222267d2954580be23"
+    },
+    {
+      "name": "workers-best-practices",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/workers-best-practices",
+      "dest": "catalog/skills/cloudflare/workers-best-practices/SKILL.md",
+      "sha256": "039c2a70aac53e00da20adc3d527bd3fc9b727be90c28b94c81c5e10092339ef"
+    },
+    {
+      "name": "workers-profiling",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/workers-profiling",
+      "dest": "catalog/skills/cloudflare/workers-profiling/SKILL.md",
+      "sha256": "3129ee720db2f479a891ecd35724bbda16fd8f6cd9dedcbaf665502b4f890efb"
+    },
+    {
+      "name": "wrangler",
+      "type": "skill",
+      "category": "cloudflare",
+      "origin": "~/.agents/skills/wrangler",
+      "dest": "catalog/skills/cloudflare/wrangler/SKILL.md",
+      "sha256": "7884f560509c08ac29ee0d3cfe1b5259855fd6790acf0c5292f4d1c54db7c191"
     }
   ]
 }

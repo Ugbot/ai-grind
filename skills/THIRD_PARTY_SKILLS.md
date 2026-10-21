@@ -16,6 +16,30 @@ cleanup. The planning algorithm behaves exactly as upstream.
 
 ## Harvested skills
 
+### Cloudflare official skills, Cloudflare, Apache-2.0, registered sources
+
+Upstream: https://github.com/cloudflare/skills and its root Apache-2.0 LICENSE.
+The exact upstream license was retrieved from revision
+`86505e44f87d801aa1864a3c4109e9a8ae5c409f` and saved at
+`skills/vendor-licenses/cloudflare/LICENSE`. Its SHA-256 is
+`58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd`.
+The official agent setup installs 19 selected names at `~/.agents/skills/`:
+`agents-sdk`, `basin`, `cf-cli`, `cloudflare`, `cloudflare-email-service`,
+`cloudflare-one`, `cloudflare-one-migrations`, `durable-objects`,
+`gateway-workers`, `k2`, `nextjs-on-cloudflare`, `sandbox-migrate-to-next`,
+`sandbox-next`, `sandbox-stable`, `turnstile-spin`, `web-perf`,
+`workers-best-practices`, `workers-profiling`, `wrangler`.
+
+Explicit `sources.toml` rows target category `cloudflare`; harvest copies the
+installed skill folders verbatim. Selected catalog/plugin/local/agents
+publication completed on 2026-10-21 with preservation and idempotence checks;
+catalog/MANIFEST/plugin are generated, never hand-edited. Existing upstream
+assets remain intact when their legacy source paths are unavailable. The
+authored `cloudflare-control` orchestration and controller agent are original
+ai-grind assets and do not replace these product skills. Installed official
+skills, MCP authentication and optional cf CLI auth are separate from library
+publication and S3 data-plane qualification.
+
 79 skills and 3 agents live in `catalog/`, harvested from five upstream
 collections through `sources.toml`. First pass 2026-07-13, extended 2026-08-19
 with cursor/plugins, trimmed the same day by the dedup pass recorded below.

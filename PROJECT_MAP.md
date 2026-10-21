@@ -48,6 +48,8 @@ A unified developer-tooling workspace. Two concerns live here:
 | `hooks/` | Claude Code hooks under the plugin `hooks` key. `report_touch.py` (PostToolUse) reports edited files to the collab API and relays conflicts into context; `check_conflict.py` (PreToolUse) is optional and reads `DEVTOOLS_MCP_COLLAB_MODE=warn\|ask\|off`. Stdlib-only, never blocking. This is the local precursor to the team collab server, coming soon |
 | `skills/` | The unified skills library. See `skills/README.md` |
 | `skills/authored/skills/devtools/reuse-harvesting/` | Reuse workflow, standalone 14-contract artifact caller, qualification reference and native Codex TOML role. Authored Claude agent lives under `skills/authored/agents/integration/`; `sync.py` publishes Markdown agents only. [Adoption ledger](docs/research/reuse-harvest-integration-20261020.json) |
+| `skills/authored/skills/devtools/cloudflare-control/` | Orchestration around official Cloudflare skills/MCP/cf/Wrangler; secret-free UV/async R2 S3 config and bounded explicit auth-status helper; native Codex role plus authored Markdown controller agent. `tests/test_cloudflare_control.py` covers synthetic CLI/config contracts. No credential store or product API reimplementation |
+| `skills/additive.py`, selected modes in `skills/{harvest,sync}.py` | Explicit `--additive --select NAME` publication: bounded staging, conflict refusal, identical-file skips and resumable missing-file publication. Harvest preserves unrelated catalog/MANIFEST entries; sync preserves unrelated plugin/local/agents output. Defaults retain their existing full behavior; project/global targets are excluded from selected mode. Focused tests: `tests/test_skills_additive.py` |
 | `pyproject.toml`, `uv.lock` | Python project metadata and lock |
 
 ## Skills library (`skills/`)
@@ -72,15 +74,28 @@ Claude loads). Two scripts and one map drive it:
   Codex TOML roles remain assets and are not registered by sync.
   See the `skills-sync` skill
 
-Contents: 110 loadable skills, being 80 harvested plus 30 authored. The
-harvested set is an 80-skill external collection (MIT and Apache) under
+Contents: 130 committed plugin skills, being 99 harvested plus 31 authored.
+The harvested set includes the existing 80-skill external collection plus 19
+official Cloudflare skills (MIT and Apache), under
 `planning/ build/ review/ ship/ web/ meta/ writing/ understanding/ principles/`
 from addyosmani/agent-skills, obra/superpowers, mattpocock/skills,
 anthropics/skills, and cursor/plugins. Clones live in
 `C:/code/vendor-skills/`, attribution in `skills/THIRD_PARTY_SKILLS.md`.
 Authored: `powershell/` (5.1 and 7), `profiling/`, `devtools/` including
 `skills-sync`, `tracker/`, `collab/`, and `meta/skill-router.rules.md`. Plus 1
-command and 5 agents (4 harvested, 1 authored).
+command and 6 agents (4 harvested, 2 authored).
+
+Cloudflare source registration adds 19 vendor-installed official skills under
+category `cloudflare` and authored `cloudflare-control`/`cloudflare-controller`.
+Selected publication is complete: committed plugin 130 skills/6 agents; 19 new
+catalog sources, 20 skills in each owned mirror and the controller Markdown agent
+in plugin/local. All 749 existing output files/125 old manifest entries remained
+unchanged; an identical second publication changed no bytes. 63 focused tests,
+source lint/format and new prose checks pass. Live cf status reports authenticated;
+S3 readiness remains separate. [Evidence](docs/research/cloudflare-integration-20261021.md).
+Source paths use `~/.agents/skills/<name>`; no full harvest is safe while legacy
+Windows sources are unavailable. Official global skills/MCP/CLI setup is separate
+from ai-grind catalog publication and from S3 credential/data-plane verification.
 
 Sidelined skills are harvested into `catalog/` for reference but never synced to
 the mirrors or indexed by the router, which `sync.sidelined()` enforces:
