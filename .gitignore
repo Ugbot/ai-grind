@@ -53,3 +53,7 @@ PerfViewData*
 Thumbs.db
 
 plugins/devtools-mcp-abap/
+
+# DTrace/loop run output (root-owned when run under sudo)
+loopc_*/
+loopc_out_*.txt
