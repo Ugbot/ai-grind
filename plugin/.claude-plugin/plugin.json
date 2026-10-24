@@ -10,8 +10,9 @@
   "homepage": "https://github.com/Ugbot/ai-grind",
   "repository": "https://github.com/Ugbot/ai-grind",
   "license": "MIT",
-  "keywords": ["skills", "commands", "agents"],
-  "skills": "./skills",
-  "commands": "./commands",
-  "agents": "./agents"
+  "keywords": [
+    "skills",
+    "commands",
+    "agents"
+  ]
 }

@@ -10,6 +10,11 @@
   "homepage": "https://github.com/Ugbot/ai-grind",
   "repository": "https://github.com/Ugbot/ai-grind",
   "license": "MIT",
-  "keywords": ["skills", "windows", "powershell", "cdb", "etw"],
-  "skills": "./skills"
+  "keywords": [
+    "skills",
+    "windows",
+    "powershell",
+    "cdb",
+    "etw"
+  ]
 }
