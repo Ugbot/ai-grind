@@ -17,10 +17,10 @@ from mcp.server.fastmcp import Context
 from devtools_mcp import skills_discovery as discovery
 from devtools_mcp.server import mcp
 
-SYNC_TARGETS = ("local", "plugin", "agents", "project", "global")
+SYNC_TARGETS = ("local", "plugin", "plugin-windows", "agents", "agents-global", "project", "global")
 # "all" fans out to the wholly-owned derived mirrors only; project/global write
 # into .claude dirs shared with other tooling, so they stay explicit-only.
-OWNED_TARGETS = ("local", "plugin", "agents")
+OWNED_TARGETS = ("local", "plugin", "plugin-windows", "agents")
 
 _SCRIPT_TIMEOUT = 120  # seconds per script run
 _OUTPUT_TAIL_LINES = 30
@@ -191,7 +191,7 @@ async def skills_sync(
             if code != 0:
                 break
         if target == "all" and all(p.count("FAILED") == 0 for p in parts):
-            parts.append("_plugin/ is committed output, review `git diff plugin/` and commit._")
+            parts.append("_plugin/ is committed output, review `git diff plugin/ plugin-windows/` and commit._")
         return "\n\n".join(parts)
 
     return f"Unknown action {action!r}: one of status, discover, adopt, harvest, sync"

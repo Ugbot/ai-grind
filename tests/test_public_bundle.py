@@ -17,7 +17,12 @@ def test_public_bundle_matches_regeneration(tmp_path, monkeypatch):
     assert module.main() == 0
 
     def snapshot(root):
-        return {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+        # .claude-plugin/ is the committed manifest, not sync output
+        return {
+            path.relative_to(root): path.read_bytes()
+            for path in root.rglob("*")
+            if path.is_file() and ".claude-plugin" not in path.relative_to(root).parts
+        }
 
     assert snapshot(generated) == snapshot(ROOT / "plugin")
     names = {path.name for path in (generated / "skills").iterdir()}

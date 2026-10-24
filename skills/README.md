@@ -25,32 +25,79 @@ keeps the browsable tree and the loadable mirror separate:
 ```bash
 python harvest.py                 # upstream  -> catalog/   (+ MANIFEST.json)
 python sync.py --target local     # catalog/  -> loadable/             (default)
-python sync.py --target plugin    # catalog/  -> <repo>/plugin/  (committed plugin bundle)
-python sync.py --target project   # catalog/  -> <repo>/.claude/       (load here)
-python sync.py --target global    # catalog/  -> ~/.claude/   (load everywhere)
+python sync.py --target plugin    # cross-platform -> <repo>/plugin/          (committed; plugin ai-grind-skills)
+python sync.py --target plugin-windows  # Windows-only -> <repo>/plugin-windows/ (committed; plugin ai-grind-windows)
+python sync.py --target project   # cross-platform -> <repo>/.claude/   (load here)
+python sync.py --target global    # cross-platform -> ~/.claude/        (per-item overwrite)
+python sync.py --target global --prune   # ... and remove retired library items from ~/.claude
+python sync.py --target agents-global    # cross-platform skills -> ~/.agents/skills/ (wiped mirror)
 ```
 
-The `plugin` target writes the flat, committed bundle that
-`.claude-plugin/plugin.json` points at (`plugin/{skills,commands,agents}/`).
-Re-run it after editing a skill, then commit `plugin/`. `sync.py` warns loudly
+### Targets
+
+| Target | Writes | Ownership | Platform |
+|---|---|---|---|
+| `local` | `skills/loadable/{skills,commands,agents}/` | wiped (gitignored) | cross-platform |
+| `plugin` | `plugin/{skills,commands,agents}/` | owned subfolders wiped, `plugin/.claude-plugin/plugin.json` kept | cross-platform |
+| `plugin-windows` | `plugin-windows/skills/` | owned subfolders wiped, manifest kept | Windows-only |
+| `agents` | `<repo>/.agents/skills/` | wiped (gitignored), skills only | cross-platform |
+| `agents-global` | `~/.agents/skills/` | `skills/` wholly owned and wiped, so retired skills vanish; other `~/.agents` content survives; skills only (Codex, Cursor) | cross-platform |
+| `project` | `<repo>/.claude/` | per-item overwrite | cross-platform |
+| `global` | `~/.claude/{skills,commands,agents}/` | per-item overwrite; `--prune` also removes retired items | cross-platform |
+
+A skill is Windows-only when its category has a `windows` path segment
+(`authored/skills/windows/powershell/pwsh-*`, `windows/debugging/cdb-windows-debug`,
+`windows/profiling/etw-profiling`; the same rule applies to harvested catalog
+categories). Every target except `plugin-windows` excludes those; `plugin-windows`
+includes only those.
+
+`global --prune` removes entries in `~/.claude/{skills,commands,agents}` that the
+library does not currently publish, but only names the library has listed: any
+`sources.toml` row (including `_disabled` ones) or any authored skill or agent
+(including `_disabled`). Unrelated user skills are never touched. Windows-only
+skills count as "not published" globally, so prune clears them from `~/.claude`;
+install them through `ai-grind-windows` instead.
+
+### Plugins
+
+Generic skills reach agents only through a Claude Code plugin. The marketplace
+(`.claude-plugin/marketplace.json`, name `ai-grind`) lists:
+
+- `ai-grind-skills` (`./plugin`): 119 cross-platform skills, 1 command, 6 agents.
+  No MCP server, so it never collides with an HTTP devtools-mcp server.
+- `ai-grind-windows` (`./plugin-windows`): 11 Windows-only skills (9 `pwsh-*`,
+  `cdb-windows-debug`, `etw-profiling`). Install on Windows machines only.
+- `devtools-mcp` (`.`): the stdio MCP server plus the same cross-platform bundle.
+  Do not install it next to an HTTP devtools-mcp server.
+- `project-map` (`./plugins/project-map`): unchanged.
+
+```bash
+claude plugin marketplace add <path-to-ai-grind-or-github:Ugbot/ai-grind>
+claude plugin install ai-grind-skills@ai-grind
+claude plugin install ai-grind-windows@ai-grind     # Windows only
+```
+
+Re-run the plugin targets after editing a skill, then commit `plugin/` and
+`plugin-windows/`. `sync.py` warns loudly
 and skips any manifest source missing from the checkout, so a partial clone still
 builds.
 
 `harvest.py` is idempotent. It wipes `catalog/` and rebuilds it from the explicit
 list in `sources.toml`. `sync.py --target local` wipes and rebuilds `loadable/`.
 The `project` and `global` targets overwrite per item, so unrelated skills
-already living there survive.
+already living there survive (`global --prune` is the explicit, name-scoped exception).
 
 ## What's inside
 
 | Type | Count | Categories |
 |---|---|---|
 | Skills (harvested, vendored external) | 99 | `planning/` `build/` `review/` `ship/` `web/` `meta/` `writing/` `understanding/` `principles/`, listed below |
-| Skills (authored) | 31 | `powershell/` (9), `profiling/` (7), `debugging/` (2), `devtools/` (7), `tracker/` (4), `collab/` (2) |
+| Skills (authored) | 31 | `windows/` (11: `powershell/` 9, `debugging/` 1, `profiling/` 1), `profiling/` (6), `debugging/` (1), `devtools/` (7), `tracker/` (4), `collab/` (2) |
 | Commands | 1 | `dev-tools/` (`clean-test-data`) |
 | Agents | 6 | `integration/` (3, including authored Reuse Harvester and Cloudflare Controller), `review/` (3) |
 
-Committed plugin: 130 skills (99 harvested plus 31 authored), 1 command and 6 agents.
+Committed plugins: `ai-grind-skills` has 119 skills (99 harvested plus 20 authored), 1 command and 6 agents;
+`ai-grind-windows` has the 11 Windows-only authored skills.
 
 Cloudflare integration was selectively published on 2026-10-21: 19 official
 `cloudflare/skills` source rows, authored `devtools/cloudflare-control`, and the
@@ -153,14 +200,14 @@ The cursor/plugins harvest added three categories:
 
 Written for this library:
 
-- `powershell/` (9) covers using PowerShell properly, with 5.1 and 7 side by
+- `windows/powershell/` (9, Windows-only) covers using PowerShell properly, with 5.1 and 7 side by
   side: `pwsh-core-idioms`, `pwsh-native-commands`, `pwsh-errors`,
   `pwsh-filesystem`, `pwsh-text-and-data`, `pwsh-jobs-async`,
   `pwsh-env-and-packages`, `pwsh-scripting-style`, `pwsh-non-interactive`.
-- `profiling/` (7): `flamegraph-reading`, `etw-profiling`, `jvm-profiling`,
+- `profiling/` (6; `etw-profiling` lives in `windows/profiling/`): `flamegraph-reading`, `jvm-profiling`,
   `jvm-threads-heap`, `python-profiling`, `js-node-profiling`,
   `renderdoc-frame-analysis` for GPU frame capture and replay.
-- `debugging/` (2): `cdb-windows-debug`, `unified-debugging`.
+- `debugging/` (1): `unified-debugging`; `cdb-windows-debug` lives in `windows/debugging/`.
 - `devtools/` (6): `devtools-mcp-usage`, `devtools-visualizer`, `build-tools` for
   maven, gradle, npm, pnpm, yarn, and cargo, `vtune-profiling`, and `skills-sync`
   for this library's harvest and sync workflow plus the `skills_sync` MCP tool;
@@ -174,7 +221,7 @@ To add another authored skill, drop a `<name>/SKILL.md` anywhere under
 frontmatter `name:`.
 
 Authored Markdown agents live under `authored/agents/<category>/<name>.md`.
-`sync.py` publishes them to each target that supports agents, preserving
+`sync.py` publishes them to each target that supports agents (not the skills-only `agents`, `agents-global` and `plugin-windows`), preserving
 unrelated entries in shared targets and rejecting case-insensitive collisions with catalog or
 other authored names. Categories with an `_` prefix or `experimental` segment
 remain sidelined. `--target agents` publishes skills only. Native Codex TOML

@@ -1,0 +1,17 @@
+{
+  "name": "ai-grind-skills",
+  "displayName": "ai-grind skills (cross-platform)",
+  "version": "0.1.0",
+  "description": "The ai-grind skills library: cross-platform skills, commands and agents only. No MCP server, so it never collides with an HTTP devtools-mcp server. Windows-only skills live in the ai-grind-windows plugin.",
+  "author": {
+    "name": "Darach Ennis",
+    "email": "darach@gmail.com"
+  },
+  "homepage": "https://github.com/Ugbot/ai-grind",
+  "repository": "https://github.com/Ugbot/ai-grind",
+  "license": "MIT",
+  "keywords": ["skills", "commands", "agents"],
+  "skills": "./skills",
+  "commands": "./commands",
+  "agents": "./agents"
+}

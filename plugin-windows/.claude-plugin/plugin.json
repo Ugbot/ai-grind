@@ -1,0 +1,15 @@
+{
+  "name": "ai-grind-windows",
+  "displayName": "ai-grind skills (Windows only)",
+  "version": "0.1.0",
+  "description": "Windows-only skills from the ai-grind library: PowerShell (pwsh-*), CDB crash debugging and ETW profiling. Install only on Windows machines. No MCP server.",
+  "author": {
+    "name": "Darach Ennis",
+    "email": "darach@gmail.com"
+  },
+  "homepage": "https://github.com/Ugbot/ai-grind",
+  "repository": "https://github.com/Ugbot/ai-grind",
+  "license": "MIT",
+  "keywords": ["skills", "windows", "powershell", "cdb", "etw"],
+  "skills": "./skills"
+}

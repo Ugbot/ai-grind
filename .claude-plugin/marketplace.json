@@ -4,7 +4,7 @@
     "name": "Darach Ennis",
     "email": "darach@gmail.com"
   },
-  "description": "Marketplace for the devtools-mcp performance-engineering plugin — a unified MCP server plus a bundled skills library (profiling, debugging, PowerShell, code-intel). Also ships project-map, which templates any project for coding agents.",
+  "description": "Marketplace for the devtools-mcp performance-engineering plugin \u2014 a unified MCP server plus a bundled skills library (profiling, debugging, PowerShell, code-intel). Also ships project-map, which templates any project for coding agents.",
   "plugins": [
     {
       "name": "devtools-mcp",
@@ -17,6 +17,30 @@
         "performance",
         "debugging",
         "skills"
+      ]
+    },
+    {
+      "name": "ai-grind-skills",
+      "source": "./plugin",
+      "description": "Cross-platform ai-grind skills, commands and agents only. No MCP server, so it never collides with an HTTP devtools-mcp server.",
+      "category": "development",
+      "keywords": [
+        "skills",
+        "commands",
+        "agents"
+      ]
+    },
+    {
+      "name": "ai-grind-windows",
+      "source": "./plugin-windows",
+      "description": "Windows-only ai-grind skills: PowerShell (pwsh-*), CDB crash debugging, ETW profiling. Install on Windows machines only.",
+      "category": "development",
+      "keywords": [
+        "skills",
+        "windows",
+        "powershell",
+        "cdb",
+        "etw"
       ]
     },
     {

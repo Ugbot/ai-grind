@@ -81,7 +81,7 @@ official Cloudflare skills (MIT and Apache), under
 from addyosmani/agent-skills, obra/superpowers, mattpocock/skills,
 anthropics/skills, and cursor/plugins. Clones live in
 `C:/code/vendor-skills/`, attribution in `skills/THIRD_PARTY_SKILLS.md`.
-Authored: `powershell/` (5.1 and 7), `profiling/`, `devtools/` including
+Authored: `windows/powershell/` (5.1 and 7), `profiling/`, `devtools/` including
 `skills-sync`, `tracker/`, `collab/`, and `meta/skill-router.rules.md`. Plus 1
 command and 6 agents (4 harvested, 2 authored).
 
