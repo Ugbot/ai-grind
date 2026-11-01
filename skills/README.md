@@ -162,6 +162,7 @@ thanks to the authors:
 | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | 9 | planning, review, ship |
 | [anthropics/skills](https://github.com/anthropics/skills) | Anthropic | Apache-2.0 | 3 | meta, web |
 | [cursor/plugins](https://github.com/cursor/plugins) | Lauren Tan (`pstack`), Cursor (`cursor-team-kit`, `thermos`, `cli-for-agent`) | MIT | 42 plus 3 agents | writing, understanding, planning, review, meta, build, ship, principles |
+| [stripe/ai](https://github.com/stripe/ai) (Claude plugin v0.11.17) | Stripe | MIT | 10 (plus 2 commands, 1 agent listed for the next full harvest) | stripe |
 
 `MANIFEST.json` records each vendored skill's exact upstream `origin` path. We
 left behind repo-owner-specific, creative, Office-document, and

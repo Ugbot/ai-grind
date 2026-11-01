@@ -1,6 +1,6 @@
 {
   "counts": {
-    "skill": 122,
+    "skill": 132,
     "archive": 1,
     "command": 15,
     "agent": 6
@@ -1157,6 +1157,86 @@
       "origin": "~/.agents/skills/wrangler",
       "dest": "catalog/skills/cloudflare/wrangler/SKILL.md",
       "sha256": "7884f560509c08ac29ee0d3cfe1b5259855fd6790acf0c5292f4d1c54db7c191"
+    },
+    {
+      "name": "connect-recommend",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/connect-recommend",
+      "dest": "catalog/skills/stripe/connect-recommend/SKILL.md",
+      "sha256": "a98c07369a6b248f1bce16a41c53c6b98db4ce0c81c196b6d716bdf67ccd405e"
+    },
+    {
+      "name": "connect-required-verification-information",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/connect-required-verification-information",
+      "dest": "catalog/skills/stripe/connect-required-verification-information/SKILL.md",
+      "sha256": "a9c30050a332f34096905103990c6ee7decd4039809f9db10a5cbc26d9e3ea88"
+    },
+    {
+      "name": "metronome",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/metronome",
+      "dest": "catalog/skills/stripe/metronome/SKILL.md",
+      "sha256": "49be038cfe1d7b596233e7398e0cf25046a96b6e4729daaa7380802a858a1054"
+    },
+    {
+      "name": "stripe-apps",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/stripe-apps",
+      "dest": "catalog/skills/stripe/stripe-apps/SKILL.md",
+      "sha256": "da49a9a5c86187f3edc13ba3620a6a3c781fbdd1e8956dd0adbc2764679df322"
+    },
+    {
+      "name": "stripe-best-practices",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/stripe-best-practices",
+      "dest": "catalog/skills/stripe/stripe-best-practices/SKILL.md",
+      "sha256": "2a85f02dbed48bb1e1863b80836151028512aa72f079467647a48833107acacc"
+    },
+    {
+      "name": "stripe-directory",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/stripe-directory",
+      "dest": "catalog/skills/stripe/stripe-directory/SKILL.md",
+      "sha256": "0805bce6792026e5963dc58f2844d6f18b626053b806c9bdf2220206c41206a6"
+    },
+    {
+      "name": "stripe-docs",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/stripe-docs",
+      "dest": "catalog/skills/stripe/stripe-docs/SKILL.md",
+      "sha256": "af38e784edcdb2f1b273825705c749c1fb3a2614a25875d0705abde02eaa603f"
+    },
+    {
+      "name": "stripe-pay",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/stripe-pay",
+      "dest": "catalog/skills/stripe/stripe-pay/SKILL.md",
+      "sha256": "3577d363c3505a514c3f61a9cdc67d5b1df47bca4521cc2509043388f6bff623"
+    },
+    {
+      "name": "stripe-projects",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/stripe-projects",
+      "dest": "catalog/skills/stripe/stripe-projects/SKILL.md",
+      "sha256": "26e54941597899591447308388dd1c25bf8eb92dc7aa46c02a5ff3156eb14d50"
+    },
+    {
+      "name": "upgrade-stripe",
+      "type": "skill",
+      "category": "stripe",
+      "origin": "~/vendor-skills/stripe-ai/skills/upgrade-stripe",
+      "dest": "catalog/skills/stripe/upgrade-stripe/SKILL.md",
+      "sha256": "dc7186bcb0f731ddbcfe9e3518cd97c13e3b1e920cb19dac13cf346769622d88"
     }
   ]
 }

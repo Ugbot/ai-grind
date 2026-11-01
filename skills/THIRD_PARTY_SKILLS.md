@@ -261,6 +261,10 @@ Until then GPU frame work is not blocked: `devtools_check` reports all five
 devtools-mcp `renderdoc` tools available (capture / analyze / counters /
 resources / thumb), and that remains the working path.
 
+### stripe/ai (Stripe, MIT): 10 kept
+
+Moved from the always-on `stripe@claude-plugins-official` plugin into the router on 2026-11-01, because Venus does not use Stripe. The skills now load on demand from `ai-grind-skills`. Kept verbatim: connect-recommend, connect-required-verification-information, metronome, stripe-apps, stripe-best-practices, stripe-directory, stripe-docs, stripe-pay, stripe-projects, upgrade-stripe. The `explain-error` and `test-cards` commands and the `company-researcher` agent are listed in `sources.toml` for the next full harvest, because selected harvest takes skills only. The plugin's MCP server is not carried over.
+
 ## Retired 2026-08-19 (dedup pass)
 
 Ten harvested skills left the library after an audit of all 122 loadable skills.

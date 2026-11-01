@@ -875,3 +875,85 @@ src = "~/.agents/skills/wrangler"
 type = "skill"
 category = "cloudflare"
 note = "Official cloudflare/skills, Apache-2.0; vendor install, verbatim selective harvest"
+
+# Stripe's official Claude plugin (github.com/stripe/ai, MIT, (c) Stripe), plugin v0.11.17.
+# Moved off the always-loaded plugin into the router (Ben 2026-11-01): Venus does not use Stripe; load on demand.
+# Copied verbatim to ~/vendor-skills/stripe-ai from the plugin cache.
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/connect-recommend"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/connect-required-verification-information"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/metronome"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/stripe-apps"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/stripe-best-practices"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/stripe-directory"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/stripe-docs"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/stripe-pay"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/stripe-projects"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/skills/upgrade-stripe"
+type = "skill"
+category = "stripe"
+note = "Official stripe/ai plugin skill, MIT; verbatim selective harvest"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/commands/explain-error.md"
+type = "command"
+category = "stripe"
+note = "Official stripe/ai plugin command, MIT; verbatim"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/commands/test-cards.md"
+type = "command"
+category = "stripe"
+note = "Official stripe/ai plugin command, MIT; verbatim"
+
+[[item]]
+src = "~/vendor-skills/stripe-ai/agents/company-researcher.md"
+type = "agent"
+category = "stripe"
+note = "Official stripe/ai plugin agent, MIT; verbatim"
