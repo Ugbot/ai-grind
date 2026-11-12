@@ -220,3 +220,27 @@ class TestFrames:
         assert steps_df.height == 1 and steps_df["status"][0] == "passed"
         for frame in (recipes_df, runs_df, steps_df):
             assert frame.height <= FRAME_MAX_ROWS
+
+
+class TestToolJsonArgs:
+    """MCP clients pass JSON-looking args decoded (list/dict); the recipe tool takes both forms."""
+
+    def test_build_spec_accepts_decoded_and_string_forms(self):
+        from devtools_mcp.tools.recipe_tools import _build_spec
+        steps = [{"label": "a", "command": "true"}]
+        env = {"X": "1"}
+        decoded = _build_spec(None, "k", "n", "fuzz", None, steps, env, None)
+        encoded = _build_spec(None, "k", "n", "fuzz", None, '[{"label": "a", "command": "true"}]', '{"X": "1"}', None)
+        assert decoded == encoded and decoded["steps"] == steps and decoded["env_axes"] == env
+
+    def test_tool_schema_admits_lists_and_dicts(self):
+        from devtools_mcp.server import mcp
+        from devtools_mcp.tools import recipe_tools  # noqa: F401 - registers the tool
+        tool = mcp._tool_manager.get_tool("recipe")
+        props = tool.parameters["properties"]
+        for name in ("steps", "env_axes", "spec", "specs", "env"):
+            kinds = {t.get("type") for t in props[name].get("anyOf", [props[name]])}
+            assert {"string", "array", "object"} <= kinds, (name, props[name])
+        args = tool.fn_metadata.arg_model.model_validate(
+            {"action": "register", "steps": [{"label": "a", "command": "true"}], "env_axes": {"X": "1"}})
+        assert isinstance(args.steps, list) and isinstance(args.env_axes, dict)

@@ -33,10 +33,17 @@ def _recipes(ctx: Context) -> RecipesDB:
     return db
 
 
-def _parse_json(raw: str | None, what: str) -> object | None:
-    """Parse a JSON string arg, raising RecipesError on malformed input."""
+# MCP clients send a JSON-looking argument as the decoded value, not the
+# string: steps arrives as a list, env_axes as a dict. The args accept both.
+JsonArg = str | list | dict | None
+
+
+def _parse_json(raw: JsonArg, what: str) -> object | None:
+    """Parse a JSON string arg (or take an already-decoded list/dict), raising RecipesError on malformed input."""
     if raw is None:
         return None
+    if isinstance(raw, (list, dict)):
+        return raw
     text = raw.strip()
     if not text:
         return None
@@ -47,13 +54,13 @@ def _parse_json(raw: str | None, what: str) -> object | None:
 
 
 def _build_spec(
-    spec: str | None,
+    spec: JsonArg,
     key: str | None,
     name: str | None,
     kind: str | None,
     summary: str | None,
-    steps: str | None,
-    env_axes: str | None,
+    steps: JsonArg,
+    env_axes: JsonArg,
     source: str | None,
 ) -> dict:
     """Assemble a recipe spec dict from a full JSON blob or individual args."""
@@ -138,12 +145,12 @@ async def recipe(
     name: str | None = None,
     kind: str | None = None,
     summary: str | None = None,
-    steps: str | None = None,
-    env_axes: str | None = None,
+    steps: JsonArg = None,
+    env_axes: JsonArg = None,
     source: str | None = None,
-    spec: str | None = None,
-    specs: str | None = None,
-    env: str | None = None,
+    spec: JsonArg = None,
+    specs: JsonArg = None,
+    env: JsonArg = None,
     force: bool = False,
     dry_run: bool = False,
     run_id: int | None = None,
