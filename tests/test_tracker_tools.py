@@ -303,3 +303,29 @@ class TestFilesTool:
         assert "src/x.py" in clm
         schema = await _call_tool("tracker_query", {"view": "activity", "columns": ["schema"]})
         assert "`session`" in schema and "`file`" in schema
+
+
+class TestTaskUpdateStatus:
+    async def test_update_sets_status(self):
+        await _call_tool("tracker_project", {"action": "create", "key": "US", "name": "Update status"})
+        await _call_tool("tracker_task", {"action": "create", "project": "US", "title": "t"})
+        out = await _call_tool("tracker_task", {"action": "update", "key": "US-1", "status": "in_progress",
+                                                "description": "d"})
+        assert "[in_progress]" in out
+        detail = await _call_tool("tracker_task", {"action": "get", "key": "US-1"})
+        assert "in_progress" in detail
+
+    async def test_bad_status_is_refused_and_nothing_written(self):
+        await _call_tool("tracker_project", {"action": "create", "key": "UB", "name": "Bad status"})
+        await _call_tool("tracker_task", {"action": "create", "project": "UB", "title": "old"})
+        out = await _call_tool("tracker_task", {"action": "update", "key": "UB-1", "status": "in_review",
+                                                "title": "new"})
+        assert out.startswith("Error") and "in_review" in out
+        detail = await _call_tool("tracker_task", {"action": "get", "key": "UB-1"})
+        assert "old" in detail and "new" not in detail
+
+    async def test_status_on_other_actions_is_refused(self):
+        await _call_tool("tracker_project", {"action": "create", "key": "UO", "name": "Other"})
+        out = await _call_tool("tracker_task", {"action": "create", "project": "UO", "title": "t",
+                                                "status": "done"})
+        assert out.startswith("Error")

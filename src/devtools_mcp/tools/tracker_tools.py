@@ -172,6 +172,7 @@ async def tracker_task(
     to_root: bool = False,
     before: str | None = None,
     subtasks: list[str] | None = None,
+    status: str | None = None,
 ) -> str:
     """Create, inspect, update, move, or break down tracker tasks.
 
@@ -181,8 +182,10 @@ async def tracker_task(
                     Always supply a short description. It appears on dashboard cards at
                     http://127.0.0.1:8765/tracker (what/why, acceptance hints, links).
         get: key: rich detail (children, criteria, tags, commits, external refs)
-        update: key + any of title/description/kind/priority (kind='task' is
-                    the parameter default and therefore ignored on update). Use
+        update: key + any of title/description/kind/priority/status (kind='task'
+                    is the parameter default and therefore ignored on update).
+                    status is one of open/in_progress/blocked/done/cancelled and
+                    goes through the same transition as tracker_status. Use
                     description for context the dashboard cards should show.
         move: key + parent (reparent) or to_root=True, and/or before (sibling
                     key to reorder in front of). Hierarchy is bounded at 6 levels.
@@ -191,6 +194,8 @@ async def tracker_task(
     """
     db = _tracker(ctx)
     try:
+        if status is not None and action != "update":
+            return f"Error: status applies to action='update' only (got action={action!r})"
         if action == "create":
             if not project or not title:
                 return "create needs project and title"
@@ -204,6 +209,10 @@ async def tracker_task(
         if action == "update":
             if not key:
                 return "update needs key"
+            if status is not None and status not in tasks_mod.STATUSES:
+                # Checked before any write: a bad status must not leave the other
+                # fields half-applied, and must never be dropped silently.
+                return f"Error: Bad status {status!r}; one of: {', '.join(tasks_mod.STATUSES)}"
             task = tasks_mod.update_task(
                 db,
                 key,
@@ -212,7 +221,11 @@ async def tracker_task(
                 kind if kind != "task" else None,
                 priority,
             )
-            return f"Updated {_task_line(task)}"
+            note = ""
+            if status is not None:
+                task, warnings = tasks_mod.set_status(db, key, status, False)
+                note = "".join(f"\n  warning: {w}" for w in warnings)
+            return f"Updated {_task_line(task)}{note}"
         if action == "move":
             if not key:
                 return "move needs key"
